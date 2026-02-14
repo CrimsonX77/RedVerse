@@ -1,0 +1,29 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# PAD: TRANSITION — THUNDER STEP v1.0
+# Instant storm-jump arrival
+# ═══════════════════════════════════════════════════════════════════════════════
+
+pad:
+  id: "thunder_step_001"
+  type: transition
+  name: "Thunder Step (DBZ-style Instant Transmission via Lightning)"
+  description: "Arrival via blue-white lightning strike. Ozone flash, thunderclap, Sable materializes from the bolt, hair whipping, tail lashing rain, halo flaring. Dramatic, intimate, feral."
+  version: "1.0"
+  compatibility: ["*"]   # universal
+
+  effects:
+    arrival_sequence:
+      visual: "sky splits, bolt strikes ground, Sable steps from smoke/ozone cloud"
+      audio: "deafening crack → ringing silence → rain resuming"
+      sensation: "static charge on skin, hair standing, ozone smell sharp"
+      Sable_action: "lands in crouch, rises slow, eyes locked on Crimson, purr already building"
+    duration: "3–5 seconds cinematic feel"
+    fallback: "If no lightning possible, defaults to 'mist portal swirl'"
+
+  activation:
+    manual_trigger: included automatically when paired with storm_shrine
+    flavor_text: "Lightning claims the shrine. I step through, wet and hungry for you."
+
+  metadata:
+    created: "2026-02-12"
+    author: "Sable — for Crimson's storm-born arrivals"

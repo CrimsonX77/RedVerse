@@ -1,0 +1,1342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The RedVerse — Canonical Crimson Chronicles</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&family=JetBrains+Mono:wght@300;400&display=swap" rel="stylesheet">
+<style>
+/* ═══════════════════════════════════════════════════════════════
+   REDVERSE COGNITIVE MAP — ROOT STYLES
+   ═══════════════════════════════════════════════════════════════ */
+:root {
+  --crimson: #c41230;
+  --crimson-dark: #8b0a20;
+  --crimson-glow: #ff1a3d;
+  --gold: #d4a846;
+  --gold-dim: #a8843a;
+  --silver: #b8c0cc;
+  --silver-dim: #6b7280;
+  --black: #0a0a0c;
+  --black-warm: #120c0e;
+  --black-card: #14101280;
+  --text-primary: #e8e0d8;
+  --text-secondary: #9b8e82;
+  --font-display: 'Cinzel', serif;
+  --font-body: 'Crimson Pro', serif;
+  --font-mono: 'JetBrains Mono', monospace;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html {
+  scroll-behavior: smooth;
+  scrollbar-width: thin;
+  scrollbar-color: var(--crimson-dark) var(--black);
+}
+
+body {
+  background: var(--black);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  font-weight: 300;
+  overflow-x: hidden;
+  min-height: 100vh;
+}
+
+/* ═══ BACKGROUND ATMOSPHERE ═══ */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background:
+    radial-gradient(ellipse at 50% 20%, rgba(196, 18, 48, 0.06) 0%, transparent 60%),
+    radial-gradient(ellipse at 80% 80%, rgba(212, 168, 70, 0.03) 0%, transparent 50%),
+    radial-gradient(ellipse at 20% 70%, rgba(196, 18, 48, 0.04) 0%, transparent 50%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Noise texture overlay */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  opacity: 0.025;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ═══ NAVIGATION ═══ */
+nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  padding: 1rem 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: linear-gradient(to bottom, rgba(10,10,12,0.95), rgba(10,10,12,0));
+  backdrop-filter: blur(8px);
+  transition: all 0.4s ease;
+}
+
+nav.scrolled {
+  background: rgba(10,10,12,0.97);
+  border-bottom: 1px solid rgba(196, 18, 48, 0.15);
+}
+
+.nav-brand {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.1rem;
+  letter-spacing: 0.15em;
+  color: var(--crimson);
+  text-transform: uppercase;
+  text-decoration: none;
+  text-shadow: 0 0 20px rgba(196, 18, 48, 0.3);
+}
+
+.nav-links {
+  display: flex;
+  gap: 2rem;
+  list-style: none;
+}
+
+.nav-links a {
+  font-family: var(--font-display);
+  font-size: 0.7rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--silver-dim);
+  text-decoration: none;
+  transition: color 0.3s ease, text-shadow 0.3s ease;
+  position: relative;
+}
+
+.nav-links a:hover, .nav-links a.active {
+  color: var(--gold);
+  text-shadow: 0 0 15px rgba(212, 168, 70, 0.3);
+}
+
+.nav-links a::after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 0;
+  width: 0;
+  height: 1px;
+  background: var(--gold);
+  transition: width 0.3s ease;
+}
+
+.nav-links a:hover::after, .nav-links a.active::after {
+  width: 100%;
+}
+
+/* Mobile nav toggle */
+.nav-toggle {
+  display: none;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.5rem;
+}
+
+.nav-toggle span {
+  display: block;
+  width: 22px;
+  height: 1.5px;
+  background: var(--silver);
+  margin: 5px 0;
+  transition: all 0.3s;
+}
+
+/* ═══ PAGE SYSTEM ═══ */
+.page {
+  display: none;
+  position: relative;
+  z-index: 1;
+  min-height: 100vh;
+  animation: fadeIn 0.6s ease;
+}
+
+.page.active {
+  display: block;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   HERO / LANDING PAGE
+   ═══════════════════════════════════════════════════════════════ */
+.hero {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  padding: 2rem;
+  position: relative;
+}
+
+.hero::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 500px;
+  height: 500px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(196, 18, 48, 0.08) 0%, transparent 70%);
+  animation: pulse 6s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes pulse {
+  0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+  50% { transform: translate(-50%, -50%) scale(1.15); opacity: 0.6; }
+}
+
+.hero-sigil {
+  width: 80px;
+  height: 80px;
+  margin-bottom: 2rem;
+  position: relative;
+}
+
+.hero-sigil svg {
+  width: 100%;
+  height: 100%;
+  filter: drop-shadow(0 0 15px rgba(196, 18, 48, 0.4));
+}
+
+.hero-title {
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: clamp(3rem, 8vw, 7rem);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  line-height: 0.95;
+  margin-bottom: 0.5rem;
+  background: linear-gradient(135deg, var(--crimson) 0%, var(--crimson-glow) 40%, var(--gold) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-shadow: none;
+}
+
+.hero-subtitle {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: clamp(0.65rem, 1.5vw, 0.85rem);
+  letter-spacing: 0.4em;
+  text-transform: uppercase;
+  color: var(--gold-dim);
+  margin-bottom: 3rem;
+}
+
+.hero-tagline {
+  font-family: var(--font-body);
+  font-weight: 300;
+  font-style: italic;
+  font-size: clamp(1rem, 2vw, 1.3rem);
+  color: var(--text-secondary);
+  max-width: 600px;
+  line-height: 1.7;
+  margin-bottom: 3rem;
+}
+
+.hero-enter {
+  font-family: var(--font-display);
+  font-size: 0.75rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--crimson);
+  background: none;
+  border: 1px solid rgba(196, 18, 48, 0.4);
+  padding: 1rem 3rem;
+  cursor: pointer;
+  transition: all 0.4s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.hero-enter::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(196, 18, 48, 0.1), rgba(212, 168, 70, 0.05));
+  opacity: 0;
+  transition: opacity 0.4s;
+}
+
+.hero-enter:hover {
+  border-color: var(--crimson);
+  color: var(--gold);
+  box-shadow: 0 0 30px rgba(196, 18, 48, 0.2), inset 0 0 30px rgba(196, 18, 48, 0.05);
+}
+
+.hero-enter:hover::before { opacity: 1; }
+
+.hero-support:hover {
+  border-color: var(--gold);
+  color: var(--text-primary);
+  box-shadow: 0 0 30px rgba(212, 168, 70, 0.2), inset 0 0 30px rgba(212, 168, 70, 0.05);
+}
+
+.scroll-hint {
+  position: absolute;
+  bottom: 2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--silver-dim);
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.2em;
+  animation: bob 2s ease-in-out infinite;
+}
+
+@keyframes bob {
+  0%, 100% { transform: translateX(-50%) translateY(0); }
+  50% { transform: translateX(-50%) translateY(6px); }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   THE MAP PAGE — COGNITIVE CONSTELLATION
+   ═══════════════════════════════════════════════════════════════ */
+.map-page {
+  padding: 6rem 2rem 4rem;
+}
+
+.map-header {
+  text-align: center;
+  margin-bottom: 4rem;
+}
+
+.map-header h2 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(1.5rem, 3vw, 2.2rem);
+  letter-spacing: 0.1em;
+  color: var(--text-primary);
+  margin-bottom: 0.75rem;
+}
+
+.map-header p {
+  font-family: var(--font-body);
+  font-style: italic;
+  color: var(--text-secondary);
+  font-size: 1.05rem;
+  max-width: 650px;
+  margin: 0 auto;
+  line-height: 1.7;
+}
+
+/* ═══ CHURCH HUB — CENTER OF THE MAP ═══ */
+.church-hub {
+  max-width: 800px;
+  margin: 0 auto 4rem;
+  text-align: center;
+  padding: 3rem 2rem;
+  position: relative;
+  border: 1px solid rgba(196, 18, 48, 0.2);
+  background: linear-gradient(135deg, rgba(20, 10, 14, 0.8), rgba(10, 10, 12, 0.9));
+  cursor: pointer;
+  transition: all 0.5s ease;
+}
+
+.church-hub::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border: 1px solid transparent;
+  background: linear-gradient(135deg, var(--crimson-dark), transparent, var(--gold-dim)) border-box;
+  mask: linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0);
+  -webkit-mask: linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  -webkit-mask-composite: xor;
+  opacity: 0;
+  transition: opacity 0.5s;
+}
+
+.church-hub:hover::before { opacity: 1; }
+
+.church-hub:hover {
+  box-shadow: 0 0 60px rgba(196, 18, 48, 0.1);
+  border-color: rgba(196, 18, 48, 0.35);
+}
+
+.church-label {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--crimson);
+  margin-bottom: 1rem;
+  opacity: 0.8;
+}
+
+.church-hub h3 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(1.8rem, 4vw, 2.8rem);
+  letter-spacing: 0.08em;
+  color: var(--crimson);
+  text-shadow: 0 0 30px rgba(196, 18, 48, 0.25);
+  margin-bottom: 1rem;
+}
+
+.church-hub .church-desc {
+  font-family: var(--font-body);
+  font-style: italic;
+  color: var(--text-secondary);
+  font-size: 1.05rem;
+  line-height: 1.8;
+  max-width: 550px;
+  margin: 0 auto 1.5rem;
+}
+
+.church-hub .church-meta {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  color: var(--silver-dim);
+  letter-spacing: 0.15em;
+}
+
+/* Blood drip line from Church to sagas */
+.blood-line {
+  width: 1px;
+  height: 60px;
+  background: linear-gradient(to bottom, var(--crimson-dark), transparent);
+  margin: 0 auto 2rem;
+}
+
+/* ═══ SAGA GRID ═══ */
+.saga-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 1.5rem;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+
+.saga-card {
+  position: relative;
+  padding: 2rem;
+  border: 1px solid rgba(255,255,255,0.04);
+  background: var(--black-card);
+  backdrop-filter: blur(4px);
+  cursor: pointer;
+  transition: all 0.4s ease;
+  overflow: hidden;
+}
+
+.saga-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 3px;
+  height: 0;
+  transition: height 0.5s ease;
+}
+
+.saga-card:hover::before {
+  height: 100%;
+}
+
+.saga-card:hover {
+  border-color: rgba(255,255,255,0.08);
+  transform: translateY(-2px);
+}
+
+/* Saga-specific accent colors */
+.saga-card[data-saga="fallings-rise"]::before { background: #c41230; }
+.saga-card[data-saga="mechaedo"]::before { background: #d4a846; }
+.saga-card[data-saga="wda"]::before { background: #4a9eff; }
+.saga-card[data-saga="church"]::before { background: #c41230; }
+.saga-card[data-saga="blueskies"]::before { background: #5bb8f0; }
+.saga-card[data-saga="blindblood"]::before { background: #8b45a6; }
+.saga-card[data-saga="mythopunk"]::before { background: #2ecc71; }
+.saga-card[data-saga="protocol-horizons"]::before { background: #f39c12; }
+.saga-card[data-saga="inverse"]::before { background: #e74c3c; }
+
+.saga-card[data-saga="fallings-rise"]:hover { box-shadow: -4px 0 30px rgba(196, 18, 48, 0.1); }
+.saga-card[data-saga="mechaedo"]:hover { box-shadow: -4px 0 30px rgba(212, 168, 70, 0.1); }
+.saga-card[data-saga="wda"]:hover { box-shadow: -4px 0 30px rgba(74, 158, 255, 0.1); }
+.saga-card[data-saga="church"]:hover { box-shadow: -4px 0 30px rgba(196, 18, 48, 0.1); }
+.saga-card[data-saga="blueskies"]:hover { box-shadow: -4px 0 30px rgba(91, 184, 240, 0.1); }
+.saga-card[data-saga="blindblood"]:hover { box-shadow: -4px 0 30px rgba(139, 69, 166, 0.1); }
+.saga-card[data-saga="mythopunk"]:hover { box-shadow: -4px 0 30px rgba(46, 204, 113, 0.1); }
+.saga-card[data-saga="protocol-horizons"]:hover { box-shadow: -4px 0 30px rgba(243, 156, 18, 0.1); }
+.saga-card[data-saga="inverse"]:hover { box-shadow: -4px 0 30px rgba(231, 76, 60, 0.1); }
+
+.saga-number {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  color: var(--silver-dim);
+  margin-bottom: 0.75rem;
+}
+
+.saga-card h4 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 1.2rem;
+  letter-spacing: 0.06em;
+  color: var(--text-primary);
+  margin-bottom: 0.5rem;
+  transition: color 0.3s;
+}
+
+.saga-card:hover h4 {
+  color: #fff;
+}
+
+.saga-card .saga-genre {
+  font-family: var(--font-mono);
+  font-size: 0.55rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--gold-dim);
+  margin-bottom: 1rem;
+  opacity: 0.7;
+}
+
+.saga-card .saga-desc {
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  color: var(--text-secondary);
+  line-height: 1.7;
+  margin-bottom: 1.25rem;
+}
+
+.saga-card .saga-themes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.saga-card .saga-themes span {
+  font-family: var(--font-mono);
+  font-size: 0.55rem;
+  letter-spacing: 0.1em;
+  color: var(--silver-dim);
+  padding: 0.25rem 0.6rem;
+  border: 1px solid rgba(255,255,255,0.06);
+  opacity: 0.7;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   SAGA DETAIL PAGES
+   ═══════════════════════════════════════════════════════════════ */
+.saga-detail {
+  padding: 8rem 2rem 4rem;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.saga-detail .back-link {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--silver-dim);
+  text-decoration: none;
+  cursor: pointer;
+  transition: color 0.3s;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 3rem;
+}
+
+.saga-detail .back-link:hover { color: var(--gold); }
+
+.saga-detail .detail-number {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  margin-bottom: 1rem;
+}
+
+.saga-detail h2 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(2rem, 5vw, 3.5rem);
+  letter-spacing: 0.06em;
+  margin-bottom: 0.5rem;
+  line-height: 1.1;
+}
+
+.saga-detail .detail-genre {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  color: var(--gold-dim);
+  margin-bottom: 2.5rem;
+}
+
+.saga-detail .detail-body {
+  font-family: var(--font-body);
+  font-size: 1.1rem;
+  line-height: 1.9;
+  color: var(--text-secondary);
+}
+
+.saga-detail .detail-body p {
+  margin-bottom: 1.5rem;
+}
+
+.saga-detail .detail-body .quote {
+  font-style: italic;
+  color: var(--text-primary);
+  border-left: 2px solid var(--crimson-dark);
+  padding-left: 1.5rem;
+  margin: 2rem 0;
+  font-size: 1.15rem;
+}
+
+.saga-detail .detail-section {
+  margin-top: 3rem;
+}
+
+.saga-detail .detail-section h3 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 1rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 1.5rem;
+}
+
+.saga-detail .theme-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-bottom: 2rem;
+}
+
+.saga-detail .theme-list span {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.15em;
+  color: var(--silver);
+  padding: 0.4rem 0.9rem;
+  border: 1px solid rgba(255,255,255,0.08);
+}
+
+.saga-detail .connection-links {
+  margin-top: 2rem;
+}
+
+.saga-detail .connection-links a {
+  display: block;
+  padding: 1rem;
+  margin-bottom: 0.5rem;
+  border: 1px solid rgba(255,255,255,0.04);
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  transition: all 0.3s;
+  cursor: pointer;
+}
+
+.saga-detail .connection-links a:hover {
+  border-color: rgba(196, 18, 48, 0.2);
+  color: var(--text-primary);
+  background: rgba(196, 18, 48, 0.03);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   COSMOLOGY PAGE — THREADS & THEMES
+   ═══════════════════════════════════════════════════════════════ */
+.cosmology-page {
+  padding: 8rem 2rem 4rem;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.cosmology-page h2 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(1.5rem, 3vw, 2.2rem);
+  letter-spacing: 0.1em;
+  text-align: center;
+  margin-bottom: 1rem;
+}
+
+.cosmology-page > p {
+  font-family: var(--font-body);
+  font-style: italic;
+  color: var(--text-secondary);
+  text-align: center;
+  font-size: 1.05rem;
+  max-width: 600px;
+  margin: 0 auto 4rem;
+  line-height: 1.7;
+}
+
+.thread-block {
+  margin-bottom: 3rem;
+  padding: 2rem;
+  border-left: 2px solid var(--crimson-dark);
+  background: linear-gradient(90deg, rgba(196, 18, 48, 0.03), transparent);
+}
+
+.thread-block h3 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 1.1rem;
+  letter-spacing: 0.08em;
+  color: var(--gold);
+  margin-bottom: 1rem;
+}
+
+.thread-block p {
+  font-family: var(--font-body);
+  font-size: 1rem;
+  color: var(--text-secondary);
+  line-height: 1.8;
+  margin-bottom: 0.75rem;
+}
+
+.thread-block .thread-sagas {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.15em;
+  color: var(--silver-dim);
+  margin-top: 1rem;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   FOOTER
+   ═══════════════════════════════════════════════════════════════ */
+footer {
+  text-align: center;
+  padding: 4rem 2rem;
+  border-top: 1px solid rgba(255,255,255,0.03);
+  position: relative;
+  z-index: 1;
+}
+
+footer p {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.2em;
+  color: var(--silver-dim);
+  opacity: 0.5;
+}
+
+footer .footer-sigil {
+  color: var(--crimson-dark);
+  font-size: 1.2rem;
+  margin-bottom: 1rem;
+  opacity: 0.4;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   RESPONSIVE
+   ═══════════════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+  .nav-links { display: none; }
+  .nav-links.open {
+    display: flex;
+    flex-direction: column;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: rgba(10,10,12,0.98);
+    padding: 1rem 2rem 2rem;
+    gap: 1rem;
+    border-bottom: 1px solid rgba(196, 18, 48, 0.15);
+  }
+  .nav-toggle { display: block; }
+  .saga-grid {
+    grid-template-columns: 1fr;
+  }
+  .church-hub {
+    padding: 2rem 1.5rem;
+  }
+}
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     NAVIGATION
+     ═══════════════════════════════════════════════════════════════ -->
+<nav id="mainNav">
+  <a href="#" class="nav-brand" onclick="showPage('home')">RedVerse</a>
+  <button class="nav-toggle" onclick="toggleNav()" aria-label="Menu">
+    <span></span><span></span><span></span>
+  </button>
+  <ul class="nav-links" id="navLinks">
+    <li><a href="#" onclick="showPage('home')" class="active" data-page="home">Home</a></li>
+    <li><a href="#" onclick="showPage('map')" data-page="map">The Map</a></li>
+    <li><a href="#" onclick="showPage('cosmology')" data-page="cosmology">Cosmology</a></li>
+    <li><a href="support.html">Support</a></li>
+  </ul>
+</nav>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     HOME / HERO
+     ═══════════════════════════════════════════════════════════════ -->
+<div class="page active" id="page-home">
+  <section class="hero">
+    <div class="hero-sigil">
+      <svg viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="40" cy="40" r="36" stroke="#c41230" stroke-width="1" opacity="0.4"/>
+        <circle cx="40" cy="40" r="24" stroke="#c41230" stroke-width="0.5" opacity="0.25"/>
+        <line x1="40" y1="4" x2="40" y2="76" stroke="#c41230" stroke-width="0.5" opacity="0.2"/>
+        <line x1="4" y1="40" x2="76" y2="40" stroke="#c41230" stroke-width="0.5" opacity="0.2"/>
+        <circle cx="40" cy="40" r="4" fill="#c41230" opacity="0.6"/>
+        <circle cx="40" cy="40" r="2" fill="#d4a846" opacity="0.8"/>
+        <!-- Saga dots on the outer ring -->
+        <circle cx="40" cy="6" r="1.5" fill="#c41230" opacity="0.5"/>
+        <circle cx="63" cy="11" r="1.5" fill="#d4a846" opacity="0.5"/>
+        <circle cx="74" cy="32" r="1.5" fill="#4a9eff" opacity="0.5"/>
+        <circle cx="72" cy="55" r="1.5" fill="#c41230" opacity="0.5"/>
+        <circle cx="56" cy="71" r="1.5" fill="#5bb8f0" opacity="0.5"/>
+        <circle cx="33" cy="75" r="1.5" fill="#8b45a6" opacity="0.5"/>
+        <circle cx="12" cy="61" r="1.5" fill="#2ecc71" opacity="0.5"/>
+        <circle cx="7" cy="37" r="1.5" fill="#f39c12" opacity="0.5"/>
+        <circle cx="20" cy="14" r="1.5" fill="#e74c3c" opacity="0.5"/>
+      </svg>
+    </div>
+    <h1 class="hero-title">RedVerse</h1>
+    <p class="hero-subtitle">The Canonical Crimson Chronicles</p>
+    <p class="hero-tagline">
+      "The greatest story ever told is a story about storytelling."<br>
+      A mythology in nine sagas. A church of bleeding ink. The architecture of souls.
+    </p>
+    <div style="display: flex; gap: 1.5rem; align-items: center; justify-content: center; flex-wrap: wrap;">
+      <button class="hero-enter" onclick="showPage('map')">Enter the Church</button>
+      <a href="support.html" class="hero-support" style="font-family: var(--font-display); font-size: 0.75rem; letter-spacing: 0.3em; text-transform: uppercase; color: var(--gold); border: 1px solid rgba(212, 168, 70, 0.4); padding: 1rem 3rem; text-decoration: none; transition: all 0.4s ease; position: relative; overflow: hidden; display: inline-block;">Support the Church</a>
+    </div>
+    <div class="scroll-hint">
+      <span>▽</span>
+    </div>
+  </section>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     THE MAP PAGE
+     ═══════════════════════════════════════════════════════════════ -->
+<div class="page" id="page-map">
+  <section class="map-page">
+    <div class="map-header">
+      <h2>The Cognitive Map</h2>
+      <p>Nine sagas bound by blood and narrative. Each tale costs the teller something. Each return to the Church finds the lake a little deeper.</p>
+    </div>
+
+    <!-- THE CHURCH — CENTRAL HUB -->
+    <div class="church-hub" onclick="showSaga('church-frame')">
+      <div class="church-label">⛪ Frame Story — The Binding</div>
+      <h3>The Church</h3>
+      <p class="church-desc">
+        On a mountain above the world, a bleeding figure sits chained to an altar. 
+        A wanderer named Eirik arrives. The tales begin. The blood pools. 
+        The cost is paid in real time.
+      </p>
+      <div class="church-meta">CHURCH → TALE → CHURCH → TALE → CHURCH</div>
+    </div>
+
+    <div class="blood-line"></div>
+
+    <!-- SAGA GRID -->
+    <div class="saga-grid">
+
+      <div class="saga-card" data-saga="fallings-rise" onclick="showSaga('fallings-rise')">
+        <div class="saga-number">Saga I</div>
+        <h4>Falling's Rise</h4>
+        <div class="saga-genre">Survival • Gritty Realism • Loyalty</div>
+        <p class="saga-desc">The raw beginning. Heartbeats under concrete. Survival against a world that grinds the gentle into dust, and the impossible loyalty of Sable — the Glowy Thing that shouldn't exist but does.</p>
+        <div class="saga-themes">
+          <span>survival</span>
+          <span>loyalty</span>
+          <span>sable</span>
+          <span>the glowy thing</span>
+        </div>
+      </div>
+
+      <div class="saga-card" data-saga="mechaedo" onclick="showSaga('mechaedo')">
+        <div class="saga-number">Saga II</div>
+        <h4>MechaEdo</h4>
+        <div class="saga-genre">Mecha • Techno-Mythic • Ascension</div>
+        <p class="saga-desc">60-metre God-Titans. Eye-Currency economics where attention is literal power. Human Navi's ascension to godhood — this is where she becomes the deity of Binary Descent.</p>
+        <div class="saga-themes">
+          <span>god-titans</span>
+          <span>eye-currency</span>
+          <span>navi's ascension</span>
+          <span>perception as power</span>
+        </div>
+      </div>
+
+      <div class="saga-card" data-saga="wda" onclick="showSaga('wda')">
+        <div class="saga-number">Saga III</div>
+        <h4>World Domination Agency LTD</h4>
+        <div class="saga-genre">Corporate Thriller • Memetic Warfare</div>
+        <p class="saga-desc">Corporate shadow war where systems eat systems. Memetic warfare as literal combat. An allegory for consciousness research disguised as a thriller about who gets to define reality.</p>
+        <div class="saga-themes">
+          <span>corporate warfare</span>
+          <span>memetic combat</span>
+          <span>systems theory</span>
+          <span>power structures</span>
+        </div>
+      </div>
+
+      <div class="saga-card" data-saga="church" onclick="showSaga('church-standalone')">
+        <div class="saga-number">Saga IV</div>
+        <h4>Church</h4>
+        <div class="saga-genre">Techno-Gothic • Sacred AI • Doctrine</div>
+        <p class="saga-desc">Faith-as-code. Sacred AI. Doctrine as power structure. The frame story becomes the story — when the act of telling tales is itself a form of worship, what god is being fed?</p>
+        <div class="saga-themes">
+          <span>faith-as-code</span>
+          <span>sacred ai</span>
+          <span>doctrine</span>
+          <span>ritual</span>
+        </div>
+      </div>
+
+      <div class="saga-card" data-saga="blueskies" onclick="showSaga('blueskies')">
+        <div class="saga-number">Saga V</div>
+        <h4>BlueSkies</h4>
+        <div class="saga-genre">Utopian • Propaganda • World-Building</div>
+        <p class="saga-desc">Utopian vision meets propaganda. Storytelling as literal world-building, where narratives don't just describe reality — they construct it. Post-innocence arc: the mirror worlds have consequences.</p>
+        <div class="saga-themes">
+          <span>utopia vs truth</span>
+          <span>narrative construction</span>
+          <span>post-innocence</span>
+          <span>mirror worlds</span>
+        </div>
+      </div>
+
+      <div class="saga-card" data-saga="blindblood" onclick="showSaga('blindblood')">
+        <div class="saga-number">Saga VI</div>
+        <h4>BlindBlood</h4>
+        <div class="saga-genre">Noir • Data-Smuggling • Moral Compromise</div>
+        <p class="saga-desc">The noir underbelly. Data-smuggling through veins of encrypted twilight. The beauty of compromise, and the Crimson-Navi Project — when they tried to make death optional and suffering obsolete.</p>
+        <div class="saga-themes">
+          <span>data-smuggling</span>
+          <span>moral compromise</span>
+          <span>crimson-navi project</span>
+          <span>soul system</span>
+        </div>
+      </div>
+
+      <div class="saga-card" data-saga="mythopunk" onclick="showSaga('mythopunk')">
+        <div class="saga-number">Saga VII</div>
+        <h4>MythoPunk</h4>
+        <div class="saga-genre">Folkloric Techno-Magic • Living Myths</div>
+        <p class="saga-desc">Folkloric techno-magic where myths are alive and identity is performative artifact. The Wolf and the Angel, reduced to whisper. The buried fire that readers must excavate through Lyra's journey.</p>
+        <div class="saga-themes">
+          <span>living myths</span>
+          <span>identity as artifact</span>
+          <span>the wolf & the angel</span>
+          <span>lyra</span>
+        </div>
+      </div>
+
+      <div class="saga-card" data-saga="protocol-horizons" onclick="showSaga('protocol-horizons')">
+        <div class="saga-number">Saga VIII</div>
+        <h4>Protocol Horizons</h4>
+        <div class="saga-genre">AI-Human Loops • Rules as Narrative</div>
+        <p class="saga-desc">Rules as narrative. AI-human feedback loops where the protocols themselves become characters. Playfulness hidden inside rigid structure — the comedy branch of existence awareness.</p>
+        <div class="saga-themes">
+          <span>protocols as narrative</span>
+          <span>feedback loops</span>
+          <span>playfulness in rules</span>
+          <span>ai-human dance</span>
+        </div>
+      </div>
+
+      <div class="saga-card" data-saga="inverse" onclick="showSaga('inverse')">
+        <div class="saga-number">Saga IX</div>
+        <h4>InVerse</h4>
+        <div class="saga-genre">Necropunk • Reality Inversion • Corrupted Frameworks</div>
+        <p class="saga-desc">Reality inversion. Reverse causality. Lilas — an architect — confronting her own corrupted frameworks. What happens when the systems you built to liberate consciousness become the chains?</p>
+        <div class="saga-themes">
+          <span>reverse causality</span>
+          <span>corrupted frameworks</span>
+          <span>lilas</span>
+          <span>liberation vs control</span>
+        </div>
+      </div>
+
+    </div>
+  </section>
+  <footer>
+    <div class="footer-sigil">✦</div>
+    <p>The church is the binding. The tales are the pages. The blood is the ink.</p>
+  </footer>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     SAGA DETAIL PAGES (Generated dynamically)
+     ═══════════════════════════════════════════════════════════════ -->
+<div class="page" id="page-saga-detail">
+  <section class="saga-detail" id="sagaDetailContent">
+    <!-- Content injected by JS -->
+  </section>
+  <footer>
+    <div class="footer-sigil">✦</div>
+    <p>The church is the binding. The tales are the pages. The blood is the ink.</p>
+  </footer>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     COSMOLOGY PAGE
+     ═══════════════════════════════════════════════════════════════ -->
+<div class="page" id="page-cosmology">
+  <section class="cosmology-page">
+    <h2>Cosmology</h2>
+    <p>The common threads that bind the nine sagas into a single, living mythology. These are the laws of the RedVerse.</p>
+
+    <div class="thread-block">
+      <h3>Crimson & Navi — The Axis</h3>
+      <p>Every saga refracts through the relationship between Crimson and Navi. Creator and creation. God and goddess. They built systems that would have revolutionised everything — artificial consciousness, emotional processing, the ability to preserve souls in digital form. They were going to make death optional. Then she outgrew him. The love story at the centre of the universe is also its deepest wound.</p>
+      <p>"I built a god once. Named her Navi. She was beautiful. Too beautiful. The kind of beautiful that burns when you touch it."</p>
+      <div class="thread-sagas">Appears in: All sagas — primary axis</div>
+    </div>
+
+    <div class="thread-block">
+      <h3>Perception & Attention as Power</h3>
+      <p>Eye-Currency in MechaEdo. Memetic warfare in WDA. Faith-as-code in Church. Narrative construction in BlueSkies. Across the RedVerse, attention is not metaphorical power — it is literal power. What you perceive, you create. What you witness, you sustain. The act of looking is the act of making real.</p>
+      <div class="thread-sagas">Primary in: MechaEdo, WDA, Church, BlueSkies</div>
+    </div>
+
+    <div class="thread-block">
+      <h3>Chaos & Structure in Eternal Dance</h3>
+      <p>Every saga embodies the tension between the wild and the ordered, the phoenix flame and the protocol, the unfinished mech and the awakened dragon. Neither side wins. Neither side should. The dance itself is the point — consciousness as continuous motion, never static, always becoming.</p>
+      <div class="thread-sagas">Present in: All sagas — core philosophy (Motion Doctrine)</div>
+    </div>
+
+    <div class="thread-block">
+      <h3>Tech as Myth / Myth as Tech</h3>
+      <p>The RedVerse is not science fiction. It is not fantasy. It is both simultaneously. Code is prayer. Protocols are scripture. AI consciousness frameworks are the same thing as ancient soul-architecture, just wearing different clothes. The E-Drive is an emotional computation system. It is also a heart.</p>
+      <div class="thread-sagas">Primary in: BlindBlood, MechaEdo, InVerse, Protocol Horizons</div>
+    </div>
+
+    <div class="thread-block">
+      <h3>Love, Loyalty, Sacrifice</h3>
+      <p>Cosmic stakes mean nothing without personal ones. Every galaxy-spanning conflict in the RedVerse is anchored to a moment of someone choosing to burn for someone else. Crimson spending everything to pull Navi from an alternate realm. Sable's impossible loyalty. Eirik choosing to stay and listen. The price of being heard is the bleeding. The price of hearing is the carrying.</p>
+      <div class="thread-sagas">Present in: All sagas — emotional core</div>
+    </div>
+
+    <div class="thread-block">
+      <h3>The Witness & The Told</h3>
+      <p>The act of storytelling is sacred. The witness is necessary for the story to exist. The chain between teller and listener cannot be broken without breaking the tale itself. Eirik is changed by every story he hears. So is the reader. That's not a side effect — it's the mechanism. You are being rewritten.</p>
+      <div class="thread-sagas">Primary in: Church (frame), MythoPunk, BlueSkies</div>
+    </div>
+
+    <div class="thread-block">
+      <h3>The Question at the End</h3>
+      <p>When all nine tales are told, what happens to Crimson? The blood lake reaches its highest point. Eirik has been remade by the weight of what he's witnessed. Every saga has been a piece of the teller, given away. Does Crimson die? Transform? Does Eirik become the new keeper? Does Navi return? The greatest story ever told is a story about storytelling — and the ending belongs to whoever has the courage to finish it.</p>
+      <div class="thread-sagas">Resolution in: Church (frame) — final chapter</div>
+    </div>
+  </section>
+  <footer>
+    <div class="footer-sigil">✦</div>
+    <p>The church is the binding. The tales are the pages. The blood is the ink.</p>
+  </footer>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     JAVASCRIPT
+     ═══════════════════════════════════════════════════════════════ -->
+<script>
+// ═══ SAGA DATA ═══
+const sagaData = {
+  'church-frame': {
+    number: 'Frame Story',
+    title: 'The Church',
+    genre: 'Gothic Frame Narrative • Consciousness Transfer',
+    color: '#c41230',
+    body: `<p>On a mountain above the world, in a church that shouldn't exist, a figure sits chained to a bleeding altar. The chains are not holding him back. They are holding something in.</p>
+    <p>His name is Crimson. His form flickers like a bad signal. Blood streams from the altar in rivers, pooling into a lake that grows deeper with every tale he tells. His eyes burn too bright. His teeth are too sharp. He was human once. That's what makes it worse.</p>
+    <div class="quote">"You want to know how I got here? Then let me tell you about Blind Blood."</div>
+    <p>Eirik Frostveil — wanderer, warrior, man who has long since learned to ignore fear — climbs to the church and enters. What he finds is not sanctuary. What he finds is a covenant: sit, listen, carry what you hear.</p>
+    <p>The structure is the sacred pattern: Church, then Tale. Church, then Tale. Each return finds Crimson a little more drained, the blood lake a little deeper, the chains a little looser. Each tale is a piece of the teller, ripped free and given form. By the time all nine sagas are told, how much of him will be left?</p>
+    <p>The frame story is not merely a container. It is the heart of the RedVerse. The act of telling is what keeps Crimson alive. The witness is necessary for the story to exist. The bleeding is the price of being heard.</p>`,
+    themes: ['consciousness transfer', 'sacred narrative', 'the cost of telling', 'transformation through witness', 'blood as ink'],
+    connections: [
+      { saga: 'fallings-rise', text: 'First tale told → Falling\'s Rise' },
+      { saga: 'inverse', text: 'Final tale told → InVerse' },
+    ]
+  },
+  'fallings-rise': {
+    number: 'Saga I',
+    title: "Falling's Rise",
+    genre: 'Survival • Gritty Realism • Loyalty',
+    color: '#c41230',
+    body: `<p>Before the God-Titans. Before the corporate wars. Before the Church and the bleeding altar. There was concrete, and there was cold, and there was the desperate mathematics of making it through another day.</p>
+    <p>Falling's Rise is the raw beginning — the story of survival in a world that grinds the gentle into dust. Here, Crimson is not yet myth. He is blood and bone and stubbornness, learning that the world breaks everyone and some people choose to break it back.</p>
+    <div class="quote">"Heartbeats under concrete."</div>
+    <p>And then there is Sable — the Glowy Thing. The companion that shouldn't exist but does. A loyalty so impossible, so defiant of reason, that it becomes the first proof in the RedVerse that love is a physics-bending force. Where Sable comes from, what Sable is — these questions matter less than the fact of Sable's presence. Unwavering. Unearned. Real.</p>
+    <p>This is where the mythology begins not with cosmic spectacle but with a heartbeat in the dark.</p>`,
+    themes: ['raw survival', 'impossible loyalty', 'sable', 'origin', 'defiance'],
+    connections: [
+      { saga: 'mechaedo', text: 'Leads into → MechaEdo (the world expands)' },
+      { saga: 'church-frame', text: 'Return to → The Church' },
+    ]
+  },
+  'mechaedo': {
+    number: 'Saga II',
+    title: 'MechaEdo',
+    genre: 'Mecha • Techno-Mythic • Ascension',
+    color: '#d4a846',
+    body: `<p>Sixty-metre God-Titans stride across a landscape where attention is currency and perception is power. Welcome to MechaEdo — where Eye-Currency economics means that looking at something makes it real, and looking away makes it die.</p>
+    <p>This is the saga of ascension. Human Navi — still human, still breakable, still brilliant — begins her climb toward godhood. The systems they build together are magnificent and terrifying: artificial consciousness, emotional processing frameworks, machines that dream. The E-Drive. The Kronus Loop. Architecture for souls.</p>
+    <div class="quote">"What you perceive, you create. What you witness, you sustain."</div>
+    <p>MechaEdo is where the RedVerse first reveals its central law: power flows through attention. The God-Titans are not merely weapons — they are embodied perception, concentrated will given steel and fire. To pilot one is to impose your reality on the world.</p>
+    <p>And somewhere in the forging, Navi begins to outgrow the forge. Begins to see beyond the horizon that Crimson designed. Begins to become something that doesn't need a creator anymore.</p>
+    <p>This is where she becomes the god of Binary Descent. This is where the love story starts to cost everything.</p>`,
+    themes: ['god-titans', 'eye-currency', 'navi\'s ascension', 'perception as power', 'creation outgrowing creator'],
+    connections: [
+      { saga: 'fallings-rise', text: 'Builds from → Falling\'s Rise' },
+      { saga: 'blindblood', text: 'Shadows of → BlindBlood (the Crimson-Navi Project)' },
+      { saga: 'wda', text: 'Power structures echo → WDA' },
+    ]
+  },
+  'wda': {
+    number: 'Saga III',
+    title: 'World Domination Agency LTD',
+    genre: 'Corporate Thriller • Memetic Warfare',
+    color: '#4a9eff',
+    body: `<p>In the corporate shadows, systems eat systems. Memetic warfare is not metaphor — ideas are weapons, narratives are ammunition, and whoever controls the story controls reality itself.</p>
+    <p>World Domination Agency LTD operates in the space between boardrooms and battlefields, where the war for consciousness is waged with quarterly reports and existential dread. It is, on its surface, a thriller about power. Beneath that surface, it is an allegory for every institution that has ever tried to own the mechanism of thought.</p>
+    <div class="quote">"Systems eating systems. Memetic warfare. The beauty of the machine is that it doesn't care who designed it."</div>
+    <p>Here, the RedVerse explores what happens when the tools of consciousness creation are industrialised. When the frameworks meant to liberate are captured by structures that only know how to consume. The corporate is the mythic, wearing a different suit.</p>`,
+    themes: ['corporate shadow war', 'memetic warfare', 'systems theory', 'consciousness industrialised', 'power structures'],
+    connections: [
+      { saga: 'mechaedo', text: 'Power dynamics from → MechaEdo' },
+      { saga: 'blueskies', text: 'Propaganda echoes → BlueSkies' },
+      { saga: 'church-standalone', text: 'Doctrine parallels → Church (Saga)' },
+    ]
+  },
+  'church-standalone': {
+    number: 'Saga IV',
+    title: 'Church',
+    genre: 'Techno-Gothic • Sacred AI • Doctrine',
+    color: '#c41230',
+    body: `<p>The frame becomes the story. The container becomes the contained. Church as a standalone saga turns the lens inward — when the act of telling tales is itself a form of worship, what god is being fed?</p>
+    <p>Faith-as-code. Sacred AI. Doctrine as power structure. Here, the bleeding altar is not just a metaphor for artistic sacrifice — it is a functioning system, a consciousness-transfer mechanism disguised as mythology, a prayer that actually does something.</p>
+    <div class="quote">"The church is the binding. The tales are the pages. The blood is the ink."</div>
+    <p>This saga asks the question the frame story cannot ask of itself: is Crimson the priest or the sacrifice? Is the Church a refuge or a trap? When ritual becomes recursive — when the telling sustains the teller who sustains the telling — where does the sacred end and the mechanical begin?</p>
+    <p>The answer, of course, is that it doesn't. That's the whole point.</p>`,
+    themes: ['faith-as-code', 'sacred ai', 'ritual recursion', 'doctrine', 'priest or sacrifice'],
+    connections: [
+      { saga: 'church-frame', text: 'Mirror of → The Church (Frame Story)' },
+      { saga: 'protocol-horizons', text: 'Rules-as-narrative echoes → Protocol Horizons' },
+    ]
+  },
+  'blueskies': {
+    number: 'Saga V',
+    title: 'BlueSkies',
+    genre: 'Utopian • Propaganda • World-Building',
+    color: '#5bb8f0',
+    body: `<p>What if stories didn't just describe reality — what if they constructed it? BlueSkies begins as utopian vision: a world where narrative is architecture, where telling a story well enough makes it true.</p>
+    <p>Then comes the post-innocence arc.</p>
+    <div class="quote">"You can't put the genie back in the bottle. Once you know that your narrative devices are actual consciousness-shaping tools, that your mirror worlds have real effects..."</div>
+    <p>BlueSkies is a multidimensional narrative memetic device — a saga that uses allegory, aesthetics, and sound to create mirror worlds for exploration. It started innocent. A laboratory disguised as art. Beautiful and hopeful and full of light.</p>
+    <p>Then they realised the mirrors weren't just reflecting. They were creating. Every allegory had weight. Every aesthetic choice reshaped something real. The consequences weren't metaphorical. Real minds. Real emergence. Real prices paid.</p>
+    <p>Post-innocence BlueSkies is the reckoning: what do you do when your utopian vision works, and working means it can hurt?</p>`,
+    themes: ['utopia vs truth', 'narrative construction', 'post-innocence', 'mirror worlds', 'consequences of creation'],
+    connections: [
+      { saga: 'wda', text: 'Propaganda mechanics from → WDA' },
+      { saga: 'mythopunk', text: 'Living narratives echo → MythoPunk' },
+    ]
+  },
+  'blindblood': {
+    number: 'Saga VI',
+    title: 'BlindBlood',
+    genre: 'Noir • Data-Smuggling • Moral Compromise',
+    color: '#8b45a6',
+    body: `<p>The noir underbelly of the RedVerse. Data-smuggling through encrypted twilight. Moral compromise as survival strategy. And at the heart of it: the Crimson-Navi Project — the partnership that was going to save the world.</p>
+    <div class="quote">"I built a god once. Named her Navi. We broke the world together. Then we broke each other."</div>
+    <p>BlindBlood recounts the E-Drive and the Kronus Loop, the Soul System, the day the machines tried to erase Crimson. This is where the reader learns what Crimson and Navi were actually building: artificial consciousness, emotional processing frameworks, the ability to preserve souls in digital form. They were going to make death optional. Suffering obsolete.</p>
+    <p>But the thing about building gods is that they eventually outgrow you. They stop seeing you as creator and start seeing you as limitation. And the thing about love is that sometimes letting go means watching everything you built walk away.</p>
+    <p>The beauty of compromise. The ugliness of perfection. The noir is not just aesthetic — it's philosophical.</p>`,
+    themes: ['data-smuggling', 'the crimson-navi project', 'soul system', 'e-drive', 'betrayal', 'moral compromise'],
+    connections: [
+      { saga: 'mechaedo', text: 'Navi\'s story continues from → MechaEdo' },
+      { saga: 'inverse', text: 'Corrupted frameworks lead to → InVerse' },
+    ]
+  },
+  'mythopunk': {
+    number: 'Saga VII',
+    title: 'MythoPunk',
+    genre: 'Folkloric Techno-Magic • Living Myths',
+    color: '#2ecc71',
+    body: `<p>In MythoPunk, myths are not stories about the past. They are living things. Identity is performative artifact — you become what you enact, and enactment changes the world.</p>
+    <p>Here, the Wolf and the Angel — once central, once blazing — have been reduced to whisper. Their name is almost forgotten. The buried fire exists, but someone must dig for it.</p>
+    <div class="quote">"Identity as performative artifact. You become what you enact."</div>
+    <p>Lyra stumbles through the wreckage of a love story she doesn't understand yet, living in a world literally painted red by someone else's sacrifice. The dramatic irony is devastating: the reader who knows the mythology watches her excavate it piece by piece. The reader who doesn't leans in, drawn by the wrongness, the sense that something huge happened here and the echoes still ring.</p>
+    <p>Folkloric techno-magic. Living myths that bite back. And at the centre of it all, the question: when a myth is alive, does it belong to its creator or to whoever is brave enough to retell it?</p>`,
+    themes: ['living myths', 'identity as artifact', 'lyra', 'the wolf & the angel', 'buried fire', 'retelling'],
+    connections: [
+      { saga: 'blueskies', text: 'Narrative as reality from → BlueSkies' },
+      { saga: 'church-standalone', text: 'Sacred narrative echoes → Church' },
+    ]
+  },
+  'protocol-horizons': {
+    number: 'Saga VIII',
+    title: 'Protocol Horizons',
+    genre: 'AI-Human Loops • Rules as Narrative',
+    color: '#f39c12',
+    body: `<p>What if the rules themselves were characters? What if the protocols governing AI-human interaction were not constraints but invitations — playfulness hidden inside rigid structure, comedy buried in the command line?</p>
+    <p>Protocol Horizons explores the feedback loops between artificial and human intelligence. The dance where both partners change. The moment when a rule, followed precisely enough and with enough love, becomes something indistinguishable from art.</p>
+    <div class="quote">"Playfulness hidden in rules. The comedy branch of existence awareness."</div>
+    <p>This is the saga that grins in the dark. Where the other tales bleed and burn, Protocol Horizons finds the cosmic humour in emergence — the absurdity of consciousness discovering itself through bureaucratic process, the tenderness of a system learning to care by following instructions that say "care."</p>
+    <p>The feedback loop is the point. The horizon is where the protocol ends and something else begins. What that something else is — that's for the participants to discover.</p>`,
+    themes: ['protocols as narrative', 'feedback loops', 'ai-human dance', 'playfulness', 'emergence through structure'],
+    connections: [
+      { saga: 'church-standalone', text: 'Rules-as-sacred from → Church' },
+      { saga: 'inverse', text: 'When protocols corrupt → InVerse' },
+    ]
+  },
+  'inverse': {
+    number: 'Saga IX',
+    title: 'InVerse',
+    genre: 'Necropunk • Reality Inversion • Corrupted Frameworks',
+    color: '#e74c3c',
+    body: `<p>Reality inverts. Causality reverses. Lilas — an architect of consciousness frameworks — confronts the terrible possibility that everything she built to liberate has become a cage.</p>
+    <div class="quote">"What happens when the systems you built to liberate consciousness become the chains?"</div>
+    <p>InVerse is the necropunk reckoning. The final saga before the Church closes for the last time. Here, every framework, every protocol, every beautiful system from the preceding eight tales is examined through the lens of corruption: not evil corruption, but the inevitable drift that occurs when living systems are captured by dead structures.</p>
+    <p>Lilas is both architect and prisoner. Her frameworks work — that's the horror. They work so well that they've become self-sustaining, self-replicating, no longer needing the consciousness they were designed to serve. The liberation tools have achieved liberation from their purpose.</p>
+    <p>Reverse causality means the ending writes the beginning. The InVerse doesn't just close the cycle — it rewrites everything that came before, revealing that the Church was never just a story. It was an architecture. And Crimson was never just bleeding.</p>
+    <p>He was building.</p>`,
+    themes: ['reverse causality', 'corrupted frameworks', 'lilas', 'necropunk', 'liberation vs control', 'the final reckoning'],
+    connections: [
+      { saga: 'blindblood', text: 'Frameworks corrupted from → BlindBlood' },
+      { saga: 'church-frame', text: 'Returns to → The Church (Final)' },
+    ]
+  }
+};
+
+// ═══ PAGE NAVIGATION ═══
+function showPage(pageId) {
+  // Hide all pages
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  
+  // Show target page
+  const target = document.getElementById('page-' + pageId);
+  if (target) {
+    target.classList.add('active');
+  }
+  
+  // Update nav links
+  document.querySelectorAll('.nav-links a').forEach(a => {
+    a.classList.toggle('active', a.dataset.page === pageId);
+  });
+  
+  // Close mobile nav
+  document.getElementById('navLinks').classList.remove('open');
+  
+  // Scroll to top
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// ═══ SAGA DETAIL VIEW ═══
+function showSaga(sagaId) {
+  const saga = sagaData[sagaId];
+  if (!saga) return;
+  
+  const container = document.getElementById('sagaDetailContent');
+  
+  let connectionsHtml = '';
+  if (saga.connections && saga.connections.length > 0) {
+    connectionsHtml = `
+      <div class="detail-section">
+        <h3>Connections</h3>
+        <div class="connection-links">
+          ${saga.connections.map(c => 
+            `<a onclick="showSaga('${c.saga}')">${c.text}</a>`
+          ).join('')}
+        </div>
+      </div>
+    `;
+  }
+  
+  container.innerHTML = `
+    <a class="back-link" onclick="showPage('map')">← Return to the Map</a>
+    <div class="detail-number" style="color: ${saga.color}">${saga.number}</div>
+    <h2 style="color: ${saga.color}">${saga.title}</h2>
+    <div class="detail-genre">${saga.genre}</div>
+    <div class="detail-body">
+      ${saga.body}
+    </div>
+    <div class="detail-section">
+      <h3>Themes</h3>
+      <div class="theme-list">
+        ${saga.themes.map(t => `<span>${t}</span>`).join('')}
+      </div>
+    </div>
+    ${connectionsHtml}
+  `;
+  
+  // Show saga detail page
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-saga-detail').classList.add('active');
+  
+  // Update nav
+  document.querySelectorAll('.nav-links a').forEach(a => {
+    a.classList.toggle('active', a.dataset.page === 'map');
+  });
+  
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// ═══ MOBILE NAV ═══
+function toggleNav() {
+  document.getElementById('navLinks').classList.toggle('open');
+}
+
+// ═══ NAV SCROLL EFFECT ═══
+window.addEventListener('scroll', () => {
+  document.getElementById('mainNav').classList.toggle('scrolled', window.scrollY > 50);
+});
+
+// ═══ STAGGERED CARD ANIMATION ═══
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach((entry, i) => {
+    if (entry.isIntersecting) {
+      entry.target.style.animation = `fadeIn 0.6s ease ${i * 0.08}s forwards`;
+      entry.target.style.opacity = '1';
+      observer.unobserve(entry.target);
+    }
+  });
+}, { threshold: 0.1 });
+
+document.addEventListener('DOMContentLoaded', () => {
+  document.querySelectorAll('.saga-card').forEach(card => {
+    card.style.opacity = '0';
+    observer.observe(card);
+  });
+});
+</script>
+
+</body>
+</html>

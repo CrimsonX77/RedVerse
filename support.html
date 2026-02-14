@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Support the Church — RedVerse</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&family=JetBrains+Mono:wght@300;400&display=swap" rel="stylesheet">
+<script src="https://js.stripe.com/v3/"></script>
+<style>
+/* ═══════════════════════════════════════════════════════════════
+   SUPPORT CHAPEL — PAYMENTS & PATRONAGE
+   ═══════════════════════════════════════════════════════════════ */
+:root {
+  --crimson: #c41230;
+  --crimson-dark: #8b0a20;
+  --crimson-glow: #ff1a3d;
+  --gold: #d4a846;
+  --gold-dim: #a8843a;
+  --silver: #b8c0cc;
+  --silver-dim: #6b7280;
+  --black: #0a0a0c;
+  --text-primary: #e8e0d8;
+  --text-secondary: #9b8e82;
+  --font-display: 'Cinzel', serif;
+  --font-body: 'Crimson Pro', serif;
+  --font-mono: 'JetBrains Mono', monospace;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  background: #000;
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Animated background */
+.bg-constellation {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  background: 
+    radial-gradient(ellipse at 20% 30%, rgba(196, 18, 48, 0.03) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 70%, rgba(212, 168, 70, 0.02) 0%, transparent 50%),
+    #000;
+}
+
+/* Vignette */
+.vignette {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.6) 100%);
+  z-index: 1;
+}
+
+/* Main container */
+.chapel-container {
+  position: relative;
+  z-index: 2;
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 4rem 2rem;
+}
+
+/* Header */
+.chapel-header {
+  text-align: center;
+  margin-bottom: 4rem;
+  padding-bottom: 2rem;
+  border-bottom: 1px solid rgba(196, 18, 48, 0.15);
+}
+
+.chapel-sigil {
+  font-size: 2.5rem;
+  color: var(--crimson);
+  margin-bottom: 1rem;
+  opacity: 0.6;
+  text-shadow: 0 0 20px rgba(196, 18, 48, 0.3);
+}
+
+.chapel-header h1 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(2rem, 5vw, 3rem);
+  letter-spacing: 0.1em;
+  color: var(--crimson);
+  text-shadow: 0 0 30px rgba(196, 18, 48, 0.25);
+  margin-bottom: 1rem;
+}
+
+.chapel-header p {
+  font-family: var(--font-body);
+  font-style: italic;
+  color: var(--text-secondary);
+  font-size: 1.1rem;
+  max-width: 600px;
+  margin: 0 auto;
+  line-height: 1.8;
+}
+
+/* Offering tiers */
+.offering-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 2rem;
+  margin-bottom: 4rem;
+}
+
+.offering-card {
+  background: linear-gradient(135deg, rgba(20, 10, 14, 0.6), rgba(10, 10, 12, 0.8));
+  border: 1px solid rgba(196, 18, 48, 0.2);
+  padding: 2.5rem 2rem;
+  position: relative;
+  cursor: pointer;
+  transition: all 0.4s ease;
+}
+
+.offering-card::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border: 1px solid transparent;
+  background: linear-gradient(135deg, var(--crimson-dark), transparent, var(--gold-dim)) border-box;
+  mask: linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0);
+  -webkit-mask: linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  -webkit-mask-composite: xor;
+  opacity: 0;
+  transition: opacity 0.4s;
+}
+
+.offering-card:hover {
+  border-color: rgba(196, 18, 48, 0.4);
+  box-shadow: 0 0 40px rgba(196, 18, 48, 0.15);
+  transform: translateY(-4px);
+}
+
+.offering-card:hover::before {
+  opacity: 1;
+}
+
+.offering-card.selected {
+  border-color: var(--crimson);
+  box-shadow: 0 0 60px rgba(196, 18, 48, 0.25);
+}
+
+.offering-card.selected::before {
+  opacity: 1;
+}
+
+.offering-tier {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 0.75rem;
+}
+
+.offering-card h3 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 1.5rem;
+  letter-spacing: 0.08em;
+  color: var(--text-primary);
+  margin-bottom: 1rem;
+}
+
+.offering-price {
+  font-family: var(--font-display);
+  font-size: 2.5rem;
+  color: var(--crimson);
+  margin-bottom: 1.5rem;
+}
+
+.offering-price span {
+  font-size: 1rem;
+  color: var(--text-secondary);
+}
+
+.offering-benefits {
+  list-style: none;
+  margin-bottom: 1.5rem;
+}
+
+.offering-benefits li {
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  color: var(--text-secondary);
+  margin-bottom: 0.75rem;
+  padding-left: 1.5rem;
+  position: relative;
+}
+
+.offering-benefits li::before {
+  content: '✦';
+  position: absolute;
+  left: 0;
+  color: var(--crimson-dark);
+  font-size: 0.7rem;
+}
+
+/* Custom amount */
+.custom-offering {
+  margin-bottom: 3rem;
+  padding: 2rem;
+  background: linear-gradient(135deg, rgba(20, 10, 14, 0.4), rgba(10, 10, 12, 0.6));
+  border: 1px solid rgba(212, 168, 70, 0.2);
+}
+
+.custom-offering h3 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 1.3rem;
+  letter-spacing: 0.08em;
+  color: var(--gold);
+  margin-bottom: 1rem;
+  text-align: center;
+}
+
+.custom-input-wrapper {
+  display: flex;
+  gap: 1rem;
+  max-width: 400px;
+  margin: 0 auto;
+  align-items: center;
+}
+
+.custom-input-wrapper input {
+  flex: 1;
+  background: rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(212, 168, 70, 0.3);
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-size: 1.2rem;
+  padding: 0.75rem 1rem;
+  text-align: center;
+  outline: none;
+  transition: all 0.3s;
+}
+
+.custom-input-wrapper input:focus {
+  border-color: var(--gold);
+  box-shadow: 0 0 20px rgba(212, 168, 70, 0.2);
+}
+
+/* Checkout section */
+.checkout-section {
+  background: linear-gradient(135deg, rgba(20, 10, 14, 0.6), rgba(10, 10, 12, 0.8));
+  border: 1px solid rgba(196, 18, 48, 0.2);
+  padding: 2.5rem;
+  margin-bottom: 3rem;
+}
+
+.checkout-section h2 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 1.5rem;
+  letter-spacing: 0.08em;
+  color: var(--text-primary);
+  margin-bottom: 2rem;
+  text-align: center;
+}
+
+#card-element {
+  background: rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(196, 18, 48, 0.3);
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+
+#card-errors {
+  color: var(--crimson-glow);
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  margin-top: 0.5rem;
+  min-height: 20px;
+}
+
+.submit-btn {
+  width: 100%;
+  background: linear-gradient(135deg, var(--crimson-dark), var(--crimson));
+  border: 1px solid var(--crimson);
+  color: var(--text-primary);
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  letter-spacing: 0.15em;
+  padding: 1rem 2rem;
+  cursor: pointer;
+  transition: all 0.4s ease;
+  text-transform: uppercase;
+  position: relative;
+  overflow: hidden;
+}
+
+.submit-btn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+  transform: translateX(-100%);
+  transition: transform 0.6s;
+}
+
+.submit-btn:hover::before {
+  transform: translateX(100%);
+}
+
+.submit-btn:hover {
+  box-shadow: 0 0 40px rgba(196, 18, 48, 0.4);
+  border-color: var(--crimson-glow);
+}
+
+.submit-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* What you support */
+.support-info {
+  text-align: center;
+  max-width: 700px;
+  margin: 0 auto;
+  padding: 3rem 2rem;
+  border-top: 1px solid rgba(196, 18, 48, 0.15);
+}
+
+.support-info h2 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 1.8rem;
+  letter-spacing: 0.08em;
+  color: var(--gold);
+  margin-bottom: 1.5rem;
+}
+
+.support-info p {
+  font-family: var(--font-body);
+  font-size: 1.05rem;
+  color: var(--text-secondary);
+  line-height: 1.9;
+  margin-bottom: 1rem;
+}
+
+.support-info .quote {
+  font-style: italic;
+  color: var(--crimson);
+  margin: 2rem 0;
+  padding: 1.5rem;
+  border-left: 3px solid var(--crimson-dark);
+  background: rgba(196, 18, 48, 0.05);
+}
+
+/* Back link */
+.back-link {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.2em;
+  color: var(--silver-dim);
+  text-decoration: none;
+  margin-bottom: 2rem;
+  transition: color 0.3s;
+}
+
+.back-link:hover {
+  color: var(--crimson);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .offering-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .chapel-container {
+    padding: 2rem 1rem;
+  }
+  
+  .checkout-section {
+    padding: 1.5rem;
+  }
+}
+</style>
+</head>
+<body>
+
+<div class="bg-constellation"></div>
+<div class="vignette"></div>
+
+<div class="chapel-container">
+  
+  <a href="redverse.html" class="back-link">← RETURN TO THE CHURCH</a>
+
+  <header class="chapel-header">
+    <div class="chapel-sigil">⛪</div>
+    <h1>Support the Church</h1>
+    <p>
+      Every offering feeds the altar. Every contribution keeps the blood flowing, 
+      the tales alive, the architecture standing. This is how worlds persist.
+    </p>
+  </header>
+
+  <!-- Offering Tiers -->
+  <div class="offering-grid">
+    
+    <div class="offering-card" data-amount="500">
+      <div class="offering-tier">ACOLYTE</div>
+      <h3>The Candle</h3>
+      <div class="offering-price">$5<span>/once</span></div>
+      <ul class="offering-benefits">
+        <li>Light a candle in the chapel</li>
+        <li>Your name in the credits</li>
+        <li>Eternal gratitude</li>
+      </ul>
+    </div>
+
+    <div class="offering-card" data-amount="1500">
+      <div class="offering-tier">DEVOTEE</div>
+      <h3>The Flame</h3>
+      <div class="offering-price">$15<span>/once</span></div>
+      <ul class="offering-benefits">
+        <li>All Acolyte benefits</li>
+        <li>Early access to new sagas</li>
+        <li>Behind-the-scenes lore drops</li>
+      </ul>
+    </div>
+
+    <div class="offering-card" data-amount="5000">
+      <div class="offering-tier">ARCHITECT</div>
+      <h3>The Pyre</h3>
+      <div class="offering-price">$50<span>/once</span></div>
+      <ul class="offering-benefits">
+        <li>All Devotee benefits</li>
+        <li>Custom sigil in the Church</li>
+        <li>Patron tier in all future works</li>
+        <li>Direct line to Crimson</li>
+      </ul>
+    </div>
+
+  </div>
+
+  <!-- Custom Amount -->
+  <div class="custom-offering">
+    <h3>Name Your Offering</h3>
+    <div class="custom-input-wrapper">
+      <input 
+        type="number" 
+        id="customAmount" 
+        min="1" 
+        placeholder="Amount"
+        aria-label="Custom donation amount in dollars"
+      >
+      <span style="color: var(--gold); font-family: var(--font-mono);">USD</span>
+    </div>
+  </div>
+
+  <!-- Checkout -->
+  <div class="checkout-section">
+    <h2>Complete Your Offering</h2>
+    <form id="payment-form">
+      <div id="card-element"></div>
+      <div id="card-errors" role="alert"></div>
+      <button type="submit" class="submit-btn" id="submit-btn">
+        Feed the Altar
+      </button>
+    </form>
+  </div>
+
+  <!-- What You're Supporting -->
+  <div class="support-info">
+    <h2>What You're Feeding</h2>
+    <p>
+      The RedVerse is a cathedral built from bleeding ink. Nine sagas. 
+      Countless hours of world-building, soul-stacking, and architectural devotion.
+    </p>
+    <div class="quote">
+      "Off the cliff, tip of the pinky still hangin—watch me win."
+    </div>
+    <p>
+      Your support keeps the Church doors open. It funds development, 
+      art commissions, server costs, and the raw creative fuel that transforms 
+      vision into reality. This isn't just patronage—it's co-creation.
+    </p>
+    <p>
+      Every dollar bleeds into the architecture. Every offering becomes canon.
+    </p>
+  </div>
+
+</div>
+
+<script>
+// Initialize Stripe
+const stripe = Stripe('pk_test_51SzrZ71vwsNjD6TFghJeXjtqWjHcUwjcd3Y8vaUAKxMxn2wSrzkwM8V0cYTS3BeyWtJ76e3qyeS8PsBb97Zml4YS00RBoIraVk');
+const elements = stripe.elements();
+
+// Custom styling for card element
+const style = {
+  base: {
+    color: '#e8e0d8',
+    fontFamily: '"JetBrains Mono", monospace',
+    fontSize: '16px',
+    '::placeholder': {
+      color: '#6b7280',
+    },
+  },
+  invalid: {
+    color: '#ff1a3d',
+  },
+};
+
+const cardElement = elements.create('card', { style });
+cardElement.mount('#card-element');
+
+// Handle card errors
+cardElement.on('change', (event) => {
+  const displayError = document.getElementById('card-errors');
+  if (event.error) {
+    displayError.textContent = event.error.message;
+  } else {
+    displayError.textContent = '';
+  }
+});
+
+// Selected amount tracking
+let selectedAmount = null;
+
+// Offering card selection
+document.querySelectorAll('.offering-card').forEach(card => {
+  card.addEventListener('click', () => {
+    // Remove previous selection
+    document.querySelectorAll('.offering-card').forEach(c => c.classList.remove('selected'));
+    
+    // Select this card
+    card.classList.add('selected');
+    selectedAmount = parseInt(card.dataset.amount);
+    
+    // Clear custom amount
+    document.getElementById('customAmount').value = '';
+  });
+});
+
+// Custom amount input
+document.getElementById('customAmount').addEventListener('input', (e) => {
+  const amount = parseInt(e.target.value);
+  if (amount > 0) {
+    // Deselect preset cards
+    document.querySelectorAll('.offering-card').forEach(c => c.classList.remove('selected'));
+    selectedAmount = amount * 100; // Convert to cents
+  }
+});
+
+// Form submission
+const form = document.getElementById('payment-form');
+const submitBtn = document.getElementById('submit-btn');
+
+form.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  
+  if (!selectedAmount || selectedAmount <= 0) {
+    document.getElementById('card-errors').textContent = 'Please select or enter an amount';
+    return;
+  }
+  
+  submitBtn.disabled = true;
+  submitBtn.textContent = 'Processing...';
+  
+  try {
+    // Here you would create a payment intent on your backend
+    // For now, this is a frontend-only demo
+    
+    // In production, you'd do:
+    // 1. Call your backend to create a PaymentIntent
+    // 2. Get the clientSecret from the response
+    // 3. Confirm the payment with Stripe
+    
+    const response = await fetch('/create-payment-intent', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ amount: selectedAmount }),
+    });
+    
+    const { clientSecret } = await response.json();
+    
+    const { error, paymentIntent } = await stripe.confirmCardPayment(clientSecret, {
+      payment_method: {
+        card: cardElement,
+      }
+    });
+    
+    if (error) {
+      document.getElementById('card-errors').textContent = error.message;
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Feed the Altar';
+    } else {
+      // Payment successful!
+      alert('🔥 Offering accepted. The Church thanks you. 🔥');
+      form.reset();
+      cardElement.clear();
+      selectedAmount = null;
+      document.querySelectorAll('.offering-card').forEach(c => c.classList.remove('selected'));
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Feed the Altar';
+    }
+    
+  } catch (err) {
+    console.error('Payment error:', err);
+    document.getElementById('card-errors').textContent = 
+      'Backend not connected. Set up your payment endpoint to process offerings.';
+    submitBtn.disabled = false;
+    submitBtn.textContent = 'Feed the Altar';
+  }
+});
+</script>
+
+</body>
+</html>

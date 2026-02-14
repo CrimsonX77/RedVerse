@@ -1,0 +1,59 @@
+:root {
+  --bg-main: #0b0f14;
+  --bg-surface: #11161d;
+  --bg-elevated: #161c24;
+
+  --accent-primary: #dc143c;
+  --accent-glow: #ff4d6d;
+  --accent-cool: #2dd4bf;
+
+  --text-main: #e6edf3;
+  --text-muted: #9aa7b2;
+  --border-subtle: #1f2630;
+
+  --radius-main: 6px;
+  --transition-fast: 120ms ease-out;
+  --transition-smooth: 220ms ease-in-out;
+}
+
+body {
+  background: var(--bg-main);
+  color: var(--text-main);
+  font-family: "Inter", "Segoe UI", sans-serif;
+}
+
+.panel {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-main);
+  box-shadow: 0 0 0 1px rgba(220, 20, 60, 0.05),
+              0 8px 24px rgba(0, 0, 0, 0.4);
+}
+
+.button-primary {
+  background: var(--accent-primary);
+  color: white;
+  border: none;
+  border-radius: var(--radius-main);
+  padding: 8px 14px;
+  transition: var(--transition-fast);
+}
+
+.button-primary:hover {
+  background: var(--accent-glow);
+  box-shadow: 0 0 12px rgba(255, 77, 109, 0.6);
+}
+
+.input, .select {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-main);
+  border-radius: var(--radius-main);
+  padding: 6px 10px;
+}
+
+.input:focus {
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 0 2px rgba(220, 20, 60, 0.25);
+  outline: none;
+}

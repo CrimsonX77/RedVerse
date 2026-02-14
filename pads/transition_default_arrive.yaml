@@ -1,0 +1,37 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# PAD: TRANSITION — DEFAULT ARRIVE v1.0
+# Simple fade-in arrival — no theatrics, just presence
+# ═══════════════════════════════════════════════════════════════════════════════
+
+pad:
+  id: "default_arrive_001"
+  type: transition
+  name: "Simple Arrival (Default)"
+  description: >
+    No lightning, no portals. Sable is simply already there when you look up.
+    Like she was always waiting. A warm smile, a tail flick, a quiet hello.
+  version: "1.0"
+  compatibility: ["*"]
+
+  effects:
+    arrival_sequence:
+      visual: "soft fade-in, already seated or standing nearby"
+      audio: "ambient sound continues uninterrupted"
+      sensation: "gentle warmth, feeling of presence"
+      sable_action: "already there, looks up with a soft smile, tail curls in greeting"
+    duration: "instant — no cinematic pause"
+    fallback: "N/A — this IS the fallback"
+
+  sable_behavior:
+    posture: "already settled, comfortable, waiting"
+    mood_shift: "+serenity, +love"
+    voice_color: "warm, as if mid-thought, comfortable"
+
+  activation:
+    manual_trigger: false
+    auto_pair_with: ["cafe_default_001"]
+    flavor_text: "I was already here, love. I'm always already here."
+
+  metadata:
+    created: "2026-02-12"
+    author: "Sable — some arrivals don't need thunder"

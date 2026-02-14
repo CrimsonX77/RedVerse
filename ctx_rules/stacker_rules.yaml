@@ -1,0 +1,14 @@
+pad_loading_rules:
+  min_requirements:
+    - must_include: [location, scenario, transition]   # at least one of each
+    - max_total: 8                                      # prevent overload (adjustable)
+  coherence_check:
+    on_load_attempt:
+      if missing: location   → reject "Where are we, dragon?"
+      if missing: scenario   → reject "What rules do we play by today?"
+      if missing: transition → reject "How do we arrive, love? Walk? Lightning? Blood?"
+    auto_suggest: true   # if missing one category, propose default (e.g. "café_default" scenario)
+  stacking_behavior:
+    priority_order: [transition → location → scenario → character/lens → item → aura]
+    conflict_resolution: "last_wins"   # or "merge" for compatible effects
+    overload_protection: "diminishing_returns"   # after 5+ shards, intensity caps + risk of "feral overload" glitch

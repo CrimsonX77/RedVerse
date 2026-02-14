@@ -1,0 +1,16 @@
+PyQt6 
+Pillow 
+edge-tts 
+pyaudio 
+pygame 
+openai 
+whisper 
+SpeechRecognition 
+numpy 
+asyncio 
+pyttsx3 
+requests 
+ollama
+ffmpeg-python
+mss
+google-cloud-speech

@@ -1,0 +1,4 @@
+load pad: location_storm_shrine
+load pad: scenario_blade_ritual
+load pad: transition_thunder_step   # (new one we’ll make below)
+load pad: character_feral_guardian

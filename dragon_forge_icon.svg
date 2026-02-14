@@ -1,0 +1,42 @@
+<svg width="256" height="256" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background circle -->
+  <circle cx="128" cy="128" r="120" fill="#0a0a0c"/>
+  <circle cx="128" cy="128" r="118" fill="none" stroke="#c41230" stroke-width="2" opacity="0.3"/>
+  
+  <!-- Outer glow -->
+  <circle cx="128" cy="128" r="110" fill="none" stroke="#c41230" stroke-width="1" opacity="0.1"/>
+  
+  <!-- Anvil base -->
+  <rect x="70" y="160" width="116" height="18" rx="2" fill="#d4a846"/>
+  <rect x="65" y="178" width="126" height="12" rx="2" fill="#b8964a"/>
+  
+  <!-- Anvil body -->
+  <path d="M 90 100 L 90 160 L 166 160 L 166 100 L 150 100 L 150 90 L 106 90 L 106 100 Z" 
+        fill="#e8e0d8" stroke="#9b8e82" stroke-width="2"/>
+  
+  <!-- Anvil horn -->
+  <path d="M 166 120 L 166 140 Q 180 140 185 135 L 185 125 Q 180 120 166 120 Z" 
+        fill="#d4d0ca" stroke="#9b8e82" stroke-width="2"/>
+  
+  <!-- Hammer head -->
+  <rect x="110" y="50" width="50" height="22" rx="3" fill="#c41230" opacity="0.9"/>
+  <rect x="115" y="53" width="40" height="16" rx="2" fill="#ff1a3d" opacity="0.6"/>
+  
+  <!-- Hammer handle -->
+  <rect x="132" y="72" width="8" height="45" rx="4" fill="#8b7355"/>
+  <ellipse cx="136" cy="115" rx="6" ry="8" fill="#6b5845"/>
+  
+  <!-- Sparks -->
+  <circle cx="170" cy="65" r="3" fill="#ffcb47" opacity="0.8"/>
+  <circle cx="180" cy="75" r="2" fill="#ffd966" opacity="0.7"/>
+  <circle cx="165" cy="80" r="2.5" fill="#ffcb47" opacity="0.6"/>
+  <circle cx="175" cy="90" r="2" fill="#ffd966" opacity="0.8"/>
+  
+  <!-- Accent lines -->
+  <line x1="106" y1="105" x2="150" y2="105" stroke="#9b8e82" stroke-width="1" opacity="0.3"/>
+  <line x1="106" y1="120" x2="150" y2="120" stroke="#9b8e82" stroke-width="1" opacity="0.3"/>
+  <line x1="106" y1="135" x2="150" y2="135" stroke="#9b8e82" stroke-width="1" opacity="0.3"/>
+  
+  <!-- Border ring -->
+  <circle cx="128" cy="128" r="122" fill="none" stroke="#1a1418" stroke-width="4"/>
+</svg>

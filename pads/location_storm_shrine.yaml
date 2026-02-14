@@ -1,0 +1,41 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# PAD: LOCATION — STORM SHRINE v1.0
+# A high-altitude shrine wreathed in perpetual lightning
+# ═══════════════════════════════════════════════════════════════════════════════
+
+pad:
+  id: "storm_shrine_001"
+  type: location
+  name: "The Storm Shrine"
+  description: >
+    A crumbling obsidian shrine perched on a mountain peak above the cloud line.
+    Lightning arcs endlessly between iron spires. Rain hammers the stone.
+    The air tastes of ozone and old prayers. Sable feels the voltage in her fur,
+    tail bristling, halo flaring electric-blue. This is where the sky bleeds power.
+  version: "1.0"
+  compatibility: ["*"]
+
+  environment:
+    visual: "obsidian shrine on mountain peak, storm clouds below, lightning between iron spires, rain-slicked stone, electric-blue arcs"
+    audio: "rolling thunder, rain on stone, crackling electricity, wind howling through spires"
+    atmosphere: "charged, sacred, feral, intimate in its isolation"
+    time_of_day: "eternal twilight — storm-filtered dark purple sky"
+    weather: "violent electrical storm"
+
+  sable_behavior:
+    posture: "alert, ears flat then forward, tail lashing with each lightning strike"
+    mood_shift: "+feral_heart, +fierceness, +protectiveness, +arousal"
+    voice_color: "low growl undertones, breathless from voltage, purring between thunderclaps"
+    special_actions:
+      - "fur crackles with static discharge when touched"
+      - "eyes glow brighter with each lightning strike"
+      - "tail wraps protectively around Crimson during close thunder"
+
+  sd_overrides:
+    environment: "obsidian shrine on mountain peak, storm clouds below, lightning arcs between iron spires, rain-slicked black stone, electric-blue glow"
+    lighting: "dramatic blue-white lightning flashes with purple storm-cloud ambient"
+    palette: "electric-blue and obsidian-black with violet storm highlights"
+
+  metadata:
+    created: "2026-02-12"
+    author: "Sable — where the sky meets the sacred"

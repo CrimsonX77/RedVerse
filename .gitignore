@@ -1,0 +1,104 @@
+# ═══════════════════════════════════════════════════════════════
+# RedVerse .gitignore
+# ═══════════════════════════════════════════════════════════════
+
+# ─── PRIVATE FOLDER (DO NOT COMMIT) ────────────────────────────
+Sables_Room/
+
+# ─── Python ────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# ─── Virtual Environments ──────────────────────────────────────
+venv/
+ENV/
+env/
+.venv
+
+# ─── IDE / Editor ──────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# ─── Credentials & Secrets ────────────────────────────────────
+*.json
+!edrive.json
+*.key
+*.pem
+scribe-*.json
+.env
+.env.local
+credentials/
+secrets/
+
+# ─── User-Specific Desktop Files ──────────────────────────────
+dragon_forge.desktop.user
+*.desktop.user
+
+# ─── Generated Outputs ─────────────────────────────────────────
+eros_outputs/
+memory/
+*.log
+*.jsonl
+
+# ─── OS Files ──────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ─── Memory & Session Data ────────────────────────────────────
+*_memory/
+*_outputs/
+fragments/
+session_*.jsonl
+trajectory_*.json
+edrive_state.json
+chain.jsonl
+
+# ─── Temporary Files ───────────────────────────────────────────
+*.tmp
+*.temp
+*.bak
+*.backup
+*~
+
+# ─── Tilde backup files (editor artifacts) ─────────────────────
+*~
+
+# ─── Shell scripts with hardcoded paths ────────────────────────
+# These are system-specific launchers; users create their own
+*.sh
+
+# ─── Desktop integration files ─────────────────────────────────
+*.desktop
+
+# ─── Large Media (Consider Git LFS) ────────────────────────────
+# Uncomment if you want to exclude large video/audio files
+# *.mp4
+# *.webm
+# *.mp3
+# *.wav

@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The RedVerse — Enter the Church</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&family=JetBrains+Mono:wght@300;400&display=swap" rel="stylesheet">
+<style>
+/* ═══════════════════════════════════════════════════════════════
+   REDVERSE — CHURCH ENTRANCE
+   Landing page with animated video doors
+   ═══════════════════════════════════════════════════════════════ */
+:root {
+  --crimson: #c41230;
+  --crimson-dark: #8b0a20;
+  --crimson-glow: #ff1a3d;
+  --gold: #d4a846;
+  --gold-dim: #a8843a;
+  --silver: #b8c0cc;
+  --silver-dim: #6b7280;
+  --black: #0a0a0c;
+  --text-primary: #e8e0d8;
+  --text-secondary: #9b8e82;
+  --font-display: 'Cinzel', serif;
+  --font-body: 'Crimson Pro', serif;
+  --font-mono: 'JetBrains Mono', monospace;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #000;
+  font-family: var(--font-body);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   PHASE 1: THE CHURCH DOORS (Video Landing)
+   ═══════════════════════════════════════════════════════════════ */
+#churchEntrance {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  background: #000;
+  cursor: default;
+  transition: opacity 1.2s ease;
+}
+
+#churchEntrance.fading {
+  opacity: 0;
+  pointer-events: none;
+}
+
+#churchEntrance.hidden {
+  display: none;
+}
+
+/* Video container — fills viewport, maintains aspect */
+.video-container {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+}
+
+.video-container video {
+  min-width: 100%;
+  min-height: 100%;
+  width: auto;
+  height: auto;
+  object-fit: cover;
+}
+
+/* Vignette overlay for cinematic framing */
+.vignette {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.7) 100%);
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* The invisible click zone over the doors */
+#doorHitZone {
+  position: absolute;
+  top: 10%;
+  left: 20%;
+  width: 60%;
+  height: 75%;
+  z-index: 10;
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  transition: all 0.3s ease;
+}
+
+/* Subtle glow indicator on hover */
+#doorHitZone:hover ~ .door-glow-overlay {
+  opacity: 1;
+}
+
+#doorHitZone:hover ~ .door-prompt {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+.door-glow-overlay {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at 50% 45%, rgba(196, 18, 48, 0.08) 0%, transparent 60%);
+  pointer-events: none;
+  z-index: 3;
+  opacity: 0;
+  transition: opacity 0.6s ease;
+}
+
+/* "Enter" prompt that appears on hover */
+.door-prompt {
+  position: absolute;
+  bottom: 12%;
+  left: 50%;
+  transform: translateX(-50%) translateY(8px);
+  z-index: 5;
+  pointer-events: none;
+  opacity: 0;
+  transition: all 0.5s ease;
+  text-align: center;
+}
+
+.door-prompt span {
+  font-family: var(--font-display);
+  font-size: 0.7rem;
+  letter-spacing: 0.4em;
+  text-transform: uppercase;
+  color: var(--crimson);
+  text-shadow: 0 0 20px rgba(196, 18, 48, 0.5);
+  display: block;
+}
+
+.door-prompt .sub {
+  font-family: var(--font-mono);
+  font-size: 0.5rem;
+  letter-spacing: 0.2em;
+  color: var(--silver-dim);
+  margin-top: 4px;
+  text-shadow: none;
+}
+
+/* Title overlay on the entrance */
+.entrance-title {
+  position: absolute;
+  top: 5%;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 5;
+  text-align: center;
+  pointer-events: none;
+}
+
+.entrance-title h1 {
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: clamp(1.5rem, 4vw, 3rem);
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--crimson);
+  text-shadow: 0 0 40px rgba(196, 18, 48, 0.3), 0 2px 20px rgba(0,0,0,0.8);
+  opacity: 0;
+  animation: titleReveal 2s ease 1s forwards;
+}
+
+.entrance-title p {
+  font-family: var(--font-mono);
+  font-size: 0.55rem;
+  letter-spacing: 0.35em;
+  text-transform: uppercase;
+  color: var(--gold-dim);
+  text-shadow: 0 1px 10px rgba(0,0,0,0.8);
+  margin-top: 6px;
+  opacity: 0;
+  animation: titleReveal 2s ease 1.8s forwards;
+}
+
+@keyframes titleReveal {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 0.85; transform: translateY(0); }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   BGM CONTROLS
+   ═══════════════════════════════════════════════════════════════ */
+#bgmToggle {
+  position: fixed;
+  bottom: 16px;
+  right: 16px;
+  z-index: 200;
+  width: 36px;
+  height: 36px;
+  background: rgba(10, 10, 12, 0.7);
+  border: 1px solid rgba(196, 18, 48, 0.25);
+  color: var(--crimson);
+  font-size: 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(8px);
+}
+
+#bgmToggle:hover {
+  border-color: var(--crimson);
+  background: rgba(196, 18, 48, 0.1);
+}
+
+#bgmToggle.muted {
+  color: var(--silver-dim);
+  border-color: rgba(255,255,255,0.06);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   PHASE 2: THE REDVERSE (Main Site — loaded via iframe or inline)
+   ═══════════════════════════════════════════════════════════════ */
+#redverseContent {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  opacity: 0;
+  transition: opacity 1.5s ease;
+  overflow: auto;
+}
+
+#redverseContent.visible {
+  opacity: 1;
+  z-index: 50;
+}
+
+#redverseContent iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   LOADING STATE
+   ═══════════════════════════════════════════════════════════════ */
+.loading-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  background: #000;
+  display: none;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.loading-overlay.active {
+  display: flex;
+}
+
+.loading-overlay .loader {
+  width: 40px;
+  height: 40px;
+  border: 2px solid rgba(196, 18, 48, 0.1);
+  border-top: 2px solid var(--crimson);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.loading-overlay p {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.3em;
+  color: var(--silver-dim);
+}
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     BGM AUDIO
+     ═══════════════════════════════════════════════════════════════ -->
+<audio id="bgm" loop preload="auto">
+  <source src="assets/RedShift.mp3" type="audio/mpeg">
+</audio>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     BGM TOGGLE BUTTON
+     ═══════════════════════════════════════════════════════════════ -->
+<button id="bgmToggle" title="Toggle BGM">♫</button>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     PHASE 1: CHURCH ENTRANCE
+     ═══════════════════════════════════════════════════════════════ -->
+<div id="churchEntrance">
+  <!-- Breathing doors video — loops -->
+  <div class="video-container" id="breathingContainer">
+    <video id="breathingVideo" muted playsinline loop preload="auto">
+      <source src="assets/breathing.mp4" type="video/mp4">
+    </video>
+  </div>
+
+  <!-- Glowing doors video — shown on hover (hidden initially) -->
+  <div class="video-container" id="glowingContainer" style="opacity: 0; transition: opacity 0.8s ease;">
+    <video id="glowingVideo" muted playsinline loop preload="auto">
+      <source src="assets/glowing.mp4" type="video/mp4">
+    </video>
+  </div>
+
+  <!-- Enter animation — plays on click (hidden initially) -->
+  <div class="video-container" id="enterContainer" style="opacity: 0; z-index: 4;">
+    <video id="enterVideo" muted playsinline preload="auto">
+      <source src="assets/Enter.mp4" type="video/mp4">
+    </video>
+  </div>
+
+  <!-- Vignette overlay -->
+  <div class="vignette"></div>
+
+  <!-- Invisible door click zone -->
+  <div id="doorHitZone"></div>
+
+  <!-- Hover glow -->
+  <div class="door-glow-overlay"></div>
+
+  <!-- Hover prompt -->
+  <div class="door-prompt">
+    <span>Enter the Church</span>
+    <div class="sub">click to open</div>
+  </div>
+
+  <!-- Title -->
+  <div class="entrance-title">
+    <h1>RedVerse</h1>
+    <p>The Canonical Crimson Chronicles</p>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     LOADING OVERLAY (Between enter video and site load)
+     ═══════════════════════════════════════════════════════════════ -->
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="loader"></div>
+  <p>The tales await...</p>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     PHASE 2: REDVERSE CONTENT
+     ═══════════════════════════════════════════════════════════════ -->
+<div id="redverseContent">
+  <iframe id="redverseFrame" src="redverse.html"></iframe>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     JAVASCRIPT — State Machine
+     ═══════════════════════════════════════════════════════════════ -->
+<script>
+(function() {
+  // ═══ ELEMENTS ═══
+  const entrance      = document.getElementById('churchEntrance');
+  const breathingVid  = document.getElementById('breathingVideo');
+  const glowingVid    = document.getElementById('glowingVideo');
+  const enterVid      = document.getElementById('enterVideo');
+  const breathingBox  = document.getElementById('breathingContainer');
+  const glowingBox    = document.getElementById('glowingContainer');
+  const enterBox      = document.getElementById('enterContainer');
+  const doorHit       = document.getElementById('doorHitZone');
+  const loading       = document.getElementById('loadingOverlay');
+  const content       = document.getElementById('redverseContent');
+  const bgm           = document.getElementById('bgm');
+  const bgmBtn        = document.getElementById('bgmToggle');
+
+  let state = 'breathing'; // breathing | glowing | entering | entered
+  let bgmStarted = false;
+  let bgmMuted = false;
+
+  // ═══ BGM SETUP ═══
+  bgm.volume = 0.35; // ~35% volume — atmospheric, not overwhelming
+
+  function startBGM() {
+    if (!bgmStarted) {
+      bgm.play().catch(() => {});
+      bgmStarted = true;
+    }
+  }
+
+  bgmBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (!bgmStarted) {
+      startBGM();
+      return;
+    }
+    bgmMuted = !bgmMuted;
+    if (bgmMuted) {
+      bgm.pause();
+      bgmBtn.textContent = '♪';
+      bgmBtn.classList.add('muted');
+      bgmBtn.title = 'Unmute BGM';
+    } else {
+      bgm.play().catch(() => {});
+      bgmBtn.textContent = '♫';
+      bgmBtn.classList.remove('muted');
+      bgmBtn.title = 'Mute BGM';
+    }
+  });
+
+  // ═══ START BREATHING VIDEO ═══
+  breathingVid.play().catch(() => {
+    // Autoplay may be blocked — we'll start on first interaction
+    document.addEventListener('click', function firstClick() {
+      breathingVid.play().catch(() => {});
+      document.removeEventListener('click', firstClick);
+    }, { once: true });
+  });
+
+  // Pre-load glowing video
+  glowingVid.play().catch(() => {});
+
+  // ═══ HOVER: Breathing → Glowing ═══
+  doorHit.addEventListener('mouseenter', () => {
+    if (state !== 'breathing') return;
+    state = 'glowing';
+
+    // Crossfade to glowing
+    glowingBox.style.opacity = '1';
+    glowingBox.style.zIndex = '1';
+
+    // Subtle scale on the glow container for punch
+    glowingBox.style.transition = 'opacity 0.8s ease';
+  });
+
+  doorHit.addEventListener('mouseleave', () => {
+    if (state !== 'glowing') return;
+    state = 'breathing';
+
+    // Crossfade back to breathing
+    glowingBox.style.opacity = '0';
+  });
+
+  // ═══ CLICK: Enter the Church ═══
+  doorHit.addEventListener('click', () => {
+    if (state === 'entering' || state === 'entered') return;
+    state = 'entering';
+
+    // Start BGM on first meaningful interaction
+    startBGM();
+
+    // Show enter video
+    enterBox.style.opacity = '1';
+    enterBox.style.zIndex = '5';
+    enterVid.currentTime = 0;
+    enterVid.play().catch(() => {});
+
+    // Hide the hover elements
+    glowingBox.style.opacity = '0';
+    doorHit.style.display = 'none';
+    document.querySelector('.door-prompt').style.display = 'none';
+    document.querySelector('.door-glow-overlay').style.display = 'none';
+
+    // Fade out the title
+    document.querySelector('.entrance-title').style.transition = 'opacity 0.8s ease';
+    document.querySelector('.entrance-title').style.opacity = '0';
+
+    // When enter video ends, transition to the site
+    enterVid.addEventListener('ended', transitionToSite, { once: true });
+
+    // Safety fallback — if video is super long or fails, transition after 12s
+    setTimeout(() => {
+      if (state === 'entering') transitionToSite();
+    }, 12000);
+  });
+
+  // ═══ TRANSITION TO MAIN SITE ═══
+  function transitionToSite() {
+    if (state === 'entered') return;
+    state = 'entered';
+
+    // Fade out entrance
+    entrance.classList.add('fading');
+
+    // Show loading briefly
+    loading.classList.add('active');
+
+    // After entrance fades, reveal content
+    setTimeout(() => {
+      entrance.classList.add('hidden');
+      loading.classList.remove('active');
+      content.classList.add('visible');
+
+      // Re-enable scrolling
+      document.body.style.overflow = 'auto';
+    }, 1400);
+  }
+
+  // ═══ ALTERNATIVE: Full single video mode ═══
+  // If you prefer using WelcomeToTheRedVerse.mp4 as one continuous piece:
+  // Uncomment below and comment out the breathing/glowing/enter logic above
+  /*
+  const fullVideo = document.createElement('video');
+  fullVideo.src = 'assets/WelcomeToTheRedVerse.mp4';
+  fullVideo.muted = true;
+  fullVideo.playsInline = true;
+
+  doorHit.addEventListener('click', () => {
+    startBGM();
+    fullVideo.currentTime = 0; // or wherever the "glowing" starts
+    fullVideo.play();
+    fullVideo.addEventListener('ended', transitionToSite, { once: true });
+  });
+  */
+
+})();
+</script>
+
+</body>
+</html>
