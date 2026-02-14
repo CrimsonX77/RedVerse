@@ -92,6 +92,7 @@ chain.jsonl
 # ─── Shell scripts with hardcoded paths ────────────────────────
 # These are system-specific launchers; users create their own
 *.sh
+!server.sh
 
 # ─── Desktop integration files ─────────────────────────────────
 *.desktop
