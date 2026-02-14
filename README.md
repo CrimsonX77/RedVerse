@@ -13,11 +13,11 @@ The RedVerse is an immersive web-based platform combining theatrical HTML interf
 - **Main RedVerse** (`redverse.html`) - Interactive cognitive map and canonical chronicles
 - **Support Chapel** (`support.html`) - Patronage and support page (requires backend setup)
 
-> **Note:** The support page uses Stripe for payments. The included key is a **test key only** for demonstration. To accept real payments, you need to:
-> 1. Create a Stripe account at https://stripe.com
-> 2. Replace the test key with your publishable key
-> 3. Set up a backend server to handle `/create-payment-intent` endpoint
-> 4. See Stripe documentation: https://stripe.com/docs/payments/accept-a-payment
+> **Note:** The support page uses Stripe for payments. To set up payment processing:
+> 1. See detailed instructions in [PAYMENT_SETUP.md](PAYMENT_SETUP.md)
+> 2. Get your Stripe API keys from https://dashboard.stripe.com/apikeys
+> 3. Configure your keys in `.env` and `support.html`
+> 4. Run the payment server: `python3 server.py` or `./server.sh`
 
 ### Python Tools
 

@@ -14,3 +14,7 @@ ollama
 ffmpeg-python
 mss
 google-cloud-speech
+flask
+flask-cors
+stripe
+python-dotenv
