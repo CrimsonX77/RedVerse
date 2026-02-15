@@ -20,15 +20,190 @@ function Write-Fail  { param($msg) Write-Host "[  ✗  ] $msg" -ForegroundColor 
 
 Write-Banner
 
-# ─── 1. Install Ollama ────────────────────────────────
+# ─── Thorough Component Detection ──────────────────────────
 Write-Host ""
-Write-Step "Step 1/6 — Installing Ollama..."
+Write-Step "Running thorough component detection..."
 
+# Get script directory and potential RedVerse install location
+$scriptDir = Split-Path -Parent (Split-Path -Parent $PSCommandPath)
+$installDir = "$env:USERPROFILE\RedVerse"
+
+# Detection results
+$ollamaFound = $false
+$oracleModelFound = $false
+$pythonFound = $false
+$pythonPackagesFound = $false
+$ffmpegFound = $false
+$redverseFound = $false
+$pythonCmd = $null
+
+# Check for Ollama
 $ollamaPath = Get-Command ollama -ErrorAction SilentlyContinue
 if ($ollamaPath) {
-    Write-Ok "Ollama already installed"
+    $ollamaFound = $true
+    Write-Ok "✓ Ollama found on system"
 } else {
-    Write-Step "Downloading Ollama installer..."
+    Write-Step "  Ollama not found on system"
+}
+
+# Check for Oracle model (only if Ollama is available)
+if ($ollamaFound) {
+    $models = ollama list 2>$null
+    if ($models -match "(?i)crimsondragonx7/oracle") {
+        $oracleModelFound = $true
+        Write-Ok "✓ Oracle model found"
+    } else {
+        Write-Step "  Oracle model not found"
+    }
+}
+
+# Check for Python 3.10+
+foreach ($cmd in @("python", "python3", "py")) {
+    $p = Get-Command $cmd -ErrorAction SilentlyContinue
+    if ($p) {
+        $ver = & $cmd --version 2>&1
+        if ($ver -match "3\.1[0-9]|3\.[2-9][0-9]") {
+            $pythonCmd = $cmd
+            $pythonFound = $true
+            Write-Ok "✓ Python 3.10+ found: $ver"
+            break
+        }
+    }
+}
+if (-not $pythonFound) {
+    Write-Step "  Python 3.10+ not found"
+}
+
+# Check for Python packages (if Python is available)
+if ($pythonFound) {
+    $missingPackages = @()
+    foreach ($pkg in @("edge-tts", "SpeechRecognition", "PyQt6", "Pillow", "flask", "ollama")) {
+        $pkgImport = $pkg -replace "-", "_"
+        $null = & $pythonCmd -c "import $pkgImport" 2>&1
+        if ($LASTEXITCODE -ne 0) {
+            $missingPackages += $pkg
+        }
+    }
+    if ($missingPackages.Count -eq 0) {
+        $pythonPackagesFound = $true
+        Write-Ok "✓ All required Python packages found"
+    } else {
+        Write-Step "  Missing Python packages: $($missingPackages -join ', ')"
+    }
+}
+
+# Check for ffmpeg
+if (Get-Command ffmpeg -ErrorAction SilentlyContinue) {
+    $ffmpegFound = $true
+    $ffmpegVer = ffmpeg -version 2>&1 | Select-Object -First 1
+    Write-Ok "✓ ffmpeg found: $($ffmpegVer -replace 'ffmpeg version ', '')"
+} else {
+    Write-Step "  ffmpeg not found"
+}
+
+# Check for RedVerse repository (in script dir or standard install location)
+if ((Test-Path "$scriptDir\.git") -and (Test-Path "$scriptDir\serve_edrive.py")) {
+    $redverseFound = $true
+    $installDir = $scriptDir
+    Write-Ok "✓ RedVerse repository found at: $installDir"
+} elseif ((Test-Path "$installDir\.git") -and (Test-Path "$installDir\serve_edrive.py")) {
+    $redverseFound = $true
+    Write-Ok "✓ RedVerse repository found at: $installDir"
+} else {
+    Write-Step "  RedVerse repository not found"
+}
+
+# Summary
+Write-Host ""
+Write-Step "Detection Summary:"
+$allFound = $true
+if (-not $ollamaFound) {
+    Write-Warn "  ✗ Ollama needs installation"
+    $allFound = $false
+}
+if ($ollamaFound -and -not $oracleModelFound) {
+    Write-Warn "  ✗ Oracle model needs to be pulled"
+    $allFound = $false
+}
+if (-not $pythonFound) {
+    Write-Warn "  ✗ Python 3.10+ needs installation"
+    $allFound = $false
+}
+if ($pythonFound -and -not $pythonPackagesFound) {
+    Write-Warn "  ✗ Python packages need installation"
+    $allFound = $false
+}
+if (-not $ffmpegFound) {
+    Write-Warn "  ✗ ffmpeg needs installation"
+    $allFound = $false
+}
+if (-not $redverseFound) {
+    Write-Warn "  ✗ RedVerse repository needs cloning"
+    $allFound = $false
+}
+
+if ($allFound) {
+    Write-Host ""
+    Write-Host "═══════════════════════════════════════════════════" -ForegroundColor Green
+    Write-Host "    ✓ All components already installed!" -ForegroundColor Green
+    Write-Host "═══════════════════════════════════════════════════" -ForegroundColor Green
+    Write-Host ""
+    
+    # Check if RedVerse needs updating
+    if ($redverseFound) {
+        Write-Host "Checking for RedVerse updates..." -ForegroundColor Yellow
+        Push-Location $installDir
+        git fetch origin main 2>$null
+        $local = git rev-parse @ 2>$null
+        $remote = git rev-parse '@{u}' 2>$null
+        
+        if ($local -ne $remote) {
+            Write-Step "Update available — pulling latest changes..."
+            git pull origin main 2>$null
+            Write-Ok "RedVerse updated to latest version"
+        } else {
+            Write-Ok "RedVerse is already up to date"
+        }
+        Pop-Location
+    }
+    
+    Write-Host ""
+    Write-Host "System is ready to use!" -ForegroundColor Yellow
+    Write-Host ""
+    Write-Host "To start the RedVerse backend:" -ForegroundColor Yellow
+    Write-Host "  cd $installDir"
+    Write-Host "  $pythonCmd serve_edrive.py"
+    Write-Host ""
+    Write-Host "Then open in your browser:" -ForegroundColor Yellow
+    Write-Host "  http://localhost:8666/EDrive.html"
+    Write-Host "  http://localhost:8666/oracle.html"
+    Write-Host ""
+    
+    # Offer to start server
+    $answer = Read-Host "Start the RedVerse server now? [Y/n]"
+    if ($answer -eq "" -or $answer -match "^[Yy]") {
+        Write-Step "Starting serve_edrive.py..."
+        Push-Location $installDir
+        Start-Process $pythonCmd -ArgumentList "serve_edrive.py" -WindowStyle Normal
+        Start-Sleep -Seconds 2
+        Start-Process "http://localhost:8666/EDrive.html"
+        Pop-Location
+        Write-Ok "Server started — opening browser..."
+    }
+    exit 0
+}
+
+Write-Host ""
+Write-Step "Proceeding with installation of missing components..."
+Start-Sleep -Seconds 2
+
+# ─── 1. Install Ollama ────────────────────────────────
+Write-Host ""
+if ($ollamaFound) {
+    Write-Step "Step 1/6 — Ollama already installed, skipping..."
+} else {
+    Write-Step "Step 1/6 — Installing Ollama..."
+
     $installerUrl = "https://ollama.com/download/OllamaSetup.exe"
     $installerPath = "$env:TEMP\OllamaSetup.exe"
     Invoke-WebRequest -Uri $installerUrl -OutFile $installerPath -UseBasicParsing
@@ -38,6 +213,7 @@ if ($ollamaPath) {
     $env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path", "User")
     if (Get-Command ollama -ErrorAction SilentlyContinue) {
         Write-Ok "Ollama installed successfully"
+        $ollamaFound = $true
     } else {
         Write-Warn "Ollama may need a restart to be in PATH — continuing..."
     }
@@ -64,60 +240,52 @@ try {
 
 # ─── 2. Pull Oracle Model ─────────────────────────────
 Write-Host ""
-Write-Step "Step 2/6 — Pulling Oracle model (this may take a few minutes)..."
-
-$models = ollama list 2>$null
-if ($models -match "(?i)crimsondragonx7/oracle") {
-    Write-Ok "Oracle model already present"
+if ($oracleModelFound) {
+    Write-Step "Step 2/6 — Oracle model already present, skipping..."
 } else {
+    Write-Step "Step 2/6 — Pulling Oracle model (this may take a few minutes)..."
     & ollama pull CrimsonDragonX7/Oracle:latest
     Write-Ok "Oracle model pulled"
 }
 
 # ─── 3. Install Python ────────────────────────────────
 Write-Host ""
-Write-Step "Step 3/6 — Checking Python..."
-
-$pythonCmd = $null
-foreach ($cmd in @("python", "python3", "py")) {
-    $p = Get-Command $cmd -ErrorAction SilentlyContinue
-    if ($p) {
-        $ver = & $cmd --version 2>&1
-        if ($ver -match "3\.1[0-9]|3\.[2-9][0-9]") {
-            $pythonCmd = $cmd
-            break
-        }
-    }
-}
-
-if (-not $pythonCmd) {
-    Write-Step "Python 3.10+ not found — installing via winget..."
+if ($pythonFound) {
+    Write-Step "Step 3/6 — Python 3.10+ already installed, skipping..."
+} else {
+    Write-Step "Step 3/6 — Installing Python..."
     try {
         winget install Python.Python.3.12 --accept-package-agreements --accept-source-agreements
         $env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path", "User")
         $pythonCmd = "python"
+        $pyVer = & $pythonCmd --version 2>&1
+        Write-Ok "Python installed: $pyVer"
+        $pythonFound = $true
     } catch {
         Write-Fail "Could not install Python — please install Python 3.10+ from python.org"
     }
 }
-$pyVer = & $pythonCmd --version 2>&1
-Write-Ok "Python: $pyVer"
+if (-not $pythonCmd) {
+    $pythonCmd = "python"
+}
 
 # ─── 4. Install pip packages ──────────────────────────
 Write-Host ""
-Write-Step "Step 4/6 — Installing Python packages..."
-& $pythonCmd -m pip install --upgrade pip --quiet 2>$null
-& $pythonCmd -m pip install edge-tts SpeechRecognition --quiet
-Write-Ok "edge-tts and SpeechRecognition installed"
+if ($pythonPackagesFound) {
+    Write-Step "Step 4/6 — Python packages already installed, skipping..."
+} else {
+    Write-Step "Step 4/6 — Installing Python packages..."
+    & $pythonCmd -m pip install --upgrade pip --quiet 2>$null
+    & $pythonCmd -m pip install edge-tts SpeechRecognition --quiet
+    Write-Ok "edge-tts and SpeechRecognition installed"
+}
 
 # ─── 5. Install ffmpeg ────────────────────────────────
 Write-Host ""
-Write-Step "Step 5/6 — Checking ffmpeg..."
-
-if (Get-Command ffmpeg -ErrorAction SilentlyContinue) {
-    Write-Ok "ffmpeg already installed"
+if ($ffmpegFound) {
+    Write-Step "Step 5/6 — ffmpeg already installed, skipping..."
 } else {
-    Write-Step "Installing ffmpeg via winget..."
+    Write-Step "Step 5/6 — Installing ffmpeg..."
     try {
         winget install Gyan.FFmpeg --accept-package-agreements --accept-source-agreements
         $env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path", "User")
@@ -129,16 +297,14 @@ if (Get-Command ffmpeg -ErrorAction SilentlyContinue) {
 
 # ─── 6. Clone / Update RedVerse ───────────────────────
 Write-Host ""
-Write-Step "Step 6/6 — Setting up RedVerse..."
-
-$installDir = "$env:USERPROFILE\RedVerse"
-if (Test-Path "$installDir\.git") {
-    Write-Step "RedVerse already cloned — pulling latest..."
+if ($redverseFound) {
+    Write-Step "Step 6/6 — RedVerse already present, checking for updates..."
     Push-Location $installDir
     git pull origin main 2>$null
     Pop-Location
     Write-Ok "RedVerse updated"
 } else {
+    Write-Step "Step 6/6 — Cloning RedVerse..."
     if (Test-Path $installDir) {
         Write-Warn "Backing up existing $installDir..."
         $ts = Get-Date -Format "yyyyMMddHHmmss"
