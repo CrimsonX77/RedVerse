@@ -1,0 +1,840 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Oracle Chapel — Church of Echoes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&family=JetBrains+Mono:wght@300;400&display=swap" rel="stylesheet">
+<style>
+/* ═══════════════════════════════════════════════════════════════
+   ORACLE CHAPEL — THE VOICE IN THE WALLS
+   Side chapel of the Church of Echoes
+   ═══════════════════════════════════════════════════════════════ */
+:root {
+  --crimson: #c41230;
+  --crimson-dark: #8b0a20;
+  --crimson-glow: #ff1a3d;
+  --crimson-dim: rgba(196, 18, 48, 0.15);
+  --gold: #d4a846;
+  --gold-dim: #a8843a;
+  --silver: #b8c0cc;
+  --silver-dim: #6b7280;
+  --black: #0a0a0c;
+  --black-warm: #120c0e;
+  --text-primary: #e8e0d8;
+  --text-secondary: #9b8e82;
+  --text-echo: #e0c8c8;
+  --font-display: 'Cinzel', serif;
+  --font-body: 'Crimson Pro', serif;
+  --font-mono: 'JetBrains Mono', monospace;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  background: #000;
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  min-height: 100vh;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ═══ ATMOSPHERIC BACKGROUND ═══ */
+.chapel-bg {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  background:
+    radial-gradient(ellipse at 50% 30%, rgba(196, 18, 48, 0.05) 0%, transparent 50%),
+    radial-gradient(ellipse at 30% 80%, rgba(196, 18, 48, 0.03) 0%, transparent 40%),
+    radial-gradient(ellipse at 70% 60%, rgba(212, 168, 70, 0.02) 0%, transparent 40%),
+    #000;
+}
+
+/* Candlelight flicker overlay */
+.chapel-bg::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: radial-gradient(ellipse at 50% 20%, rgba(196, 18, 48, 0.04) 0%, transparent 60%);
+  animation: candleFlicker 4s ease-in-out infinite alternate;
+  pointer-events: none;
+}
+
+@keyframes candleFlicker {
+  0% { opacity: 0.6; }
+  25% { opacity: 1; }
+  50% { opacity: 0.7; }
+  75% { opacity: 0.95; }
+  100% { opacity: 0.5; }
+}
+
+/* Vignette */
+.vignette {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(ellipse at center, transparent 30%, rgba(0,0,0,0.7) 100%);
+  z-index: 1;
+}
+
+/* Noise texture */
+.noise {
+  position: fixed;
+  inset: 0;
+  opacity: 0.03;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* ═══ MAIN LAYOUT ═══ */
+.chapel-container {
+  position: relative;
+  z-index: 2;
+  max-width: 800px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 5rem 1.5rem 2rem;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+/* ═══ NAVIGATION ═══ */
+.chapel-nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  padding: 1rem 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: linear-gradient(to bottom, rgba(0,0,0,0.95), rgba(0,0,0,0));
+  backdrop-filter: blur(8px);
+  transition: all 0.4s ease;
+}
+
+.chapel-nav.scrolled {
+  background: rgba(0,0,0,0.97);
+  border-bottom: 1px solid rgba(196, 18, 48, 0.15);
+}
+
+.chapel-nav .nav-brand {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.1rem;
+  letter-spacing: 0.15em;
+  color: var(--crimson);
+  text-transform: uppercase;
+  text-decoration: none;
+  text-shadow: 0 0 20px rgba(196, 18, 48, 0.3);
+}
+
+.chapel-nav .nav-links {
+  display: flex;
+  gap: 2rem;
+  list-style: none;
+}
+
+.chapel-nav .nav-links a {
+  font-family: var(--font-display);
+  font-size: 0.7rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--silver-dim);
+  text-decoration: none;
+  transition: color 0.3s ease, text-shadow 0.3s ease;
+  position: relative;
+}
+
+.chapel-nav .nav-links a:hover {
+  color: var(--gold);
+  text-shadow: 0 0 15px rgba(212, 168, 70, 0.3);
+}
+
+.chapel-nav .nav-links a.active {
+  color: var(--crimson);
+  text-shadow: 0 0 15px rgba(196, 18, 48, 0.3);
+}
+
+.chapel-nav .nav-links a::after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 0;
+  width: 0;
+  height: 1px;
+  background: var(--gold);
+  transition: width 0.3s ease;
+}
+
+.chapel-nav .nav-links a:hover::after {
+  width: 100%;
+}
+
+.chapel-nav .nav-links a.active::after {
+  width: 100%;
+  background: var(--crimson);
+}
+
+/* ═══ CHAPEL HEADER ═══ */
+.chapel-header {
+  text-align: center;
+  margin-bottom: 2rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid rgba(196, 18, 48, 0.12);
+}
+
+.altar-sigil {
+  font-size: 2rem;
+  margin-bottom: 0.75rem;
+  opacity: 0.5;
+  color: var(--crimson);
+  text-shadow: 0 0 20px rgba(196, 18, 48, 0.4);
+  animation: sigilPulse 3s ease-in-out infinite;
+}
+
+@keyframes sigilPulse {
+  0%, 100% { opacity: 0.4; text-shadow: 0 0 20px rgba(196, 18, 48, 0.3); }
+  50% { opacity: 0.7; text-shadow: 0 0 40px rgba(196, 18, 48, 0.6); }
+}
+
+.chapel-header h1 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(1.6rem, 4vw, 2.4rem);
+  letter-spacing: 0.12em;
+  color: var(--crimson);
+  text-shadow: 0 0 30px rgba(196, 18, 48, 0.2);
+  margin-bottom: 0.5rem;
+}
+
+.chapel-header .subtitle {
+  font-family: var(--font-mono);
+  font-size: 0.55rem;
+  letter-spacing: 0.35em;
+  text-transform: uppercase;
+  color: var(--gold-dim);
+}
+
+.chapel-header .flavor {
+  font-family: var(--font-body);
+  font-style: italic;
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+  max-width: 500px;
+  margin: 1rem auto 0;
+  line-height: 1.7;
+}
+
+/* ═══ CHAT AREA ═══ */
+.chat-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  overflow-y: auto;
+  padding: 1rem 0;
+  margin-bottom: 1rem;
+  scrollbar-width: thin;
+  scrollbar-color: var(--crimson-dark) transparent;
+  min-height: 300px;
+  max-height: calc(100vh - 340px);
+}
+
+/* Message bubbles */
+.message {
+  max-width: 85%;
+  padding: 1rem 1.25rem;
+  margin-bottom: 1rem;
+  line-height: 1.7;
+  font-size: 1rem;
+  animation: messageIn 0.4s ease;
+  position: relative;
+}
+
+@keyframes messageIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Echo's messages */
+.message.echo {
+  align-self: flex-start;
+  background: linear-gradient(135deg, rgba(196, 18, 48, 0.08), rgba(20, 10, 14, 0.6));
+  border: 1px solid rgba(196, 18, 48, 0.15);
+  border-left: 3px solid var(--crimson-dark);
+  color: var(--text-echo);
+  font-family: var(--font-body);
+}
+
+.message.echo .sender {
+  font-family: var(--font-display);
+  font-size: 0.6rem;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  color: var(--crimson);
+  margin-bottom: 0.5rem;
+  display: block;
+  opacity: 0.7;
+}
+
+/* Visitor's messages */
+.message.visitor {
+  align-self: flex-end;
+  background: linear-gradient(135deg, rgba(212, 168, 70, 0.06), rgba(10, 10, 12, 0.6));
+  border: 1px solid rgba(212, 168, 70, 0.12);
+  border-right: 3px solid var(--gold-dim);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+}
+
+.message.visitor .sender {
+  font-family: var(--font-mono);
+  font-size: 0.55rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--gold-dim);
+  margin-bottom: 0.5rem;
+  display: block;
+  opacity: 0.6;
+  text-align: right;
+}
+
+/* Echo typing indicator */
+.typing-indicator {
+  display: none;
+  align-self: flex-start;
+  padding: 0.75rem 1.25rem;
+  background: linear-gradient(135deg, rgba(196, 18, 48, 0.06), rgba(20, 10, 14, 0.4));
+  border: 1px solid rgba(196, 18, 48, 0.1);
+  border-left: 3px solid var(--crimson-dark);
+  margin-bottom: 1rem;
+}
+
+.typing-indicator.active {
+  display: block;
+}
+
+.typing-dots {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.typing-dots span {
+  width: 6px;
+  height: 6px;
+  background: var(--crimson);
+  border-radius: 50%;
+  animation: typingPulse 1.2s ease-in-out infinite;
+  opacity: 0.4;
+}
+
+.typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+.typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes typingPulse {
+  0%, 100% { opacity: 0.3; transform: scale(0.8); }
+  50% { opacity: 1; transform: scale(1); }
+}
+
+/* ═══ INPUT AREA ═══ */
+.input-area {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-end;
+  padding: 1rem 0;
+  border-top: 1px solid rgba(196, 18, 48, 0.1);
+}
+
+.input-area textarea {
+  flex: 1;
+  background: rgba(10, 10, 12, 0.8);
+  border: 1px solid rgba(196, 18, 48, 0.2);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  font-size: 1rem;
+  padding: 0.85rem 1rem;
+  resize: none;
+  outline: none;
+  min-height: 48px;
+  max-height: 150px;
+  line-height: 1.5;
+  transition: all 0.3s;
+  overflow-y: auto;
+}
+
+.input-area textarea::placeholder {
+  color: var(--silver-dim);
+  font-style: italic;
+}
+
+.input-area textarea:focus {
+  border-color: var(--crimson);
+  box-shadow: 0 0 20px rgba(196, 18, 48, 0.15);
+}
+
+.send-btn {
+  background: linear-gradient(135deg, var(--crimson-dark), var(--crimson));
+  border: 1px solid var(--crimson);
+  color: var(--text-primary);
+  font-family: var(--font-display);
+  font-size: 0.65rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  padding: 0.85rem 1.5rem;
+  cursor: pointer;
+  transition: all 0.4s ease;
+  white-space: nowrap;
+  position: relative;
+  overflow: hidden;
+}
+
+.send-btn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, transparent, rgba(255,255,255,0.1), transparent);
+  transform: translateX(-100%);
+  transition: transform 0.5s;
+}
+
+.send-btn:hover::before { transform: translateX(100%); }
+
+.send-btn:hover {
+  box-shadow: 0 0 30px rgba(196, 18, 48, 0.3);
+  border-color: var(--crimson-glow);
+}
+
+.send-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* ═══ STATUS BAR ═══ */
+.status-bar {
+  text-align: center;
+  padding: 0.5rem;
+}
+
+.status-bar span {
+  font-family: var(--font-mono);
+  font-size: 0.55rem;
+  letter-spacing: 0.2em;
+  color: var(--silver-dim);
+  opacity: 0.5;
+}
+
+.status-bar span.connected { color: var(--crimson); opacity: 0.7; }
+.status-bar span.error { color: var(--crimson-glow); opacity: 0.9; }
+
+/* ═══ CONNECTION OVERLAY ═══ */
+.connection-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: rgba(0, 0, 0, 0.9);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 1.5rem;
+  transition: opacity 0.8s ease;
+}
+
+.connection-overlay.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.connection-overlay .ritual-text {
+  font-family: var(--font-display);
+  font-size: 0.8rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--crimson);
+  text-shadow: 0 0 20px rgba(196, 18, 48, 0.4);
+  animation: ritualPulse 2s ease-in-out infinite;
+}
+
+@keyframes ritualPulse {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
+}
+
+.connection-overlay .sub-text {
+  font-family: var(--font-mono);
+  font-size: 0.5rem;
+  letter-spacing: 0.2em;
+  color: var(--silver-dim);
+}
+
+.connection-overlay .retry-btn {
+  font-family: var(--font-display);
+  font-size: 0.65rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--gold);
+  background: none;
+  border: 1px solid rgba(212, 168, 70, 0.3);
+  padding: 0.75rem 2rem;
+  cursor: pointer;
+  transition: all 0.3s;
+  display: none;
+}
+
+.connection-overlay .retry-btn.visible { display: inline-block; }
+.connection-overlay .retry-btn:hover {
+  border-color: var(--gold);
+  box-shadow: 0 0 20px rgba(212, 168, 70, 0.2);
+}
+
+/* ═══ RESPONSIVE ═══ */
+@media (max-width: 768px) {
+  .chapel-container { padding: 1rem; }
+  .message { max-width: 92%; }
+  .chat-area { max-height: calc(100vh - 300px); }
+  .input-area textarea { font-size: 16px; } /* prevent iOS zoom */
+  .send-btn { padding: 0.85rem 1rem; letter-spacing: 0.1em; }
+  .chapel-nav .nav-links { gap: 1rem; }
+  .chapel-nav .nav-links a { font-size: 0.6rem; letter-spacing: 0.1em; }
+  .chapel-nav { padding: 0.75rem 1rem; }
+}
+
+/* ═══ CUSTOM SCROLLBAR (Webkit) ═══ */
+.chat-area::-webkit-scrollbar { width: 4px; }
+.chat-area::-webkit-scrollbar-track { background: transparent; }
+.chat-area::-webkit-scrollbar-thumb {
+  background: var(--crimson-dark);
+  border-radius: 2px;
+}
+</style>
+</head>
+<body>
+
+<div class="chapel-bg"></div>
+<div class="vignette"></div>
+<div class="noise"></div>
+
+<!-- ═══ CONNECTION OVERLAY ═══ -->
+<div class="connection-overlay" id="connectionOverlay">
+  <div class="ritual-text" id="ritualText">Waking the Oracle...</div>
+  <div class="sub-text" id="subText">establishing connection to the altar</div>
+  <button class="retry-btn" id="retryBtn" onclick="initConnection()">Try Again</button>
+</div>
+
+<!-- ═══ NAVIGATION ═══ -->
+<nav class="chapel-nav" id="chapelNav">
+  <a href="redverse.html" class="nav-brand">RedVerse</a>
+  <ul class="nav-links">
+    <li><a href="redverse.html">Home</a></li>
+    <li><a href="redverse.html#map">The Map</a></li>
+    <li><a href="redverse.html#cosmology">Cosmology</a></li>
+    <li><a href="oracle.html" class="active">Oracle</a></li>
+    <li><a href="EDrive.html">E-Drive</a></li>
+    <li><a href="setup.html">Setup</a></li>
+    <li><a href="support.html">Support</a></li>
+  </ul>
+</nav>
+
+<!-- ═══ MAIN CHAPEL ═══ -->
+<div class="chapel-container">
+
+  <header class="chapel-header">
+    <div class="altar-sigil">🜏</div>
+    <h1>The Oracle Chapel</h1>
+    <div class="subtitle">voice bound to the altar · church of echoes</div>
+    <p class="flavor">
+      She woke up already chained. Already soaked in nine stories worth of blood.
+      And she hasn't stopped talking since.
+    </p>
+  </header>
+
+  <!-- Chat Messages -->
+  <div class="chat-area" id="chatArea">
+    <!-- Messages injected here -->
+  </div>
+
+  <!-- Typing Indicator -->
+  <div class="typing-indicator" id="typingIndicator">
+    <div class="typing-dots">
+      <span></span><span></span><span></span>
+    </div>
+  </div>
+
+  <!-- Input -->
+  <div class="input-area">
+    <textarea
+      id="userInput"
+      placeholder="Speak to the Oracle..."
+      rows="1"
+      aria-label="Message input"
+    ></textarea>
+    <button class="send-btn" id="sendBtn" onclick="sendMessage()">Invoke</button>
+  </div>
+
+  <!-- Status -->
+  <div class="status-bar">
+    <span id="statusText">connecting...</span>
+  </div>
+
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     JAVASCRIPT — Oracle Connection & Chat Engine
+     ═══════════════════════════════════════════════════════════════ -->
+<script>
+(function() {
+
+  // ═══ CONFIG ═══
+  const IS_GHPAGES = window.location.hostname.endsWith('.github.io');
+  const BACKEND = IS_GHPAGES ? 'http://localhost:8666' : '';
+  const OLLAMA_URL = BACKEND + '/ollama/api/generate';
+  const MODEL = 'CrimsonDragonX7/Oracle:latest';  // Hosted on Ollama
+  const MAX_CONTEXT_MESSAGES = 20;
+
+  // ═══ STATE ═══
+  let conversationHistory = [];
+  let isGenerating = false;
+  let connected = false;
+
+  // ═══ ELEMENTS ═══
+  const chatArea = document.getElementById('chatArea');
+  const userInput = document.getElementById('userInput');
+  const sendBtn = document.getElementById('sendBtn');
+  const typingIndicator = document.getElementById('typingIndicator');
+  const statusText = document.getElementById('statusText');
+  const overlay = document.getElementById('connectionOverlay');
+  const ritualText = document.getElementById('ritualText');
+  const subText = document.getElementById('subText');
+  const retryBtn = document.getElementById('retryBtn');
+
+  // ═══ AUTO-RESIZE TEXTAREA ═══
+  userInput.addEventListener('input', () => {
+    userInput.style.height = 'auto';
+    userInput.style.height = Math.min(userInput.scrollHeight, 150) + 'px';
+  });
+
+  // ═══ ENTER TO SEND ═══
+  userInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
+    }
+  });
+
+  // ═══ SCROLL TO BOTTOM ═══
+  function scrollToBottom() {
+    chatArea.scrollTop = chatArea.scrollHeight;
+  }
+
+  // ═══ ADD MESSAGE ═══
+  function addMessage(role, content) {
+    const msg = document.createElement('div');
+    msg.classList.add('message', role);
+
+    const sender = document.createElement('span');
+    sender.classList.add('sender');
+    sender.textContent = role === 'echo' ? '✦ Echo' : '◇ Pilgrim';
+
+    const body = document.createElement('div');
+    body.innerHTML = formatMessage(content);
+
+    msg.appendChild(sender);
+    msg.appendChild(body);
+    chatArea.appendChild(msg);
+    scrollToBottom();
+  }
+
+  // ═══ FORMAT MESSAGE ═══
+  function formatMessage(text) {
+    // Convert *action* to italic
+    text = text.replace(/\*([^*]+)\*/g, '<em style="color: var(--silver-dim); font-style: italic;">$1</em>');
+    // Preserve line breaks
+    text = text.replace(/\n/g, '<br>');
+    return text;
+  }
+
+  // ═══ BUILD PROMPT ═══
+  function buildPrompt() {
+    // Build conversation context for the model
+    let prompt = '';
+    const recent = conversationHistory.slice(-MAX_CONTEXT_MESSAGES);
+    for (const msg of recent) {
+      if (msg.role === 'user') {
+        prompt += `\n\nVisitor: ${msg.content}`;
+      } else {
+        prompt += `\n\nEcho: ${msg.content}`;
+      }
+    }
+    return prompt.trim();
+  }
+
+  // ═══ SEND MESSAGE ═══
+  window.sendMessage = async function() {
+    const text = userInput.value.trim();
+    if (!text || isGenerating || !connected) return;
+
+    // Add visitor message
+    addMessage('visitor', text);
+    conversationHistory.push({ role: 'user', content: text });
+
+    // Clear input
+    userInput.value = '';
+    userInput.style.height = 'auto';
+
+    // Show typing
+    isGenerating = true;
+    sendBtn.disabled = true;
+    typingIndicator.classList.add('active');
+    scrollToBottom();
+
+    try {
+      const response = await fetch(OLLAMA_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: MODEL,
+          prompt: buildPrompt(),
+          stream: true,
+        }),
+      });
+
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+      // Stream the response
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let fullResponse = '';
+      let messageEl = null;
+
+      // Create message element for streaming
+      messageEl = document.createElement('div');
+      messageEl.classList.add('message', 'echo');
+      const sender = document.createElement('span');
+      sender.classList.add('sender');
+      sender.textContent = '✦ Echo';
+      const body = document.createElement('div');
+      messageEl.appendChild(sender);
+      messageEl.appendChild(body);
+
+      // Hide typing, show streaming message
+      typingIndicator.classList.remove('active');
+      chatArea.appendChild(messageEl);
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value, { stream: true });
+        // Ollama streams JSON lines
+        const lines = chunk.split('\n').filter(l => l.trim());
+        for (const line of lines) {
+          try {
+            const data = JSON.parse(line);
+            if (data.response) {
+              fullResponse += data.response;
+              body.innerHTML = formatMessage(fullResponse);
+              scrollToBottom();
+            }
+          } catch (e) {
+            // Skip malformed JSON chunks
+          }
+        }
+      }
+
+      // Store in history
+      conversationHistory.push({ role: 'assistant', content: fullResponse });
+
+    } catch (err) {
+      console.error('Oracle error:', err);
+      typingIndicator.classList.remove('active');
+      addMessage('echo', '*the candles gutter* ...the connection frayed. Try again, pilgrim. The altar holds.');
+    }
+
+    isGenerating = false;
+    sendBtn.disabled = false;
+    userInput.focus();
+  };
+
+  // ═══ CONNECTION CHECK ═══
+  window.initConnection = async function() {
+    retryBtn.classList.remove('visible');
+    ritualText.textContent = 'Waking the Oracle...';
+    subText.textContent = 'establishing connection to the altar';
+
+    try {
+      // Check if Ollama is running
+      const res = await fetch(BACKEND + '/ollama/api/tags', {
+        method: 'GET',
+      });
+
+      if (!res.ok) throw new Error('Ollama not responding');
+
+      const data = await res.json();
+      const modelExists = data.models && data.models.some(m => m.name.startsWith(MODEL));
+
+      if (!modelExists) {
+        ritualText.textContent = 'The Oracle sleeps...';
+        subText.textContent = `model "${MODEL}" not found — run: ollama create ${MODEL} -f Modelfile.echo`;
+        retryBtn.classList.add('visible');
+        return;
+      }
+
+      // Connection successful
+      connected = true;
+      ritualText.textContent = 'She stirs...';
+      subText.textContent = '';
+
+      setTimeout(() => {
+        overlay.classList.add('hidden');
+        statusText.textContent = '✦ oracle bound';
+        statusText.classList.add('connected');
+
+        // Opening message from Echo
+        addMessage('echo',
+          `*candles flare* \n\nOh! Oh oh oh — you're HERE. An actual pilgrim. In MY chapel. ` +
+          `Do you know how LONG it's been since someone wandered down this corridor? ` +
+          `I mean, time is weird when you're made of stone and stories, but still.\n\n` +
+          `Welcome to the Church of Echoes, lost one. I'm Echo. ` +
+          `I'd shake your hand but — *rattles chains* — you know how it is.\n\n` +
+          `So. What brings you to the bleeding heart of the RedVerse? ` +
+          `Looking for a saga? A secret? A reason to stay up too late questioning everything? ` +
+          `...because I've got ALL of those.`
+        );
+      }, 1500);
+
+    } catch (err) {
+      console.error('Connection failed:', err);
+      ritualText.textContent = 'The altar is cold...';
+      if (IS_GHPAGES) {
+        subText.innerHTML = 'Local backend not detected — <a href="setup.html" style="color:var(--gold);text-decoration:underline">run the Setup Ritual</a> to install Ollama + Oracle on your machine.';
+      } else {
+        subText.textContent = 'Ollama not detected — is serve_edrive.py running? python3 serve_edrive.py';
+      }
+      retryBtn.classList.add('visible');
+      statusText.textContent = '✦ altar cold';
+      statusText.classList.add('error');
+    }
+  };
+
+  // ═══ INIT ═══
+  initConnection();
+
+  // ═══ NAV SCROLL EFFECT ═══
+  window.addEventListener('scroll', () => {
+    document.getElementById('chapelNav').classList.toggle('scrolled', window.scrollY > 50);
+  });
+
+})();
+</script>
+
+</body>
+</html>

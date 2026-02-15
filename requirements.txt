@@ -1,19 +1,29 @@
-PyQt6 
-Pillow 
-edge-tts 
-pyaudio 
-pygame 
-openai 
-whisper 
-SpeechRecognition 
-numpy 
-asyncio 
-pyttsx3 
-requests 
-ollama
+# ═══ Redverse — Python 3.10+ ═══
+# Core GUI
+PyQt6
+
+# Image processing
+Pillow
+
+# Audio / Speech
+edge-tts
+pyttsx3
+pygame
+pyaudio
+SpeechRecognition
+openai-whisper
+numpy
+google-cloud-speech
+
+# Data / Config
+PyYAML
+requests
+
+# Networking / Server
 ffmpeg-python
 mss
-google-cloud-speech
+ollama
+asyncio
 flask
 flask-cors
 stripe

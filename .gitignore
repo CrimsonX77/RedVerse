@@ -93,6 +93,9 @@ chain.jsonl
 # These are system-specific launchers; users create their own
 *.sh
 !server.sh
+# Allow installer scripts
+!installers/*.sh
+!installers/*.ps1
 
 # ─── Desktop integration files ─────────────────────────────────
 *.desktop

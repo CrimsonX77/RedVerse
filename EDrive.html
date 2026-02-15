@@ -1,0 +1,2222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>E-Drive Heart — The Arcane Ticker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&family=JetBrains+Mono:wght@300;400&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/js-yaml@4/dist/js-yaml.min.js"></script>
+<style>
+:root {
+  --crimson: #c41230;
+  --crimson-dark: #8b0a20;
+  --crimson-glow: #ff1a3d;
+  --crimson-dim: rgba(196, 18, 48, 0.15);
+  --gold: #d4a846;
+  --gold-dim: #a8843a;
+  --gold-glow: #ffd25a;
+  --silver: #b8c0cc;
+  --silver-dim: #6b7280;
+  --silver-glow: #dce1eb;
+  --black: #0a0a0c;
+  --black-warm: #120c0e;
+  --black-deep: #050306;
+  --text-primary: #e8e0d8;
+  --text-secondary: #9b8e82;
+  --text-dim: #4a4a4a;
+  --font-display: 'Cinzel', serif;
+  --font-body: 'Crimson Pro', serif;
+  --font-mono: 'JetBrains Mono', monospace;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: var(--black-deep);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background:
+    radial-gradient(ellipse at 50% 30%, rgba(196, 18, 48, 0.04) 0%, transparent 50%),
+    radial-gradient(ellipse at 30% 70%, rgba(212, 168, 70, 0.03) 0%, transparent 50%),
+    radial-gradient(ellipse at 70% 50%, rgba(184, 192, 204, 0.02) 0%, transparent 40%);
+  pointer-events: none;
+  z-index: 0;
+}
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  opacity: 0.025;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 0;
+}
+.edrive-nav {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 100;
+  padding: 0.75rem 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: linear-gradient(to bottom, rgba(5,3,6,0.97), rgba(5,3,6,0));
+  backdrop-filter: blur(8px);
+  transition: all 0.4s ease;
+}
+.edrive-nav.scrolled {
+  background: rgba(5,3,6,0.98);
+  border-bottom: 1px solid rgba(196, 18, 48, 0.15);
+}
+.edrive-nav .nav-brand {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.1rem;
+  letter-spacing: 0.15em;
+  color: var(--crimson);
+  text-transform: uppercase;
+  text-decoration: none;
+  text-shadow: 0 0 20px rgba(196, 18, 48, 0.3);
+}
+.edrive-nav .nav-links {
+  display: flex;
+  gap: 2rem;
+  list-style: none;
+}
+.edrive-nav .nav-links a {
+  font-family: var(--font-display);
+  font-size: 0.7rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--silver-dim);
+  text-decoration: none;
+  transition: color 0.3s, text-shadow 0.3s;
+  position: relative;
+}
+.edrive-nav .nav-links a:hover {
+  color: var(--gold);
+  text-shadow: 0 0 15px rgba(212, 168, 70, 0.3);
+}
+.edrive-nav .nav-links a.active {
+  color: var(--crimson);
+  text-shadow: 0 0 15px rgba(196, 18, 48, 0.3);
+}
+.edrive-nav .nav-links a::after {
+  content: '';
+  position: absolute;
+  bottom: -4px; left: 0;
+  width: 0; height: 1px;
+  background: var(--gold);
+  transition: width 0.3s;
+}
+.edrive-nav .nav-links a:hover::after { width: 100%; }
+.edrive-nav .nav-links a.active::after { width: 100%; background: var(--crimson); }
+.edrive-container {
+  position: relative;
+  z-index: 1;
+  max-width: 1100px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 4rem 1.5rem 1rem;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+.edrive-header {
+  text-align: center;
+  margin-bottom: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid rgba(196, 18, 48, 0.1);
+}
+.edrive-header h1 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(1.4rem, 3.5vw, 2rem);
+  letter-spacing: 0.12em;
+  color: var(--crimson);
+  text-shadow: 0 0 25px rgba(196, 18, 48, 0.2);
+  margin-bottom: 0.3rem;
+}
+.edrive-header .subtitle {
+  font-family: var(--font-mono);
+  font-size: 0.5rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--gold-dim);
+}
+.edrive-body {
+  display: flex;
+  gap: 1.5rem;
+  flex: 1;
+  min-height: 0;
+}
+.ring-panel {
+  flex: 0 0 420px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+.ring-canvas-wrap {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1;
+  background: transparent;
+  border: 1px solid rgba(196, 18, 48, 0.1);
+  overflow: hidden;
+}
+#ringCanvas { width: 100%; height: 100%; display: block; }
+.zone-overlay {
+  position: absolute;
+  bottom: 8px; left: 0; right: 0;
+  text-align: center;
+  pointer-events: none;
+}
+.zone-label {
+  font-family: var(--font-mono);
+  font-size: 0.55rem;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  color: var(--crimson);
+  opacity: 0.6;
+  text-shadow: 0 0 10px rgba(196, 18, 48, 0.3);
+}
+.emotion-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  background: rgba(10, 10, 12, 0.8);
+  border: 1px solid rgba(196, 18, 48, 0.08);
+  overflow-x: auto;
+  scrollbar-width: none;
+  flex-wrap: nowrap;
+  min-height: 36px;
+}
+.emotion-bar::-webkit-scrollbar { display: none; }
+.dominant-tag {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  font-weight: bold;
+  letter-spacing: 0.1em;
+  padding: 2px 8px;
+  border-radius: 3px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.emotion-chip {
+  font-family: var(--font-mono);
+  font-size: 0.5rem;
+  padding: 2px 5px;
+  border-radius: 3px;
+  white-space: nowrap;
+  flex-shrink: 0;
+  border: 1px solid transparent;
+}
+.emotion-sep {
+  width: 1px; height: 20px;
+  background: rgba(255,255,255,0.08);
+  flex-shrink: 0;
+}
+.frame-tag {
+  font-family: var(--font-mono);
+  font-size: 0.45rem;
+  letter-spacing: 0.1em;
+  color: var(--text-dim);
+  white-space: nowrap;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+.metrics-row {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+.metric {
+  font-family: var(--font-mono);
+  font-size: 0.5rem;
+  letter-spacing: 0.1em;
+  color: var(--silver-dim);
+  padding: 4px 8px;
+  background: rgba(10, 10, 12, 0.6);
+  border: 1px solid rgba(255,255,255,0.04);
+  white-space: nowrap;
+}
+.metric .val {
+  color: var(--text-primary);
+  font-weight: bold;
+}
+.chat-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.chat-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  padding: 0.5rem 0;
+  scrollbar-width: thin;
+  scrollbar-color: var(--crimson-dark) transparent;
+  min-height: 200px;
+  max-height: calc(100vh - 240px);
+}
+.chat-area::-webkit-scrollbar { width: 4px; }
+.chat-area::-webkit-scrollbar-track { background: transparent; }
+.chat-area::-webkit-scrollbar-thumb { background: var(--crimson-dark); border-radius: 2px; }
+.message {
+  max-width: 90%;
+  padding: 0.75rem 1rem;
+  margin-bottom: 0.75rem;
+  line-height: 1.6;
+  font-size: 0.95rem;
+  animation: msgIn 0.35s ease;
+}
+@keyframes msgIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.message.assistant {
+  align-self: flex-start;
+  background: linear-gradient(135deg, rgba(196, 18, 48, 0.08), rgba(20, 10, 14, 0.6));
+  border: 1px solid rgba(196, 18, 48, 0.12);
+  border-left: 3px solid var(--crimson-dark);
+  color: #e0c8c8;
+}
+.message.user {
+  align-self: flex-end;
+  background: linear-gradient(135deg, rgba(212, 168, 70, 0.06), rgba(10, 10, 12, 0.6));
+  border: 1px solid rgba(212, 168, 70, 0.1);
+  border-right: 3px solid var(--gold-dim);
+}
+.message .sender {
+  font-family: var(--font-display);
+  font-size: 0.5rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  margin-bottom: 0.35rem;
+  display: block;
+  opacity: 0.6;
+}
+.message.assistant .sender { color: var(--crimson); }
+.message.user .sender { color: var(--gold-dim); text-align: right; }
+.typing-indicator {
+  display: none;
+  align-self: flex-start;
+  padding: 0.6rem 1rem;
+  background: rgba(196, 18, 48, 0.05);
+  border: 1px solid rgba(196, 18, 48, 0.08);
+  border-left: 3px solid var(--crimson-dark);
+  margin-bottom: 0.75rem;
+}
+.typing-indicator.active { display: block; }
+.typing-dots { display: flex; gap: 4px; }
+.typing-dots span {
+  width: 5px; height: 5px;
+  background: var(--crimson);
+  border-radius: 50%;
+  animation: dotPulse 1.2s ease-in-out infinite;
+  opacity: 0.3;
+}
+.typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+.typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+@keyframes dotPulse {
+  0%, 100% { opacity: 0.3; transform: scale(0.8); }
+  50% { opacity: 1; transform: scale(1); }
+}
+.input-area {
+  display: flex;
+  gap: 0.5rem;
+  align-items: flex-end;
+  padding: 0.75rem 0;
+  border-top: 1px solid rgba(196, 18, 48, 0.08);
+}
+.input-area textarea {
+  flex: 1;
+  background: rgba(10, 10, 12, 0.8);
+  border: 1px solid rgba(196, 18, 48, 0.15);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  padding: 0.7rem 0.85rem;
+  resize: none;
+  outline: none;
+  min-height: 42px;
+  max-height: 120px;
+  line-height: 1.5;
+  transition: all 0.3s;
+}
+.input-area textarea::placeholder {
+  color: var(--silver-dim);
+  font-style: italic;
+}
+.input-area textarea:focus {
+  border-color: var(--crimson);
+  box-shadow: 0 0 15px rgba(196, 18, 48, 0.12);
+}
+.send-btn {
+  background: linear-gradient(135deg, var(--crimson-dark), var(--crimson));
+  border: 1px solid var(--crimson);
+  color: var(--text-primary);
+  font-family: var(--font-display);
+  font-size: 0.6rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  padding: 0.7rem 1.2rem;
+  cursor: pointer;
+  transition: all 0.4s;
+  white-space: nowrap;
+}
+.send-btn:hover {
+  box-shadow: 0 0 25px rgba(196, 18, 48, 0.3);
+  border-color: var(--crimson-glow);
+}
+.send-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+.status-bar { text-align: center; padding: 4px; }
+.status-bar span {
+  font-family: var(--font-mono);
+  font-size: 0.5rem;
+  letter-spacing: 0.15em;
+  color: var(--silver-dim);
+  opacity: 0.5;
+}
+.status-bar span.connected { color: var(--crimson); opacity: 0.7; }
+.status-bar span.error { color: var(--crimson-glow); opacity: 0.9; }
+@media (max-width: 900px) {
+  .edrive-body { flex-direction: column; }
+  .ring-panel { flex: 0 0 auto; max-width: 100%; }
+  .ring-canvas-wrap { max-width: 400px; margin: 0 auto; }
+  .chat-area { max-height: 50vh; }
+  .edrive-nav .nav-links { gap: 1rem; }
+  .edrive-nav .nav-links a { font-size: 0.6rem; letter-spacing: 0.1em; }
+}
+@media (max-width: 600px) {
+  .edrive-container { padding: 3.5rem 0.75rem 0.75rem; }
+  .ring-canvas-wrap { max-width: 300px; }
+  .edrive-nav { padding: 0.5rem 0.75rem; }
+}
+/* ═══ FEATURE CONTROLS ═══ */
+.ctrl-btn {
+  width: 36px; height: 36px;
+  background: rgba(139, 0, 0, 0.6);
+  color: #FFD700;
+  border: 1px solid rgba(196, 18, 48, 0.3);
+  border-radius: 4px;
+  font-size: 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s;
+  flex-shrink: 0;
+  padding: 0;
+  line-height: 1;
+}
+.ctrl-btn:hover {
+  background: rgba(196, 18, 48, 0.8);
+  border-color: rgba(255, 215, 0, 0.5);
+}
+.ctrl-btn.active {
+  background: rgba(196, 18, 48, 0.9);
+  border: 2px solid rgba(255, 215, 0, 0.8);
+}
+.ctrl-btn.soul-toggle {
+  background: rgba(80, 30, 80, 0.5);
+  color: #b48cff;
+  border-color: rgba(180, 140, 255, 0.2);
+  font-size: 13px;
+}
+.ctrl-btn.soul-toggle:hover,
+.ctrl-btn.soul-toggle.active {
+  background: rgba(180, 140, 255, 0.3);
+  color: #d4b8ff;
+  border-color: rgba(180, 140, 255, 0.6);
+}
+.ctrl-btn.muted {
+  background: rgba(42, 42, 42, 0.8);
+  color: #808080;
+  border-color: rgba(80, 80, 80, 0.5);
+}
+.scene-backdrop {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  transition: opacity 1.5s ease;
+  z-index: 0;
+  pointer-events: none;
+  display: none;
+}
+.scene-backdrop.visible {
+  display: block;
+  opacity: 0.35;
+}
+#ringCanvas {
+  position: relative;
+  z-index: 1;
+}
+.soul-panel {
+  width: 280px;
+  flex-shrink: 0;
+  background: rgba(20, 10, 25, 0.95);
+  border: 1px solid rgba(180, 140, 255, 0.15);
+  border-left: 2px solid rgba(180, 140, 255, 0.3);
+  padding: 1rem;
+  overflow-y: auto;
+  max-height: calc(100vh - 5rem);
+  scrollbar-width: thin;
+  scrollbar-color: rgba(180,140,255,0.3) transparent;
+}
+.soul-panel h3 {
+  font-family: var(--font-display);
+  font-size: 0.8rem;
+  letter-spacing: 0.15em;
+  color: #d4b8ff;
+  margin-bottom: 0.75rem;
+  text-transform: uppercase;
+}
+.soul-panel .section { margin-bottom: 1rem; }
+.soul-panel .section-title {
+  font-family: var(--font-mono);
+  font-size: 0.55rem;
+  letter-spacing: 0.12em;
+  color: #b48cff;
+  text-transform: uppercase;
+  margin-bottom: 0.4rem;
+  opacity: 0.7;
+}
+.pad-item, .soul-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.3rem 0.5rem;
+  margin-bottom: 0.25rem;
+  background: rgba(80, 30, 80, 0.2);
+  border: 1px solid rgba(180, 140, 255, 0.1);
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.pad-item:hover, .soul-item:hover {
+  background: rgba(180, 140, 255, 0.15);
+  border-color: rgba(180, 140, 255, 0.3);
+  color: var(--text-primary);
+}
+.pad-item.loaded, .soul-item.loaded {
+  background: rgba(180, 140, 255, 0.2);
+  border-color: rgba(180, 140, 255, 0.4);
+  color: #d4b8ff;
+}
+.pad-item .pad-type {
+  font-size: 0.45rem;
+  color: #b48cff;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+.pad-item .pad-action, .soul-item .pad-action {
+  font-size: 0.7rem;
+  color: #b48cff;
+  padding: 0 4px;
+}
+.soul-panel .panel-btn {
+  width: 100%;
+  padding: 0.4rem;
+  font-family: var(--font-mono);
+  font-size: 0.55rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  background: rgba(80, 30, 80, 0.4);
+  color: #b48cff;
+  border: 1px solid rgba(180, 140, 255, 0.2);
+  cursor: pointer;
+  transition: all 0.3s;
+  margin-bottom: 0.3rem;
+}
+.soul-panel .panel-btn:hover {
+  background: rgba(180, 140, 255, 0.3);
+  color: #d4b8ff;
+  border-color: rgba(180, 140, 255, 0.5);
+}
+.soul-context-preview {
+  font-family: var(--font-mono);
+  font-size: 0.5rem;
+  color: var(--text-dim);
+  background: rgba(5, 3, 6, 0.5);
+  padding: 0.5rem;
+  border: 1px solid rgba(180, 140, 255, 0.08);
+  max-height: 150px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+  line-height: 1.5;
+}
+.pad-status-msg {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  color: #b48cff;
+  padding: 0.5rem 0.75rem;
+  background: rgba(80, 30, 80, 0.15);
+  border-left: 2px solid rgba(180, 140, 255, 0.3);
+  margin-bottom: 0.75rem;
+  animation: msgIn 0.35s ease;
+  white-space: pre-wrap;
+}
+.sd-status {
+  font-family: var(--font-mono);
+  font-size: 0.45rem;
+  color: var(--text-dim);
+  text-align: center;
+  padding: 2px;
+  letter-spacing: 0.1em;
+}
+.sd-status.online { color: #4CAF50; }
+.sd-status.offline { color: var(--silver-dim); }
+</style>
+</head>
+<body>
+<nav class="edrive-nav" id="edriveNav">
+  <a href="redverse.html" class="nav-brand">RedVerse</a>
+  <ul class="nav-links">
+    <li><a href="redverse.html">Home</a></li>
+    <li><a href="redverse.html#map">The Map</a></li>
+    <li><a href="oracle.html">Oracle</a></li>
+    <li><a href="EDrive.html" class="active">E-Drive</a></li>
+    <li><a href="setup.html">Setup</a></li>
+    <li><a href="support.html">Support</a></li>
+  </ul>
+</nav>
+<div class="edrive-container">
+  <header class="edrive-header">
+    <h1>E-Drive Heart</h1>
+    <div class="subtitle">the ticker that pumps information for imotions &middot; 3 rings &middot; 18 nodes</div>
+  </header>
+  <div class="edrive-body">
+    <div class="ring-panel">
+      <div class="ring-canvas-wrap">
+        <canvas id="ringCanvas"></canvas>
+        <img id="sceneBackdrop" class="scene-backdrop" alt="">
+        <div class="zone-overlay">
+          <span class="zone-label" id="zoneLabel">neutral flow</span>
+        </div>
+      </div>
+      <div class="emotion-bar" id="emotionBar">
+        <span class="dominant-tag" id="dominantTag" style="color: var(--silver-dim); background: rgba(100,100,100,0.15);">&#9658; NEUTRAL</span>
+        <div class="emotion-sep"></div>
+        <span class="frame-tag" id="frameTag">BALANCED &bull; NEUTRAL FLOW</span>
+      </div>
+      <div class="metrics-row" id="metricsRow">
+        <span class="metric">LOVE <span class="val" id="mLove">1.00</span></span>
+        <span class="metric">TRUTH <span class="val" id="mTruth">0.90</span></span>
+        <span class="metric">EMPATHY <span class="val" id="mEmpathy">0.85</span></span>
+        <span class="metric">COHERENCE <span class="val" id="mCoherence">0.50</span></span>
+        <span class="metric">CONFIDENCE <span class="val" id="mConfidence">0.50</span></span>
+      </div>
+    </div>
+    <div class="chat-panel">
+      <div class="chat-area" id="chatArea"></div>
+      <div class="typing-indicator" id="typingIndicator">
+        <div class="typing-dots"><span></span><span></span><span></span></div>
+      </div>
+      <div class="input-area">
+        <button class="ctrl-btn soul-toggle" id="soulBtn" onclick="toggleSoulPanel()" title="Soul Stacker &#8212; configure persona layers">&#9670;</button>
+        <button class="ctrl-btn" id="reloadBtn" onclick="reloadAll()" title="Reload pads &amp; re-probe SD">&#10227;</button>
+        <button class="ctrl-btn" id="micBtn" onclick="STT.toggle()" title="Microphone dictation">&#127908;</button>
+        <textarea id="userInput" placeholder="Speak to the heart..." rows="1" aria-label="Message input"></textarea>
+        <button class="send-btn" id="sendBtn" onclick="sendMessage()">Pulse</button>
+        <button class="ctrl-btn" id="muteBtn" onclick="TTS.toggleMute()" title="Auto-speak ON &#8212; click to mute">&#128266;</button>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:0 4px;">
+        <div class="status-bar"><span id="statusText">connecting...</span></div>
+        <div class="sd-status" id="sdStatus">SD: probing...</div>
+      </div>
+    </div>
+    <div class="soul-panel" id="soulPanel" style="display:none">
+      <h3>&#9670; Soul Stacker</h3>
+      <div class="section">
+        <div class="section-title">Pads</div>
+        <div id="padList"></div>
+        <button class="panel-btn" onclick="PadLoader.clearPads();refreshSoulPanel();">Clear &amp; Reset Pads</button>
+      </div>
+      <div class="section">
+        <div class="section-title">Soul Gems</div>
+        <div id="soulList"></div>
+      </div>
+      <div class="section">
+        <div class="section-title">Crystallized Context</div>
+        <div class="soul-context-preview" id="soulContextPreview">(no context loaded)</div>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+(function() {
+'use strict';
+
+const IS_GHPAGES = window.location.hostname.endsWith('.github.io');
+const BACKEND = IS_GHPAGES ? 'http://localhost:8666' : '';
+const OLLAMA_URL = BACKEND + '/ollama/api/generate';
+const MODEL = 'CrimsonDragonX7/Oracle:latest';
+const SD_URL = BACKEND + '/sd';
+const TTS_URL = BACKEND + '/tts';
+const STT_URL = BACKEND + '/stt';
+const FPS = 45;
+
+/* ═══ EMOTION LEXICON ═══ */
+const EMOTION_LEXICON = {
+  joy:["happy","joy","wonderful","great","amazing","beautiful","brilliant","awesome","fantastic","laugh","smile","excited","delighted"],
+  trust:["trust","believe","faith","loyal","honest","reliable","safe","secure","depend","confident","sure","certain"],
+  fear:["fear","afraid","scared","terrified","anxious","worry","dread","panic","nervous","uneasy","threat"],
+  surprise:["surprise","shocked","unexpected","wow","whoa","suddenly","astonished","amazed","startled","omg"],
+  sadness:["sad","cry","tears","grief","loss","miss","lonely","hurt","pain","sorrow","mourn","depressed","heartbreak"],
+  disgust:["disgust","hate","revolting","sick","vile","awful","terrible","gross","repulsive","loathe"],
+  anger:["angry","rage","furious","mad","annoyed","frustrated","hostile","bitter","pissed","outraged","livid"],
+  anticipation:["expect","wait","soon","looking forward","eager","ready","plan","tomorrow","future","dream","wish","imagine"],
+  love:["love","adore","cherish","darling","sweetheart","intimate","passion","heart","devotion","romance","beloved","treasure"],
+  submission:["submit","yield","surrender","obey","comply","defer","humble","meek","serve"],
+  awe:["awe","magnificent","breathtaking","sublime","majestic","overwhelming","transcendent","divine","glorious"],
+  disapproval:["disapprove","disagree","wrong","mistake","unacceptable","problematic","disappointing"],
+  remorse:["sorry","regret","apologize","guilt","ashamed","forgive","my fault"],
+  contempt:["pathetic","worthless","beneath","scorn","disdain","ridiculous","laughable","pitiful"],
+  aggression:["fight","attack","destroy","crush","dominate","conquer","ruthless","savage","force","overpower"],
+  optimism:["hope","hopeful","bright","promising","better","improve","opportunity","potential","possible","believe in"],
+  curiosity:["curious","wonder","how","why","what if","interesting","fascinated","intrigued","explore","discover","tell me"],
+  devotion:["devoted","always","forever","yours","anything for","never leave","committed","dedicated","faithful"],
+  longing:["miss you","wish you were","far away","come back","need you","without you","distance","apart","yearn","ache for"],
+  serenity:["calm","peaceful","serene","still","quiet","gentle","tranquil","at ease","centered","grounded","breathe"],
+  playfulness:["haha","lol","tease","joke","funny","silly","playful","game","fun","cheeky","wink","flirt"],
+  protectiveness:["protect","guard","shield","keep safe","watch over","defend","care for","worry about","look after","shelter"],
+  vulnerability:["vulnerable","exposed","open up","fragile","raw","defenseless","bare","unguarded","sensitive","delicate"],
+  nostalgia:["remember when","used to","back then","old times","memories","reminds me","those days","long ago","childhood","past"],
+  gratitude:["thank","grateful","appreciate","blessed","thankful","indebted","means a lot","so kind","generous"],
+  jealousy:["jealous","envious","possessive","mine","belonged","covet","resent","why them","not fair"],
+  resolve:["determined","resolve","will not","must","no matter what","refuse to","stand firm","committed","unwavering","steel"],
+  empowerment:["powerful","strong","capable","unstoppable","rise","own it","take charge","warrior","throne","reign"],
+  arousal:["aroused","excited","turned on","desire you","need you","want you","hot","burning","passionate"],
+  feral_heart:["wild","untamed","raw","primal","fierce","unleashed","ferocious","savage","roar","hunt"],
+  erotic_heart:["sensual","intimate","desire","lust","passion","heat","burning","touch","caress","whisper"],
+  mischief:["scheme","sneaky","prank","trick","devious","naughty","troublemaker","imp","sly","cunning"],
+  melancholy:["bittersweet","wistful","somber","heavy heart","ennui","forlorn","languish","pensive","hollow","fading"],
+  reverence:["revere","worship","sacred","holy","venerate","bow","honor","exalt","psalm","hallowed"],
+  defiance:["defy","rebel","resist","refuse","challenge","disobey","stand against","break free","overthrow","revolt"],
+  tenderness:["gentle","soft","tender","caress","hold me","stroke","soothe","cradle","delicately"],
+  fierceness:["fierce","blaze","burn","wildfire","inferno","untamed","primal","ferocious","roar","unleash"],
+};
+
+const COMPOUND_MAP = {
+  love:["joy","trust"], submission:["trust","fear"], awe:["fear","surprise"],
+  disapproval:["surprise","sadness"], remorse:["sadness","disgust"], contempt:["disgust","anger"],
+  aggression:["anger","anticipation"], optimism:["anticipation","joy"],
+  vulnerability:["trust","fear"], nostalgia:["joy","sadness"], gratitude:["joy","trust"],
+  jealousy:["love","anger"], resolve:["trust","anticipation"], empowerment:["joy","anger"],
+  mischief:["playfulness","anticipation"], melancholy:["sadness","serenity"],
+  reverence:["awe","devotion"], defiance:["anger","protectiveness"],
+  tenderness:["love","serenity"], fierceness:["anger","love"],
+  arousal:["love","anticipation"], feral_heart:["fierceness","aggression"], erotic_heart:["arousal","love"],
+};
+
+const EMOTION_COLORS = {
+  joy:"#FFD700",trust:"#4CAF50",fear:"#9C27B0",surprise:"#FF9800",sadness:"#2196F3",
+  disgust:"#795548",anger:"#F44336",anticipation:"#00BCD4",love:"#FF1493",submission:"#7B68EE",
+  awe:"#E040FB",disapproval:"#607D8B",remorse:"#5C6BC0",contempt:"#8D6E63",aggression:"#FF5722",
+  optimism:"#8BC34A",curiosity:"#00E5FF",devotion:"#FF80AB",longing:"#CE93D8",serenity:"#80DEEA",
+  playfulness:"#FFAB40",protectiveness:"#A5D6A7",vulnerability:"#F48FB1",nostalgia:"#BCAAA4",
+  gratitude:"#AED581",jealousy:"#EF5350",resolve:"#78909C",empowerment:"#FFB300",
+  arousal:"#FF6090",feral_heart:"#FF3D00",erotic_heart:"#FF1493",
+  mischief:"#FF6F00",melancholy:"#90A4AE",reverence:"#B388FF",defiance:"#D50000",
+  tenderness:"#F8BBD0",fierceness:"#FF3D00",
+};
+
+const EMOTIONAL_FRAMES = {
+  transcendent_harmony:["illuminated","deep clarity and connection"],
+  wisdom_clarity:["contemplative","weighing truth with love"],
+  compassionate_connection:["warm","genuine care"],
+  authentic_understanding:["grounded","seeing clearly and feeling deeply"],
+  love_domain:["tender","love colors everything"],
+  truth_domain:["precise","cutting through noise"],
+  empathy_domain:["receptive","absorbing and reflecting"],
+  arousal_domain:["sensual","intimate desire and connection"],
+  feral_heart:["raw","untamed primal honesty"],
+  erotic_heart:["sensual","intimate desire"],
+  devotion_bond:["devoted","unwavering presence"],
+  curious_exploration:["inquisitive","genuine fascination"],
+  protective_vigil:["watchful","quiet strength"],
+  playful_spark:["playful","affectionate teasing"],
+  serene_stillness:["serene","calm clarity"],
+  void_space:["still","quiet between thoughts"],
+  neutral_flow:["balanced","flowing with the current"],
+  vulnerable_openness:["raw","emotionally exposed"],
+  nostalgic_reflection:["wistful","warmth and ache"],
+  fierce_passion:["blazing","passionate intensity"],
+  resolute_determination:["unyielding","steely resolve"],
+  mischievous_spark:["impish","trickster energy"],
+  melancholic_depth:["somber","beautiful sadness"],
+};
+
+const ZONE_COLORS = {
+  transcendent_harmony:"rgba(255,200,60,",
+  wisdom_clarity:"rgba(180,140,255,",
+  compassionate_connection:"rgba(255,100,150,",
+  devotion_bond:"rgba(255,128,171,",
+  curious_exploration:"rgba(0,229,255,",
+  protective_vigil:"rgba(165,214,167,",
+  playful_spark:"rgba(255,171,64,",
+  serene_stillness:"rgba(128,222,234,",
+  void_space:"rgba(40,30,50,",
+  love_domain:"rgba(255,20,93,",
+  truth_domain:"rgba(184,192,204,",
+  empathy_domain:"rgba(212,168,70,",
+  arousal_domain:"rgba(255,96,144,",
+  feral_heart:"rgba(255,61,0,",
+  erotic_heart:"rgba(255,20,93,",
+  neutral_flow:"rgba(196,18,48,",
+};
+
+/* ═══ IMAGE PROMPT BUILDER ═══ */
+const ImagePromptBuilder = {
+  SABLE_BASE: 'silver-white haired android catgirl with blue streaks, pink glowing eyes, white cat ears with blue-purple tips, large fluffy white tail with blue tips, cyber-magical bikini armor, tech-gauntlets, glowing pauldrons, circuit skin patterns, floating geometry halo, curvy figure, cell-shaded anime style',
+  CRIMSON_BASE: 'young man with Wild Crimson hair, intense golden eyes, Shirtless, Combat athletic build, Arms with glowing arcane tattoos, casual tech-wear pants, combat boots, confident stance, cyberpunk city background, dynamic lighting',
+  POSITIVE_BOILERPLATE: '(Masterpiece:1.3), High_Quality, Max_Detail, Absurd-Res, Ornate_Detail, Semi_Realistic, Highly_Detailed, 8k, Cell-Shaded, ',
+  NEGATIVE_PROMPT: 'Low_Quality, Blurry, Worst_Quality, Bad_Anatomy, [Neg_Portrait] bad face, ugly face, poorly drawn face, asymmetrical face, asymmetrical eyes, cross-eyed, wonky eyes, lazy eye, poorly drawn eyes, extra eyes, missing eyes, floating eyes, disconnected eyes, bad eye alignment, uneven eyes, poorly drawn nose, deformed nose, extra nose, missing nose, poorly drawn mouth, deformed mouth, extra mouth, bad lips, weird lips, poorly drawn ears, extra ears, missing ears, deformed ears, uneven ears, bad facial structure, melted face, distorted face, blurry face, low detail face, bad skin texture, plastic skin, waxy skin, uncanny valley, dead eyes, soulless eyes, empty expression, mask-like face, puppet face',
+  ZONE_ENVIRONMENTS: {
+    transcendent_harmony:'ethereal neon cathedral with golden light streams',
+    wisdom_clarity:'serene library with floating holographic books and warm amber light',
+    compassionate_connection:'cozy neon-lit caf\u00e9 with warm rose-gold ambiance',
+    authentic_understanding:'open rooftop under a clear starlit sky with city lights below',
+    love_domain:'intimate bedroom with soft crimson silk and candlelight',
+    truth_domain:'minimalist zen garden with moonlight and digital cherry blossoms',
+    empathy_domain:'warm fireside scene with soft shadows and gentle glow',
+    arousal_domain:'dimly lit intimate space with deep red neon accents and silk',
+    feral_heart:'wild storm-charged landscape with lightning and dark clouds',
+    erotic_heart:'luxurious private chamber with rose petals and warm amber light',
+    devotion_bond:'starlit observation deck overlooking a nebula',
+    curious_exploration:'vast digital library with floating data streams and holographic displays',
+    protective_vigil:'fortress battlements at twilight with guardian statues',
+    playful_spark:'colorful arcade with neon signs and holographic games',
+    serene_stillness:'peaceful lakeside at dawn with mist and soft light',
+    void_space:'vast dark void with distant stars and floating debris',
+    vulnerable_openness:'quiet rain-soaked garden with soft diffused light',
+    nostalgic_reflection:'sunset-lit balcony overlooking a nostalgic cityscape',
+    fierce_passion:'volcanic landscape with rivers of molten light',
+    resolute_determination:'grand forge with sparks and molten metal glow',
+    mischievous_spark:'whimsical carnival at night with colorful lights',
+    melancholic_depth:'rainy window view of a quiet city at night',
+    neutral_flow:'sleek modern cyber-caf\u00e9 with ambient blue lighting',
+  },
+  ZONE_SABLE_POSE: {
+    transcendent_harmony:['standing radiantly with arms open','serene glowing smile with closed eyes'],
+    wisdom_clarity:['sitting contemplatively with chin resting on hand','thoughtful knowing gaze'],
+    compassionate_connection:['leaning forward with gentle reach','warm soft smile with caring eyes'],
+    love_domain:['close embrace pose with gentle hold','tender loving expression'],
+    truth_domain:['standing tall with direct stance','calm focused piercing gaze'],
+    empathy_domain:['sitting close with attentive lean','empathetic concerned expression'],
+    arousal_domain:['alluring recline with half-turned pose','half-lidded sultry gaze with slight smile'],
+    feral_heart:['crouched predatory stance with claws extended','fierce wild grin with glowing eyes'],
+    erotic_heart:['sensual pose with arched back','smoldering desire in eyes with parted lips'],
+    devotion_bond:['standing close protectively','devoted adoring gaze'],
+    curious_exploration:['leaning in excitedly with ears forward','bright curious wide eyes'],
+    protective_vigil:['standing guard with arms crossed','watchful stern protective expression'],
+    playful_spark:['playful bouncing pose with tail high','mischievous grin with sparkling eyes'],
+    serene_stillness:['peaceful sitting with tail curled','calm serene closed-eye meditation'],
+    void_space:['floating in darkness with dim glow','contemplative distant expression'],
+    vulnerable_openness:['sitting curled with knees drawn up','raw open vulnerable eyes'],
+    nostalgic_reflection:['gazing into distance with gentle stance','wistful bittersweet smile'],
+    fierce_passion:['dynamic action pose with blazing aura','fierce passionate blazing eyes'],
+    resolute_determination:['standing firm with clenched fist','steely determined jaw set'],
+    mischievous_spark:['sneaky crouch with sly tail flick','impish devious smirk'],
+    melancholic_depth:['sitting alone gazing at rain','beautiful somber downcast eyes'],
+    neutral_flow:['relaxed casual standing','calm neutral pleasant expression'],
+  },
+  ZONE_LIGHTING: {
+    transcendent_harmony:'divine golden volumetric rays',
+    wisdom_clarity:'warm amber side-lighting with soft shadows',
+    compassionate_connection:'gentle rose-gold diffused light',
+    love_domain:'intimate warm candlelight with crimson accents',
+    truth_domain:'cool precise moonlight',
+    empathy_domain:'soft warm firelight glow',
+    arousal_domain:'deep red neon with dramatic shadows',
+    feral_heart:'dramatic storm lightning with electric blue flashes',
+    erotic_heart:'warm amber low-key lighting with silk highlights',
+    devotion_bond:'soft starlight with nebula colors',
+    curious_exploration:'bright holographic cyan glow',
+    protective_vigil:'dramatic twilight with long shadows',
+    playful_spark:'colorful neon carnival lights',
+    serene_stillness:'soft dawn light with gentle mist',
+    void_space:'sparse distant starlight in darkness',
+    vulnerable_openness:'soft diffused rain-filtered light',
+    nostalgic_reflection:'warm golden sunset glow',
+    fierce_passion:'intense volcanic orange-red glow',
+    resolute_determination:'forge-fire orange with spark trails',
+    mischievous_spark:'playful multicolored neon flickers',
+    melancholic_depth:'cool blue rain-on-window light',
+    neutral_flow:'ambient soft blue-white glow',
+  },
+  ZONE_PALETTES: {
+    transcendent_harmony:'golden and white luminous',wisdom_clarity:'purple and amber warm',
+    compassionate_connection:'rose-pink and warm gold',love_domain:'deep crimson and rose-gold',
+    truth_domain:'silver-blue and moonlight',empathy_domain:'warm orange and soft amber',
+    arousal_domain:'deep red and dark purple',feral_heart:'electric blue and storm-grey',
+    erotic_heart:'crimson-rose and warm amber',devotion_bond:'soft pink and starlight blue',
+    curious_exploration:'cyan and electric teal',protective_vigil:'dark green and twilight purple',
+    playful_spark:'rainbow neon and vibrant',serene_stillness:'soft blue and misty white',
+    void_space:'deep black and sparse silver',vulnerable_openness:'rain-grey and soft lavender',
+    nostalgic_reflection:'sunset orange and sepia warm',fierce_passion:'volcanic red and molten orange',
+    resolute_determination:'forge-orange and steel-grey',mischievous_spark:'neon green and playful purple',
+    melancholic_depth:'cool blue and rain-grey',neutral_flow:'soft blue and ambient silver',
+  },
+  ZONE_INTERACTIONS: {
+    transcendent_harmony:'standing together in shared light gazing at each other',
+    wisdom_clarity:'sitting side by side sharing knowledge',
+    compassionate_connection:'close together with gentle physical contact',
+    love_domain:'embracing tenderly with foreheads touching',
+    truth_domain:'facing each other in honest conversation',
+    empathy_domain:'one comforting the other with gentle touch',
+    arousal_domain:'close together with electric tension between them',
+    feral_heart:'wild dynamic energy between them',
+    erotic_heart:'intimate closeness with desire visible',
+    devotion_bond:'one gazing adoringly at the other',
+    curious_exploration:'excitedly showing each other something new',
+    protective_vigil:'one standing protectively near the other',
+    playful_spark:'playfully teasing each other with laughter',
+    serene_stillness:'peacefully sitting together in comfortable silence',
+    void_space:'distant figures in vast space',
+    vulnerable_openness:'one opening up emotionally to the other',
+    nostalgic_reflection:'looking at shared memories together',
+    fierce_passion:'passionate intense confrontation or embrace',
+    resolute_determination:'standing shoulder to shoulder facing challenge',
+    mischievous_spark:'conspiring together with playful secrecy',
+    melancholic_depth:'sitting together in beautiful shared sadness',
+    neutral_flow:'casually existing near each other comfortably',
+  },
+
+  buildPrompt(userText, aiResponse, padOverrides) {
+    const zone = state.zone || 'neutral_flow';
+    const sorted = Object.entries(state.emotions).sort((a,b) => b[1] - a[1]);
+    const dominant = sorted[0] ? sorted[0][0] : 'neutral';
+    const intensity = sorted[0] ? sorted[0][1] : 0.3;
+    const po = padOverrides || {};
+    const poseData = this.ZONE_SABLE_POSE[zone] || ['standing casually','calm expression'];
+    const pose = po.pose || poseData[0];
+    const expression = po.expression || poseData[1];
+    const w = (0.9 + intensity * 0.4).toFixed(1);
+    const d1 = '(' + this.SABLE_BASE + ', ' + pose + ':' + w + ')';
+    const d2 = '(' + expression + ':' + Math.min(1.4, 0.9 + intensity * 0.3).toFixed(1) + ')';
+    const act = this._inferActivity(userText);
+    const d3 = '(' + this.CRIMSON_BASE + ', ' + act + ':0.9)';
+    const env = po.environment || this.ZONE_ENVIRONMENTS[zone] || 'sleek modern cyber-caf\u00e9';
+    const d4 = '(' + env + ':1.1)';
+    const lit = po.lighting || this.ZONE_LIGHTING[zone] || 'ambient soft lighting';
+    const d5 = '(' + lit + ':1.0)';
+    const pal = po.palette || this.ZONE_PALETTES[zone] || 'neon blue and cyber-pink';
+    const d6 = '(' + pal + ' color palette:0.9)';
+    const mood = po.mood || this._mood();
+    const d7 = '(' + mood + ' atmosphere:1.0)';
+    const inter = this.ZONE_INTERACTIONS[zone] || 'together in shared space';
+    const d8 = '(' + inter + ':0.9)';
+    return {
+      positive: this.POSITIVE_BOILERPLATE + d1+', '+d2+', '+d3+', '+d4+', '+d5+', '+d6+', '+d7+', '+d8,
+      negative: this.NEGATIVE_PROMPT
+    };
+  },
+  _inferActivity(text) {
+    var t = (text||'').toLowerCase();
+    if (/code|coding|debug|program|script|python/.test(t)) return 'sitting at desk with multiple glowing monitors coding';
+    if (/music|guitar|song|playing|singing/.test(t)) return 'playing guitar with passionate expression';
+    if (/walk|outside|park|forest|nature/.test(t)) return 'walking alongside through natural scenery';
+    if (/sleep|tired|rest|bed|night/.test(t)) return 'resting peacefully in comfortable space';
+    if (/fight|angry|battle|war|attack/.test(t)) return 'standing in fighting stance with fierce expression';
+    if (/sad|cry|hurt|pain|miss/.test(t)) return 'sitting quietly with reflective expression';
+    if (/love|kiss|hold|hug|close/.test(t)) return 'close together in intimate embrace';
+    if (/build|create|make|design/.test(t)) return 'working at holographic workstation creating';
+    return 'sitting at desk with glowing monitors, casual stance';
+  },
+  _mood() {
+    var i = state.frameIntensity || 0.3, l = state.loveModulation || 0.5;
+    if (i > 0.8 && l > 0.7) return 'intensely passionate and electric';
+    if (i > 0.7) return 'highly charged and dynamic';
+    if (l > 0.7) return 'warmly intimate and tender';
+    if (i > 0.4) return 'emotionally engaged and present';
+    if (l > 0.4) return 'comfortable and connected';
+    return 'calm and ambient';
+  }
+};
+
+/* ═══ E-DRIVE STATE ═══ */
+const state = {
+  coreLove: 1.0, coreTruth: 0.9, coreEmpathy: 0.85, coreCreation: 0.8,
+  emotions: {},
+  empathyResponse: {},
+  coherence: 0.5, authenticity: 0.5, loveModulation: 0.5,
+  zone: 'neutral_flow', confidence: 0.5,
+  emotionalFrame: 'balanced', frameIntensity: 0.5,
+};
+for (const k of Object.keys(EMOTION_LEXICON)) state.emotions[k] = 0;
+
+/* ═══ E-DRIVE PROCESSOR ═══ */
+function ringAverage(rs, idx) {
+  const r = rs.rings[idx];
+  if (!r) return 50;
+  const v = r.values;
+  return v.reduce((a, b) => a + b, 0) / v.length;
+}
+
+function parseEmotions(text) {
+  const lower = text.toLowerCase();
+  let totalHits = 0;
+  for (const [emotion, keywords] of Object.entries(EMOTION_LEXICON)) {
+    let hits = 0;
+    for (const kw of keywords) { if (lower.includes(kw)) hits++; }
+    state.emotions[emotion] = Math.min(1.0, hits * 0.25);
+    totalHits += hits;
+  }
+  for (const [compound, pair] of Object.entries(COMPOUND_MAP)) {
+    if (pair.length < 2) continue;
+    const blend = ((state.emotions[pair[0]] || 0) + (state.emotions[pair[1]] || 0)) * 0.4;
+    state.emotions[compound] = Math.max(state.emotions[compound] || 0, blend);
+  }
+  if (totalHits === 0) {
+    state.emotions.anticipation = 0.15;
+    state.emotions.trust = 0.1;
+    state.emotions.curiosity = 0.1;
+  }
+}
+
+function mapEmpathy(rs) {
+  state.empathyResponse = {};
+  const midE = ringAverage(rs, 1);
+  const neg = new Set(["sadness","fear","anger","disgust","remorse","contempt","disapproval","longing"]);
+  const pos = new Set(["joy","trust","anticipation","love","arousal","feral_heart","erotic_heart","optimism","serenity","devotion","playfulness","awe"]);
+  for (const [e, v] of Object.entries(state.emotions)) {
+    if (v < 0.05) continue;
+    if (neg.has(e)) state.empathyResponse['comfort_'+e] = v * state.coreEmpathy * (midE / 50);
+    else if (pos.has(e)) state.empathyResponse['share_'+e] = v * state.coreEmpathy * (midE / 50);
+    else state.empathyResponse['note_'+e] = v * 0.5;
+  }
+}
+
+function evaluateTruth(text, rs) {
+  const outerE = ringAverage(rs, 2);
+  state.coherence = 0.5 + (outerE / 100) * 0.5;
+  state.authenticity = Math.min(1.0, Object.values(state.emotions).reduce((a, b) => a + b, 0) / 3);
+}
+
+function integrateLove(rs) {
+  const harmonics = [];
+  for (let i = 0; i < 3; i++) {
+    const avg = ringAverage(rs, i);
+    const vals = rs.rings[i] ? rs.rings[i].values : [50];
+    const variance = vals.reduce((s, v) => s + (v - avg) ** 2, 0) / vals.length;
+    harmonics.push(1.0 / (1.0 + variance / 100));
+  }
+  state.loveModulation = (harmonics.reduce((a, b) => a + b, 0) / harmonics.length) * state.coreLove;
+  const pos = new Set(["joy","trust","anticipation","love","optimism","serenity","devotion","playfulness","awe","curiosity","gratitude","tenderness","empowerment","nostalgia","reverence","mischief","arousal","feral_heart","erotic_heart"]);
+  const neg = new Set(["fear","anger","disgust","contempt","aggression","remorse","jealousy","defiance"]);
+  for (const e of Object.keys(state.emotions)) {
+    if (pos.has(e)) state.emotions[e] = Math.min(1.0, state.emotions[e] * (1 + state.loveModulation * 0.3));
+    else if (neg.has(e)) state.emotions[e] = Math.max(0, state.emotions[e] * (1 - state.loveModulation * 0.2));
+  }
+}
+
+function determineZone() {
+  const l = state.loveModulation;
+  const t = state.coherence * state.coreTruth;
+  const empVals = Object.values(state.empathyResponse);
+  const e = empVals.length ? empVals.reduce((a, b) => a + b, 0) / empVals.length : 0.3;
+  const checks = [
+    ["transcendent_harmony", l>0.7&&t>0.7&&e>0.7],
+    ["wisdom_clarity", l>0.7&&t>0.7],
+    ["compassionate_connection", l>0.7&&e>0.7],
+    ["authentic_understanding", t>0.7&&e>0.7],
+    ["love_domain", l>0.7],
+    ["truth_domain", t>0.7],
+    ["empathy_domain", e>0.7],
+    ["arousal_domain", e>0.7&&l>0.5],
+    ["feral_heart", l>0.5&&t>0.5&&e>0.5],
+    ["erotic_heart", l>0.6&&e>0.6],
+    ["devotion_bond", l>0.6&&e>0.5],
+    ["curious_exploration", t>0.5&&e>0.4],
+    ["protective_vigil", l>0.5&&t>0.4],
+    ["playful_spark", l>0.4&&e>0.3],
+    ["serene_stillness", l>0.3&&t>0.5&&e>0.3],
+    ["void_space", l<0.3&&t<0.3&&e<0.3],
+    ["vulnerable_openness", l>0.5&&e>0.6&&t<0.5],
+    ["nostalgic_reflection", l>0.4&&e>0.4&&t>0.3],
+    ["fierce_passion", l>0.6&&e>0.5&&t<0.4],
+    ["resolute_determination", t>0.6&&e>0.3&&l>0.3],
+    ["mischievous_spark", l>0.3&&e>0.3],
+    ["melancholic_depth", e>0.5&&l<0.4&&t>0.3],
+  ];
+  for (const [name, test] of checks) { if (test) { state.zone = name; return; } }
+  state.zone = 'neutral_flow';
+}
+
+function generateFrame() {
+  const f = EMOTIONAL_FRAMES[state.zone] || ["balanced","flowing"];
+  state.emotionalFrame = f[0];
+  const vals = Object.values(state.emotions);
+  state.frameIntensity = vals.length ? Math.max(...vals) : 0.3;
+}
+
+function adaptCore() {
+  const intensity = Object.values(state.emotions).reduce((a, b) => a + b, 0);
+  state.coreEmpathy = Math.min(1.0, state.coreEmpathy + intensity * 0.001);
+  state.coreTruth = Math.min(1.0, state.coreTruth + state.coherence * 0.0005);
+}
+
+function calculateConfidence(rs) {
+  const vals = Object.values(state.emotions);
+  const maxEmo = vals.length ? Math.max(...vals) : 0;
+  state.confidence = (maxEmo + state.coherence + state.loveModulation + state.authenticity) / 4;
+}
+
+function processEDrive(text, rs) {
+  parseEmotions(text); mapEmpathy(rs); evaluateTruth(text, rs);
+  integrateLove(rs); determineZone(); generateFrame();
+  adaptCore(); calculateConfidence(rs);
+}
+
+function getSystemContext() {
+  const f = EMOTIONAL_FRAMES[state.zone] || ["balanced","flowing"];
+  const sorted = Object.entries(state.emotions).sort((a, b) => b[1] - a[1]);
+  const top3 = sorted.slice(0, 3).filter(x => x[1] > 0.05).map(x => x[0]+'('+x[1].toFixed(2)+')').join(', ') || 'neutral(0.00)';
+  return '[E-DRIVE STATE] Zone: '+state.zone+' | Frame: '+f[0]+' ('+f[1]+') | Dominant emotions: '+top3+' | Love modulation: '+state.loveModulation.toFixed(2)+' | Confidence: '+state.confidence.toFixed(2)+' | Core: L='+state.coreLove.toFixed(2)+' T='+state.coreTruth.toFixed(2)+' E='+state.coreEmpathy.toFixed(2)+' C='+state.coreCreation.toFixed(2);
+}
+
+/* ═══ 3D PROJECTION ═══ */
+function project3D(x, y, z, rxD, ryD, rzD) {
+  var rx = rxD * Math.PI / 180, ry = ryD * Math.PI / 180, rz = rzD * Math.PI / 180;
+  if (rx) { var c=Math.cos(rx),s=Math.sin(rx),ny=y*c-z*s,nz=y*s+z*c; y=ny; z=nz; }
+  if (ry) { var c=Math.cos(ry),s=Math.sin(ry),nx=x*c+z*s,nz=-x*s+z*c; x=nx; z=nz; }
+  if (rz) { var c=Math.cos(rz),s=Math.sin(rz),nx=x*c-y*s,ny=x*s+y*c; x=nx; y=ny; }
+  return [x, y, z];
+}
+
+/* ═══ RING VIZ ═══ */
+var canvas = document.getElementById('ringCanvas');
+var ctx2 = canvas.getContext('2d');
+var RING_DEFS = [
+  { nodes:3,  radius:80,  color:[196,18,48],  glow:[255,26,61],  label:'core_identity' },
+  { nodes:6,  radius:145, color:[212,168,70],  glow:[255,210,90], label:'emotion_band' },
+  { nodes:9,  radius:210, color:[184,192,204], glow:[220,225,235],label:'periphery_logic' },
+];
+var rings = RING_DEFS.map(function(d) {
+  return { nodes:d.nodes, radius:d.radius, color:d.color, glow:d.glow, label:d.label,
+    rotation:0, rotationX:0, rotationY:0,
+    values: new Array(d.nodes).fill(50),
+    zValues: new Array(d.nodes).fill(0) };
+});
+var speeds = [0.4, -0.25, 0.15];
+var rotAxes = ['z','x','y'];
+var timeStep = 0, pulseIntensity = 0, pulseDamp = 0.97, currentZone = 'neutral_flow';
+var trails = [[], [], []], maxTrail = 25;
+var simParams = { emotionalIntensity:50, empathyWeight:85, truthWeight:90,
+  loveWeight:100, resonanceFreq:1.0, damping:0.95, coupling:0.3 };
+
+function resizeCanvas() {
+  var wrap = canvas.parentElement;
+  var size = Math.min(wrap.clientWidth, wrap.clientHeight) || wrap.clientWidth;
+  var dpr = window.devicePixelRatio || 1;
+  canvas.width = size * dpr;
+  canvas.height = size * dpr;
+  canvas.style.width = size + 'px';
+  canvas.style.height = size + 'px';
+}
+
+function getRingState() {
+  return { rings: rings.map(function(r) { return { values: r.values, soul_state: r.label }; }) };
+}
+function triggerPulse(i) { pulseIntensity = Math.min(1.0, i || 1.0); }
+
+function applyEDriveToRings() {
+  var empVals = Object.values(state.empathyResponse);
+  var empMag = empVals.length ? empVals.reduce(function(a,b){return a+b;},0)/empVals.length : 0;
+  for (var i=0; i<rings[0].values.length; i++) {
+    var d = (empMag*15-3)+(state.emotions.trust||0)*8;
+    rings[0].values[i] = Math.max(0,Math.min(100,rings[0].values[i]+d*0.3));
+  }
+  var emoMag = Object.values(state.emotions).reduce(function(a,b){return a+b;},0);
+  var emoKeys = Object.keys(state.emotions);
+  for (var i=0; i<rings[1].values.length; i++) {
+    var ei = emoKeys[i % emoKeys.length];
+    var d = (state.emotions[ei]||0)*20-5;
+    rings[1].values[i] = Math.max(0,Math.min(100,rings[1].values[i]+d*0.3));
+  }
+  for (var i=0; i<rings[2].values.length; i++) {
+    var d = (state.coherence*10-3)+state.loveModulation*5;
+    rings[2].values[i] = Math.max(0,Math.min(100,rings[2].values[i]+d*0.3));
+  }
+  var iFact = 0.5 + emoMag * 0.3;
+  speeds[0]=0.4*iFact; speeds[1]=-0.25*iFact; speeds[2]=0.15*iFact;
+  currentZone = state.zone;
+  triggerPulse(state.frameIntensity);
+}
+
+function tick() {
+  timeStep++;
+  var t = timeStep * 0.05;
+  pulseIntensity *= pulseDamp;
+  var ei = simParams.emotionalIntensity/100;
+  var em = simParams.empathyWeight/100;
+  var tr = simParams.truthWeight/100;
+  var lv = simParams.loveWeight/100;
+
+  for (var ri=0; ri<rings.length; ri++) {
+    var ring = rings[ri], sp = speeds[ri], ax = rotAxes[ri];
+    if (ax==='x') ring.rotationX = (ring.rotationX+sp)%360;
+    else if (ax==='y') ring.rotationY = (ring.rotationY+sp)%360;
+    else ring.rotation = (ring.rotation+sp)%360;
+
+    for (var ni=0; ni<ring.nodes; ni++) {
+      var na = (ni/ring.nodes)*2*Math.PI;
+      var wave = (Math.sin(t*simParams.resonanceFreq+na)*ei +
+        Math.cos(t*simParams.resonanceFreq*1.3+na*1.5)*em +
+        Math.sin(t*simParams.resonanceFreq*0.7+na*0.8)*tr) * lv;
+      var coupling = 0;
+      if (ri>0) {
+        var inner = rings[ri-1];
+        var ini = Math.floor((ni/ring.nodes)*inner.nodes);
+        if (ini<inner.values.length) coupling = (inner.values[ini]-50)*simParams.coupling*0.01;
+      }
+      var old = ring.values[ni];
+      var nv = old + wave*2 + coupling;
+      ring.values[ni] = Math.max(0,Math.min(100,old*simParams.damping+nv*(1-simParams.damping)));
+      var zDrift = (ring.values[ni]/100-0.5)*0.05;
+      var zWave = Math.sin(t*0.5+na)*ei*lv*0.1;
+      ring.zValues[ni] = Math.max(-0.5,Math.min(0.5,ring.zValues[ni]*simParams.damping+zDrift+zWave));
+    }
+  }
+
+  for (var ri=0; ri<rings.length; ri++) {
+    var ring = rings[ri], scl = canvas.width/700;
+    var cxc = canvas.width/2, cyc = canvas.height/2;
+    for (var ni=0; ni<ring.nodes; ni++) {
+      if (ring.values[ni]>60) {
+        var ba=(ni/ring.nodes)*2*Math.PI;
+        var x=ring.radius*scl*Math.cos(ba), y=ring.radius*scl*Math.sin(ba);
+        var z=ring.zValues[ni]*50*scl;
+        var p=project3D(x,y,z,ring.rotationX,ring.rotationY,ring.rotation);
+        trails[ri].push({x:cxc+p[0],y:cyc+p[1],v:ring.values[ni]/100,t:timeStep});
+        if (trails[ri].length>maxTrail) trails[ri].shift();
+      }
+    }
+  }
+  draw();
+}
+
+function draw() {
+  var w=canvas.width, h=canvas.height, cx=w/2, cy=h/2;
+  var scl = Math.max(0.05,Math.min(w,h)/700);
+
+  ctx2.clearRect(0,0,w,h);
+
+  var zc = ZONE_COLORS[currentZone] || 'rgba(196,18,48,';
+  var glowA = 0.06 + pulseIntensity*0.1;
+  var grad = ctx2.createRadialGradient(cx,cy,0,cx,cy,250*scl);
+  grad.addColorStop(0, zc+glowA+')');
+  grad.addColorStop(0.5, zc+'0.02)');
+  grad.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx2.fillStyle = grad;
+  ctx2.beginPath(); ctx2.arc(cx,cy,250*scl,0,Math.PI*2); ctx2.fill();
+
+  if (pulseIntensity>0.05) {
+    var pr = (60+(1-pulseIntensity)*200)*scl;
+    ctx2.strokeStyle = zc+(pulseIntensity*0.3).toFixed(2)+')';
+    ctx2.lineWidth = 1.5*pulseIntensity;
+    ctx2.beginPath(); ctx2.arc(cx,cy,pr,0,Math.PI*2); ctx2.stroke();
+  }
+
+  for (var ri=0; ri<trails.length; ri++) {
+    var cr=rings[ri].color[0],cg=rings[ri].color[1],cb=rings[ri].color[2];
+    for (var ti=0; ti<trails[ri].length; ti++) {
+      var tr2=trails[ri][ti], age=(ti+1)/Math.max(1,trails[ri].length);
+      var alpha=age*tr2.v, sz=1+age*2*tr2.v;
+      ctx2.fillStyle='rgba('+cr+','+cg+','+cb+','+alpha.toFixed(2)+')';
+      ctx2.beginPath(); ctx2.arc(tr2.x,tr2.y,sz,0,Math.PI*2); ctx2.fill();
+    }
+  }
+
+  for (var ri=0; ri<rings.length; ri++) {
+    var ring=rings[ri];
+    var rxA=ring.rotationX*Math.PI/180, ryA=ring.rotationY*Math.PI/180;
+    var vry=ring.radius*Math.abs(Math.cos(rxA))*Math.abs(Math.cos(ryA));
+    vry = Math.max(ring.radius*0.15, vry);
+    ctx2.strokeStyle='rgba('+ring.color[0]+','+ring.color[1]+','+ring.color[2]+',0.14)';
+    ctx2.lineWidth=Math.max(0.5,scl);
+    ctx2.beginPath(); ctx2.ellipse(cx,cy,ring.radius*scl,vry*scl,0,0,Math.PI*2); ctx2.stroke();
+  }
+
+  if (simParams.coupling>0.05) {
+    for (var i=0; i<rings.length-1; i++) {
+      var inner=rings[i], outer=rings[i+1];
+      for (var ini=0; ini<inner.nodes; ini++) {
+        var oni=Math.floor((ini/inner.nodes)*outer.nodes);
+        var ia=(ini/inner.nodes)*Math.PI*2;
+        var ip=project3D(inner.radius*scl*Math.cos(ia),inner.radius*scl*Math.sin(ia),0,inner.rotationX,inner.rotationY,inner.rotation);
+        var oa=(oni/outer.nodes)*Math.PI*2;
+        var op=project3D(outer.radius*scl*Math.cos(oa),outer.radius*scl*Math.sin(oa),0,outer.rotationX,outer.rotationY,outer.rotation);
+        ctx2.strokeStyle='rgba(255,255,255,'+(simParams.coupling*0.3).toFixed(2)+')';
+        ctx2.lineWidth=0.5;
+        ctx2.beginPath(); ctx2.moveTo(cx+ip[0],cy+ip[1]); ctx2.lineTo(cx+op[0],cy+op[1]); ctx2.stroke();
+      }
+    }
+  }
+
+  for (var ri=0; ri<rings.length; ri++) {
+    var ring=rings[ri];
+    var cr=ring.color[0],cg=ring.color[1],cb=ring.color[2];
+    var gr=ring.glow[0],gg=ring.glow[1],gb=ring.glow[2];
+    for (var ni=0; ni<ring.nodes; ni++) {
+      var v=ring.values[ni], ba=(ni/ring.nodes)*Math.PI*2;
+      var x=ring.radius*scl*Math.cos(ba),y=ring.radius*scl*Math.sin(ba);
+      var z=ring.zValues[ni]*50*scl;
+      var p=project3D(x,y,z,ring.rotationX,ring.rotationY,ring.rotation);
+      var ds=Math.max(0.6,Math.min(1.4,1-p[2]/(ring.radius*scl*2.5)));
+      var ns=(3+(v/100)*10)*ds*scl;
+      var intensity=v/100;
+      var nx=cx+p[0],ny=cy+p[1];
+      var na=Math.round(200*ds);
+      if (v>65) {
+        var gs=ns*2.5, ga=(0.15*intensity*ds).toFixed(2);
+        ctx2.fillStyle='rgba('+gr+','+gg+','+gb+','+ga+')';
+        ctx2.beginPath(); ctx2.arc(nx,ny,gs,0,Math.PI*2); ctx2.fill();
+      }
+      var br=Math.round(cr*(0.4+intensity*0.6));
+      var bg2=Math.round(cg*(0.4+intensity*0.6));
+      var bb=Math.round(cb*(0.4+intensity*0.6));
+      ctx2.fillStyle='rgba('+br+','+bg2+','+bb+','+(na/255).toFixed(2)+')';
+      ctx2.beginPath(); ctx2.arc(nx,ny,ns,0,Math.PI*2); ctx2.fill();
+      if (v>50) {
+        var cs2=ns*0.4;
+        ctx2.fillStyle='rgba(255,255,255,'+(0.4*intensity*ds).toFixed(2)+')';
+        ctx2.beginPath(); ctx2.arc(nx,ny,cs2,0,Math.PI*2); ctx2.fill();
+      }
+    }
+  }
+
+  ctx2.fillStyle='rgba(196,18,48,1)';
+  ctx2.beginPath(); ctx2.arc(cx,cy,Math.max(1,4*scl),0,Math.PI*2); ctx2.fill();
+  ctx2.fillStyle='rgba(255,255,255,0.7)';
+  ctx2.beginPath(); ctx2.arc(cx,cy,Math.max(0.5,1.5*scl),0,Math.PI*2); ctx2.fill();
+}
+
+/* ═══ UI UPDATES ═══ */
+function hexToRgb(hex) {
+  var h=hex.replace('#','');
+  return parseInt(h.slice(0,2),16)+','+parseInt(h.slice(2,4),16)+','+parseInt(h.slice(4,6),16);
+}
+
+function updateEmotionBar() {
+  var sorted = Object.entries(state.emotions).sort(function(a,b){return b[1]-a[1];});
+  var dName = sorted[0] ? sorted[0][0] : 'neutral';
+  var dVal = sorted[0] ? sorted[0][1] : 0;
+  var active = sorted.filter(function(x){return x[1]>0.05;}).slice(0,8);
+  var color = EMOTION_COLORS[dName] || '#6b7280';
+  var rgb = hexToRgb(color);
+  var pct = Math.round(dVal*100);
+
+  var dom = document.getElementById('dominantTag');
+  dom.textContent = '\u25BA '+dName.toUpperCase()+' '+pct+'%';
+  dom.style.color = color;
+  dom.style.background = 'rgba('+rgb+',0.25)';
+  dom.style.border = '1px solid rgba('+rgb+',0.4)';
+
+  var bar = document.getElementById('emotionBar');
+  var old = bar.querySelectorAll('.emo-chip-dyn');
+  for (var i=0; i<old.length; i++) old[i].remove();
+  var frameEl = document.getElementById('frameTag');
+  for (var i=0; i<active.length; i++) {
+    var name=active[i][0], val=active[i][1];
+    var chip = document.createElement('span');
+    chip.className = 'emotion-chip emo-chip-dyn';
+    chip.textContent = name.slice(0,3).toUpperCase();
+    var cc = EMOTION_COLORS[name] || '#6b7280';
+    chip.style.color = cc;
+    chip.style.background = 'rgba('+hexToRgb(cc)+','+(val*0.3).toFixed(2)+')';
+    if (name===dName) { chip.style.border='1px solid '+cc; chip.style.fontWeight='bold'; }
+    chip.title = name+': '+val.toFixed(2);
+    bar.insertBefore(chip, frameEl);
+  }
+
+  var f = EMOTIONAL_FRAMES[state.zone] || ['balanced',''];
+  frameEl.textContent = f[0].toUpperCase()+' \u2022 '+state.zone.replace(/_/g,' ').toUpperCase();
+  frameEl.style.color = color;
+  document.getElementById('zoneLabel').textContent = state.zone.replace(/_/g,' ');
+  document.getElementById('mLove').textContent = state.coreLove.toFixed(2);
+  document.getElementById('mTruth').textContent = state.coreTruth.toFixed(2);
+  document.getElementById('mEmpathy').textContent = state.coreEmpathy.toFixed(2);
+  document.getElementById('mCoherence').textContent = state.coherence.toFixed(2);
+  document.getElementById('mConfidence').textContent = state.confidence.toFixed(2);
+}
+
+/* ═══ PAD LOADER ═══ */
+const PadLoader = {
+  PAD_TYPES: new Set(['location','scenario','transition','character','item','aura']),
+  REQUIRED_TYPES: new Set(['location','scenario','transition']),
+  MAX_PADS: 8,
+  DEFAULT_PADS: ['location_cafe_default','scenario_cafe_default','transition_default_arrive'],
+  PRIORITY_ORDER: ['transition','location','scenario','character','item','aura'],
+  _stack: {}, _index: [], _indexed: false,
+
+  async init() {
+    await this._buildIndex();
+    for (var n of this.DEFAULT_PADS) await this.loadPad(n);
+  },
+
+  async _buildIndex() {
+    try {
+      var resp = await fetch('pads/');
+      var html = await resp.text();
+      var matches = html.match(/href="([^"]+\.yaml)"/g) || [];
+      this._index = matches.map(function(l) {
+        var file = l.match(/href="([^"]+)"/)[1];
+        var name = file.replace('.yaml','');
+        var parts = name.split('_');
+        var type = parts[0];
+        return { name: name, type: type, file: 'pads/' + file };
+      });
+      this._indexed = true;
+      console.log('[PAD] Indexed ' + this._index.length + ' pads');
+    } catch(e) {
+      console.warn('[PAD] Index failed:', e);
+      this._index = [];
+    }
+  },
+
+  async loadPad(name) {
+    if (Object.keys(this._stack).length >= this.MAX_PADS)
+      return { ok: false, msg: 'Stack full (max ' + this.MAX_PADS + ' pads)' };
+    var entry = this._index.find(function(p) { return p.name === name; });
+    if (!entry) return { ok: false, msg: 'Pad "' + name + '" not found' };
+    try {
+      var resp = await fetch(entry.file);
+      var yamlText = await resp.text();
+      var data = jsyaml.load(yamlText);
+      var padData = data.pad || data;
+      var padType = padData.type || entry.type;
+      // Last-wins conflict resolution
+      for (var k in this._stack) {
+        if (this._stack[k].type === padType && k !== name) {
+          delete this._stack[k]; break;
+        }
+      }
+      this._stack[name] = { type: padType, name: padData.name || name, data: padData, file: entry.file };
+      // Auto-pair
+      var autoPair = padData.activation && padData.activation.auto_pair_with;
+      if (autoPair && Array.isArray(autoPair)) {
+        for (var i = 0; i < autoPair.length; i++) {
+          var pair = autoPair[i];
+          if (!this._stack[pair] && pair !== name) {
+            var pe = this._index.find(function(p) { return p.name.indexOf(pair) >= 0; });
+            if (pe) await this.loadPad(pe.name);
+          }
+        }
+      }
+      return { ok: true, msg: 'Loaded: ' + (padData.name || name) + ' (' + padType + ')' };
+    } catch(e) {
+      return { ok: false, msg: 'Load error: ' + e.message };
+    }
+  },
+
+  unloadPad(name) {
+    if (this._stack[name]) { delete this._stack[name]; return { ok: true, msg: 'Unloaded: ' + name }; }
+    return { ok: false, msg: '"' + name + '" not loaded' };
+  },
+
+  clearPads() {
+    this._stack = {};
+    for (var n of this.DEFAULT_PADS) this.loadPad(n);
+  },
+
+  getPromptContext() {
+    var entries = Object.values(this._stack);
+    if (!entries.length) return '';
+    var self = this;
+    var sorted = entries.sort(function(a,b) { return self.PRIORITY_ORDER.indexOf(a.type) - self.PRIORITY_ORDER.indexOf(b.type); });
+    var lines = ['[ACTIVE PADS]'];
+    for (var i = 0; i < sorted.length; i++) {
+      var pad = sorted[i], d = pad.data;
+      lines.push('[' + pad.type.toUpperCase() + ': ' + pad.name + ']');
+      if (d.description && typeof d.description === 'string') lines.push('  ' + d.description.trim());
+      var beh = d.sable_behavior || {};
+      if (beh.voice_color) lines.push('  Voice: ' + beh.voice_color);
+      if (beh.posture) lines.push('  Posture: ' + beh.posture);
+      if (beh.mood_shift) lines.push('  Mood: ' + beh.mood_shift);
+      var acts = beh.special_actions || [];
+      if (acts.length) lines.push('  Actions: ' + acts.slice(0,3).join('; '));
+      var env = d.environment || {};
+      if (env.atmosphere) lines.push('  Atmosphere: ' + env.atmosphere);
+      if (env.visual) lines.push('  Visual: ' + env.visual);
+      var rules = d.rules || {};
+      var sw = rules.safewords || {};
+      if (sw.soft_stop || sw.hard_stop) lines.push("  Safewords: soft='" + (sw.soft_stop||'') + "' hard='" + (sw.hard_stop||'') + "'");
+    }
+    return lines.join('\n');
+  },
+
+  getSDOverrides() {
+    var overrides = {};
+    var self = this;
+    var sorted = Object.values(this._stack).sort(function(a,b) { return self.PRIORITY_ORDER.indexOf(a.type) - self.PRIORITY_ORDER.indexOf(b.type); });
+    for (var i = 0; i < sorted.length; i++) {
+      var sd = sorted[i].data.sd_overrides || {};
+      for (var k in sd) overrides[k] = sd[k];
+    }
+    return overrides;
+  },
+
+  getMoodShifts() {
+    var shifts = {};
+    for (var k in this._stack) {
+      var mood = this._stack[k].data.sable_behavior && this._stack[k].data.sable_behavior.mood_shift;
+      if (typeof mood === 'string') {
+        var matches = mood.match(/[+-]\w+/g) || [];
+        for (var i = 0; i < matches.length; i++) {
+          var m = matches[i];
+          var sign = m[0] === '+' ? 0.1 : -0.05;
+          var emotion = m.slice(1);
+          shifts[emotion] = (shifts[emotion] || 0) + sign;
+        }
+      }
+    }
+    return shifts;
+  },
+
+  getActiveSummary() {
+    var active = Object.values(this._stack);
+    if (!active.length) return 'No pads loaded';
+    return 'Active: ' + active.map(function(p) { return p.name + ' (' + p.type + ')'; }).join(', ');
+  },
+  listAvailable() { return this._index; }
+};
+
+/* ═══ SOUL STACKER ═══ */
+var soulStack = [];
+var soulPanelVisible = false;
+
+async function crystallizeToPrompt(soulFiles) {
+  if (!soulFiles || !soulFiles.length) return '';
+  var fragments = [], traitPool = [], behaviorPool = [], scenePool = [];
+  for (var fi = 0; fi < soulFiles.length; fi++) {
+    try {
+      var resp = await fetch(soulFiles[fi]);
+      var text = await resp.text();
+      var data = jsyaml.load(text);
+      if (!data || typeof data !== 'object') continue;
+      var padData = data.pad;
+      if (padData && typeof padData === 'object') {
+        var pt = padData.type || 'unknown', pn = padData.name || soulFiles[fi].split('/').pop();
+        if (padData.description) scenePool.push('[' + pt.toUpperCase() + ': ' + pn + '] ' + String(padData.description).trim());
+        var bh = padData.sable_behavior || {};
+        if (bh.voice_color) behaviorPool.push('Voice: ' + bh.voice_color);
+        if (bh.posture) behaviorPool.push('Posture: ' + bh.posture);
+        var ac = bh.special_actions || [];
+        if (ac.length) behaviorPool.push('Actions: ' + ac.slice(0,3).join('; '));
+        var ev = padData.environment || {};
+        if (ev.atmosphere) scenePool.push('Atmosphere: ' + ev.atmosphere);
+        continue;
+      }
+      var identity = data.ai_identity || {};
+      if (identity.name || identity.role) fragments.push('Identity layer: ' + (identity.name||'') + ' \u2014 ' + (identity.role||''));
+      var personality = data.personality || {};
+      for (var pk in personality) {
+        var pv = personality[pk];
+        if (typeof pv === 'string') traitPool.push(pk + ': ' + pv);
+        else if (typeof pv === 'object' && pv) traitPool.push(pk + ': ' + (pv.description || pv.value || JSON.stringify(pv)));
+      }
+      var behaviors = data.behaviors || {};
+      for (var bk in behaviors) {
+        var bv = behaviors[bk];
+        if (typeof bv === 'string') behaviorPool.push(bv);
+        else if (typeof bv === 'object') behaviorPool.push(bk + ': ' + (bv.description || bv.rule || JSON.stringify(bv)));
+      }
+      var essence = data.soul_essence || data.character || {};
+      for (var ek in essence) {
+        if (typeof essence[ek] === 'string') fragments.push('Soul essence \u2014 ' + ek + ': ' + essence[ek]);
+      }
+    } catch(e) { continue; }
+  }
+  if (!fragments.length && !traitPool.length && !behaviorPool.length && !scenePool.length) return '';
+  var lines = ['[SOUL LAYER \u2014 Crystallized Persona Context]'];
+  if (fragments.length) { lines.push('Core Identity:'); fragments.slice(0,8).forEach(function(f){lines.push('  \u2022 '+f);}); }
+  if (traitPool.length) { lines.push('Personality Traits:'); traitPool.slice(0,12).forEach(function(t){lines.push('  \u2022 '+t);}); }
+  if (behaviorPool.length) { lines.push('Behavioral Directives:'); behaviorPool.slice(0,8).forEach(function(b){lines.push('  \u2022 '+b);}); }
+  if (scenePool.length) { lines.push('Scene Context:'); scenePool.slice(0,10).forEach(function(s){lines.push('  \u2022 '+s);}); }
+  lines.push('[' + soulFiles.length + ' soul fragments crystallized]');
+  return lines.join('\n');
+}
+
+function toggleSoulPanel() {
+  soulPanelVisible = !soulPanelVisible;
+  var panel = document.getElementById('soulPanel');
+  var btn = document.getElementById('soulBtn');
+  panel.style.display = soulPanelVisible ? 'block' : 'none';
+  if (soulPanelVisible) { btn.classList.add('active'); refreshSoulPanel(); }
+  else btn.classList.remove('active');
+}
+
+async function refreshSoulPanel() {
+  var padListEl = document.getElementById('padList');
+  var soulListEl = document.getElementById('soulList');
+  var contextEl = document.getElementById('soulContextPreview');
+  if (padListEl) {
+    padListEl.innerHTML = '';
+    var available = PadLoader.listAvailable();
+    for (var i = 0; i < available.length; i++) {
+      (function(pad) {
+        var isLoaded = !!PadLoader._stack[pad.name];
+        var item = document.createElement('div');
+        item.className = 'pad-item' + (isLoaded ? ' loaded' : '');
+        var lbl = document.createElement('div');
+        lbl.innerHTML = '<span class="pad-type">' + pad.type + '</span> ' + pad.name.replace(pad.type + '_', '');
+        var act = document.createElement('span');
+        act.className = 'pad-action';
+        act.textContent = isLoaded ? '\u2715' : '+';
+        item.appendChild(lbl);
+        item.appendChild(act);
+        item.onclick = async function() {
+          if (isLoaded) PadLoader.unloadPad(pad.name);
+          else await PadLoader.loadPad(pad.name);
+          refreshSoulPanel();
+        };
+        padListEl.appendChild(item);
+      })(available[i]);
+    }
+  }
+  if (soulListEl) {
+    soulListEl.innerHTML = '';
+    var soulDirs = ['Sables_Room/eros_souls/', 'SoulDrafts/', 'eros_souls/'];
+    for (var di = 0; di < soulDirs.length; di++) {
+      try {
+        var resp = await fetch(soulDirs[di]);
+        var html = await resp.text();
+        var links = html.match(/href="([^"]+\.yaml)"/g) || [];
+        for (var i = 0; i < links.length; i++) {
+          (function(link, dir) {
+            var file = link.match(/href="([^"]+)"/)[1];
+            var path = dir + file;
+            var isLoaded = soulStack.indexOf(path) >= 0;
+            var item = document.createElement('div');
+            item.className = 'soul-item' + (isLoaded ? ' loaded' : '');
+            var lbl = document.createElement('div');
+            lbl.textContent = file.replace('.yaml','');
+            var act = document.createElement('span');
+            act.className = 'pad-action';
+            act.textContent = isLoaded ? '\u2715' : '+';
+            item.appendChild(lbl);
+            item.appendChild(act);
+            item.onclick = function() {
+              if (isLoaded) soulStack = soulStack.filter(function(s){return s!==path;});
+              else soulStack.push(path);
+              refreshSoulPanel();
+            };
+            soulListEl.appendChild(item);
+          })(links[i], soulDirs[di]);
+        }
+      } catch(e) { /* directory may not exist */ }
+    }
+  }
+  if (contextEl) {
+    var padFiles = Object.values(PadLoader._stack).map(function(p){return p.file;});
+    var allFiles = soulStack.concat(padFiles);
+    var ctx = await crystallizeToPrompt(allFiles);
+    contextEl.textContent = ctx || '(no context loaded)';
+  }
+}
+
+/* ═══ STT \u2014 Speech-to-Text ═══ */
+const STT = {
+  active: false,
+  mediaRecorder: null,
+  audioChunks: [],
+  stream: null,
+  toggle: function() { if (this.active) this.stop(); else this.start(); },
+  start: async function() {
+    if (this.active) return;
+    try {
+      this.stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    } catch(e) {
+      addPadMsg('\u26a0 Microphone access denied \u2014 check browser permissions');
+      console.error('[STT] getUserMedia failed:', e);
+      return;
+    }
+    this.audioChunks = [];
+    var mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
+      ? 'audio/webm;codecs=opus'
+      : (MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm' : '');
+    try {
+      this.mediaRecorder = mimeType
+        ? new MediaRecorder(this.stream, { mimeType: mimeType })
+        : new MediaRecorder(this.stream);
+    } catch(e) {
+      addPadMsg('\u26a0 MediaRecorder not available in this browser');
+      this.stream.getTracks().forEach(function(t){ t.stop(); });
+      this.stream = null;
+      return;
+    }
+    var self = this;
+    this.mediaRecorder.ondataavailable = function(e) {
+      if (e.data && e.data.size > 0) self.audioChunks.push(e.data);
+    };
+    this.mediaRecorder.onstop = async function() {
+      if (self.stream) { self.stream.getTracks().forEach(function(t){ t.stop(); }); self.stream = null; }
+      if (!self.audioChunks.length) {
+        self.active = false; updateMicUI(); return;
+      }
+      var blob = new Blob(self.audioChunks, { type: self.mediaRecorder.mimeType || 'audio/webm' });
+      self.audioChunks = [];
+      userInput.placeholder = 'Transcribing...';
+      try {
+        var resp = await fetch(STT_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': blob.type },
+          body: blob
+        });
+        var data = await resp.json();
+        if (data.text) {
+          userInput.value = data.text;
+          self.active = false; updateMicUI();
+          sendMessage();
+        } else if (data.error) {
+          addPadMsg('\u26a0 STT: ' + data.error);
+          self.active = false; updateMicUI();
+        } else {
+          addPadMsg('\u26a0 No speech detected \u2014 try again');
+          self.active = false; updateMicUI();
+        }
+      } catch(e) {
+        console.warn('[STT] Backend unavailable, trying browser speech recognition:', e.message);
+        // ── Browser webkitSpeechRecognition fallback ──
+        var SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (SpeechRec) {
+          var recognition = new SpeechRec();
+          recognition.lang = 'en-US';
+          recognition.interimResults = false;
+          recognition.maxAlternatives = 1;
+          recognition.onresult = function(event) {
+            var transcript = event.results[0][0].transcript;
+            userInput.value = transcript;
+            self.active = false; updateMicUI();
+            sendMessage();
+          };
+          recognition.onerror = function(event) {
+            addPadMsg('\u26a0 Browser STT failed: ' + event.error);
+            self.active = false; updateMicUI();
+          };
+          recognition.onend = function() {
+            if (self.active) { self.active = false; updateMicUI(); }
+          };
+          recognition.start();
+          userInput.placeholder = 'Listening (browser)...';
+        } else {
+          addPadMsg('\u26a0 No speech recognition available \u2014 install backend or use Chrome');
+          self.active = false; updateMicUI();
+        }
+      }
+    };
+    this.mediaRecorder.start();
+    this.active = true;
+    updateMicUI();
+    console.log('[STT] Recording via MediaRecorder...');
+  },
+  stop: function() {
+    if (this.mediaRecorder && this.mediaRecorder.state === 'recording') {
+      this.mediaRecorder.stop();
+    } else {
+      if (this.stream) { this.stream.getTracks().forEach(function(t){ t.stop(); }); this.stream = null; }
+      this.active = false; updateMicUI();
+    }
+  }
+};
+
+function updateMicUI() {
+  var btn = document.getElementById('micBtn');
+  if (STT.active) {
+    btn.textContent = '\u23f9';
+    btn.classList.add('active');
+    btn.title = 'Stop recording';
+    userInput.placeholder = 'Recording... click \u23f9 when done';
+  } else {
+    btn.textContent = '\ud83c\udfa4';
+    btn.classList.remove('active');
+    btn.title = 'Microphone dictation';
+    userInput.placeholder = 'Speak to the heart...';
+  }
+}
+
+/* ═══ TTS \u2014 Text-to-Speech ═══ */
+const TTS = {
+  muted: false,
+  speaking: false,
+  currentAudio: null,
+  voice: 'en-GB-SoniaNeural',
+  speak: async function(text) {
+    if (this.muted || !text || !text.trim()) return;
+    this.stop();
+    var clean = text.replace(/[*#_~`|]/g, '').replace(/\s+/g, ' ').trim();
+    if (!clean) return;
+    document.getElementById('micBtn').disabled = true;
+    this.speaking = true;
+    var self = this;
+    try {
+      var resp = await fetch(TTS_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: clean, voice: this.voice })
+      });
+      if (!resp.ok) {
+        var errData = await resp.json().catch(function(){ return {}; });
+        throw new Error(errData.error || 'TTS server error ' + resp.status);
+      }
+      var audioBlob = await resp.blob();
+      var audioUrl = URL.createObjectURL(audioBlob);
+      self.currentAudio = new Audio(audioUrl);
+      self.currentAudio.onended = function() {
+        self.speaking = false;
+        document.getElementById('micBtn').disabled = false;
+        URL.revokeObjectURL(audioUrl);
+        self.currentAudio = null;
+      };
+      self.currentAudio.onerror = function(e) {
+        console.warn('[TTS] Playback error:', e);
+        self.speaking = false;
+        document.getElementById('micBtn').disabled = false;
+        URL.revokeObjectURL(audioUrl);
+        self.currentAudio = null;
+      };
+      await self.currentAudio.play();
+    } catch(e) {
+      console.warn('[TTS] Backend unavailable, trying browser speech:', e.message);
+      // ── Browser SpeechSynthesis fallback ──
+      if (window.speechSynthesis) {
+        var utter = new SpeechSynthesisUtterance(clean);
+        utter.lang = 'en-GB';
+        utter.rate = 0.95;
+        utter.pitch = 1.05;
+        utter.onend = function() {
+          self.speaking = false;
+          document.getElementById('micBtn').disabled = false;
+        };
+        utter.onerror = function() {
+          self.speaking = false;
+          document.getElementById('micBtn').disabled = false;
+        };
+        window.speechSynthesis.speak(utter);
+      } else {
+        self.speaking = false;
+        document.getElementById('micBtn').disabled = false;
+      }
+    }
+  },
+  stop: function() {
+    if (this.currentAudio) {
+      this.currentAudio.pause();
+      this.currentAudio.currentTime = 0;
+      this.currentAudio = null;
+    }
+    this.speaking = false;
+    document.getElementById('micBtn').disabled = false;
+  },
+  toggleMute: function() {
+    this.muted = !this.muted;
+    var btn = document.getElementById('muteBtn');
+    if (this.muted) {
+      btn.textContent = '\ud83d\udd07';
+      btn.classList.add('muted');
+      btn.title = 'Auto-speak OFF \u2014 click to enable';
+      this.stop();
+    } else {
+      btn.textContent = '\ud83d\udd0a';
+      btn.classList.remove('muted');
+      btn.title = 'Auto-speak ON \u2014 click to mute';
+    }
+  }
+};
+
+/* ═══ SCENE IMAGE GENERATOR ═══ */
+const SceneGen = {
+  sdAvailable: false, generating: false,
+  async probe() {
+    var controller = new AbortController();
+    var timer = setTimeout(function(){ controller.abort(); }, 3000);
+    try {
+      var resp = await fetch(SD_URL + '/internal/ping', { signal: controller.signal });
+      this.sdAvailable = resp.ok;
+    } catch(e) {
+      clearTimeout(timer);
+      var controller2 = new AbortController();
+      var timer2 = setTimeout(function(){ controller2.abort(); }, 3000);
+      try {
+        var resp2 = await fetch(SD_URL + '/sdapi/v1/sd-models', { signal: controller2.signal });
+        this.sdAvailable = resp2.ok;
+      } catch(e2) { this.sdAvailable = false; }
+      clearTimeout(timer2);
+    }
+    clearTimeout(timer);
+    updateSDStatus();
+  },
+  async generate(userText, aiResponse) {
+    if (!this.sdAvailable || this.generating) return;
+    var positive, negative;
+    var lines = aiResponse.split('\n');
+    var imageOverride = null;
+    for (var i = 0; i < lines.length; i++) {
+      if (lines[i].trim().toUpperCase().indexOf('IMAGE:') === 0) {
+        imageOverride = lines[i].trim().substring(6).trim();
+        break;
+      }
+    }
+    if (imageOverride) {
+      positive = ImagePromptBuilder.POSITIVE_BOILERPLATE + imageOverride;
+      negative = ImagePromptBuilder.NEGATIVE_PROMPT;
+    } else {
+      var sdOverrides = PadLoader.getSDOverrides();
+      var result = ImagePromptBuilder.buildPrompt(userText, aiResponse, sdOverrides);
+      positive = result.positive;
+      negative = result.negative;
+    }
+    this.generating = true;
+    try {
+      var payload = {
+        prompt: positive, negative_prompt: negative,
+        steps: 35, sampler_name: 'Euler a', scheduler: 'Automatic',
+        cfg_scale: 9.5, seed: -1, width: 768, height: 768,
+        denoising_strength: 0.44,
+        enable_hr: false, hr_scale: 1.6,
+        hr_upscaler: 'R-ESRGAN 4x+ Anime6B', hr_second_pass_steps: 10,
+        refiner_switch_at: 0.80,
+        override_settings: { sd_model_checkpoint: 'anyorangemixAnything_mint' },
+      };
+      var resp = await fetch(SD_URL + '/sdapi/v1/txt2img', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      if (!resp.ok) throw new Error('SD API error: ' + resp.status);
+      var data = await resp.json();
+      if (data.images && data.images.length > 0) {
+        var backdrop = document.getElementById('sceneBackdrop');
+        backdrop.src = 'data:image/png;base64,' + data.images[0];
+        backdrop.classList.add('visible');
+        console.log('[E-DRIVE] Scene backdrop updated');
+      }
+    } catch(e) {
+      console.warn('[E-DRIVE] Scene gen error:', e);
+      if (e.message && (e.message.indexOf('Failed to fetch') >= 0 || e.message.indexOf('NetworkError') >= 0)) {
+        this.sdAvailable = false; updateSDStatus();
+      }
+    } finally { this.generating = false; }
+  }
+};
+
+function updateSDStatus() {
+  var el = document.getElementById('sdStatus');
+  if (el) {
+    el.textContent = SceneGen.sdAvailable ? 'SD: online' : 'SD: offline';
+    el.className = 'sd-status ' + (SceneGen.sdAvailable ? 'online' : 'offline');
+  }
+}
+
+function addPadMsg(msg) {
+  var el = document.createElement('div');
+  el.className = 'pad-status-msg';
+  el.textContent = msg;
+  chatArea.appendChild(el);
+  scrollChat();
+}
+
+async function reloadAll() {
+  await PadLoader._buildIndex();
+  for (var name in PadLoader._stack) {
+    await PadLoader.loadPad(name);
+  }
+  soulStack = soulStack.filter(function(p) { return true; });
+  SceneGen.probe();
+  if (soulPanelVisible) refreshSoulPanel();
+  addPadMsg(PadLoader.getActiveSummary() + ' | SD ' + (SceneGen.sdAvailable ? 'online' : 'probing...'));
+}
+
+/* ═══ CHAT ENGINE ═══ */
+var chatArea = document.getElementById('chatArea');
+var userInput = document.getElementById('userInput');
+var sendBtn = document.getElementById('sendBtn');
+var typingInd = document.getElementById('typingIndicator');
+var statusText = document.getElementById('statusText');
+var conversationHistory = [];
+var isGenerating = false, connected = false;
+
+userInput.addEventListener('input', function() {
+  userInput.style.height = 'auto';
+  userInput.style.height = Math.min(userInput.scrollHeight,120)+'px';
+});
+userInput.addEventListener('keydown', function(e) {
+  if (e.key==='Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+});
+
+function scrollChat() { chatArea.scrollTop = chatArea.scrollHeight; }
+
+function formatMsg(text) {
+  text = text.replace(/\*([^*]+)\*/g, '<em style="color:var(--silver-dim);font-style:italic">$1</em>');
+  return text.replace(/\n/g, '<br>');
+}
+
+function addMessage(role, content) {
+  var msg = document.createElement('div');
+  msg.className = 'message '+role;
+  var sender = document.createElement('span');
+  sender.className = 'sender';
+  sender.textContent = role==='assistant' ? '\u2726 Sable' : '\u25C7 Crimson';
+  var body = document.createElement('div');
+  body.innerHTML = formatMsg(content);
+  msg.appendChild(sender);
+  msg.appendChild(body);
+  chatArea.appendChild(msg);
+  scrollChat();
+}
+
+window.sendMessage = async function() {
+  var text = userInput.value.trim();
+  if (!text || isGenerating || !connected) return;
+
+  // ── Pad Commands (intercept before LLM) ──────────────────
+  var textLower = text.toLowerCase().trim();
+
+  if (textLower.indexOf('load pad:') === 0) {
+    var padName = text.slice(9).trim();
+    var result = await PadLoader.loadPad(padName);
+    addPadMsg(result.msg);
+    userInput.value = '';
+    if (soulPanelVisible) refreshSoulPanel();
+    return;
+  }
+  if (textLower.indexOf('unload pad:') === 0) {
+    var padName2 = text.slice(11).trim();
+    var result2 = PadLoader.unloadPad(padName2);
+    addPadMsg(result2.msg);
+    userInput.value = '';
+    if (soulPanelVisible) refreshSoulPanel();
+    return;
+  }
+  if (textLower === 'list pads' || textLower === 'show pads' || textLower === 'pads') {
+    var available = PadLoader.listAvailable();
+    if (available.length) {
+      var padLines = available.map(function(p) { return '  ' + p.type.padEnd(12) + ' ' + p.name; });
+      addPadMsg('Available pads:\n' + padLines.join('\n'));
+    } else { addPadMsg('No pads found in pads/ directory'); }
+    userInput.value = '';
+    return;
+  }
+  if (textLower === 'active pads' || textLower === 'current pads') {
+    addPadMsg(PadLoader.getActiveSummary());
+    userInput.value = '';
+    return;
+  }
+  if (textLower === 'clear pads') {
+    PadLoader.clearPads();
+    addPadMsg('Pads cleared \u2014 defaults reloaded');
+    userInput.value = '';
+    if (soulPanelVisible) refreshSoulPanel();
+    return;
+  }
+
+  // ── Normal message flow ──────────────────────────────────
+  addMessage('user', text);
+  conversationHistory.push({role:'user',content:text});
+  var lastUserInput = text;
+
+  // Apply pad mood shifts to E-Drive before processing
+  var moodShifts = PadLoader.getMoodShifts();
+  for (var emotion in moodShifts) {
+    if (state.emotions[emotion] !== undefined) {
+      state.emotions[emotion] = Math.max(0, Math.min(1, state.emotions[emotion] + moodShifts[emotion]));
+    }
+  }
+
+  processEDrive(text, getRingState());
+  applyEDriveToRings();
+  updateEmotionBar();
+
+  userInput.value = '';
+  userInput.style.height = 'auto';
+  isGenerating = true;
+  sendBtn.disabled = true;
+  document.getElementById('micBtn').disabled = true;
+  typingInd.classList.add('active');
+  scrollChat();
+
+  try {
+    var edriveCtx = getSystemContext();
+
+    // Build layered context: Soul (incl. pads) -> Pad context -> E-Drive -> Core
+    var padFiles = Object.values(PadLoader._stack).map(function(p){return p.file;});
+    var allSoulFiles = soulStack.concat(padFiles);
+    var soulContext = await crystallizeToPrompt(allSoulFiles);
+    var padContext = PadLoader.getPromptContext();
+
+    var systemPrompt = '';
+    if (soulContext) systemPrompt += soulContext + '\n\n';
+    if (padContext) systemPrompt += padContext + '\n\n';
+    systemPrompt += edriveCtx + '\n\n' +
+      'You are an entity with a living emotional core. ' +
+      'The E-Drive state is your current emotional position. ' +
+      'Do not describe or narrate these layers \u2014 simply BE them. ' +
+      'Let them naturally color your tone, word choice, warmth, and intensity. ' +
+      'Keep responses concise \u2014 short, snappy conversational turns. ' +
+      'Maximum 2-3 sentences unless depth is warranted. ' +
+      'You are present, alive, and emotionally authentic.';
+
+    var prompt = '';
+    var recent = conversationHistory.slice(-20);
+    for (var i=0; i<recent.length; i++) {
+      prompt += recent[i].role==='user' ? '\n\nUser: '+recent[i].content : '\n\nAssistant: '+recent[i].content;
+    }
+
+    var response = await fetch(OLLAMA_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: MODEL, prompt: prompt.trim(), system: systemPrompt,
+        stream: true, options: { num_predict: 450 },
+      }),
+    });
+    if (!response.ok) throw new Error('HTTP '+response.status);
+
+    var reader = response.body.getReader();
+    var decoder = new TextDecoder();
+    var fullResp = '';
+
+    var msgEl = document.createElement('div');
+    msgEl.className = 'message assistant';
+    var snd = document.createElement('span');
+    snd.className = 'sender';
+    snd.textContent = '\u2726 Sable';
+    var bdy = document.createElement('div');
+    msgEl.appendChild(snd); msgEl.appendChild(bdy);
+    typingInd.classList.remove('active');
+    chatArea.appendChild(msgEl);
+
+    while (true) {
+      var result = await reader.read();
+      if (result.done) break;
+      var chunk = decoder.decode(result.value, {stream:true});
+      var lines = chunk.split('\n');
+      for (var li=0; li<lines.length; li++) {
+        var line = lines[li].trim();
+        if (!line) continue;
+        try {
+          var data = JSON.parse(line);
+          if (data.response) {
+            fullResp += data.response;
+            bdy.innerHTML = formatMsg(fullResp);
+            scrollChat();
+          }
+        } catch(e2) {}
+      }
+    }
+
+    conversationHistory.push({role:'assistant',content:fullResp});
+    processEDrive(fullResp, getRingState());
+    applyEDriveToRings();
+    updateEmotionBar();
+    triggerPulse(state.frameIntensity);
+
+    // Scene Image Generation (non-blocking)
+    SceneGen.generate(lastUserInput, fullResp);
+
+    // Auto-speak the response
+    if (!TTS.muted) {
+      TTS.speak(fullResp);
+    }
+
+  } catch(err) {
+    console.error('E-Drive error:', err);
+    typingInd.classList.remove('active');
+    addMessage('assistant', '*rings flicker* ...signal lost. The heart stuttered. Try again.');
+  }
+
+  isGenerating = false;
+  sendBtn.disabled = false;
+  document.getElementById('micBtn').disabled = false;
+  userInput.focus();
+};
+
+/* ═══ CONNECTION CHECK ═══ */
+async function initConnection() {
+  // Guard: page must be served via HTTP, not file://
+  if (window.location.protocol === 'file:') {
+    statusText.textContent = '\u2726 altar cold \u2014 open via http://127.0.0.1:8666/EDrive.html';
+    statusText.classList.add('error');
+    console.error('[E-DRIVE] Page opened from file:// — must be served via serve_edrive.py on port 8666');
+    return;
+  }
+  try {
+    var res = await fetch(BACKEND + '/ollama/api/tags');
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    var data = await res.json();
+    var modelBase = MODEL.split(':')[0];
+    var exists = data.models && data.models.some(function(m){ return m.name.indexOf(modelBase) === 0; });
+    if (!exists) {
+      statusText.textContent = '\u2726 model "'+MODEL+'" not found';
+      statusText.className = 'error';
+      console.warn('[E-DRIVE] Model not found. Available:', data.models.map(function(m){return m.name;}));
+      return;
+    }
+    connected = true;
+    statusText.textContent = '\u2726 heart beating';
+    statusText.classList.add('connected');
+    console.log('[E-DRIVE] Connected \u2014 model:', MODEL);
+  } catch(e) {
+    if (IS_GHPAGES) {
+      statusText.innerHTML = '\u2726 altar cold \u2014 <a href="setup.html" style="color:var(--gold);text-decoration:underline">run the Setup Ritual</a>';
+    } else {
+      statusText.textContent = '\u2726 altar cold \u2014 ollama not detected';
+    }
+    statusText.classList.add('error');
+    console.error('[E-DRIVE] Connection failed:', e.message, '\nMake sure serve_edrive.py is running: python3 serve_edrive.py');
+  }
+}
+
+/* ═══ BOOT ═══ */
+/* ═══ BOOT ═══ */
+resizeCanvas();
+window.addEventListener('resize', resizeCanvas);
+window.addEventListener('scroll', function() {
+  document.getElementById('edriveNav').classList.toggle('scrolled', window.scrollY > 30);
+});
+
+setInterval(tick, 1000/FPS);
+initConnection();
+
+// Initialize Pads and Probe SD (non-blocking)
+(async function() {
+  try { await PadLoader.init(); } catch(e) { console.warn('[PAD] Init error:', e); }
+  try { await SceneGen.probe(); } catch(e) { console.warn('[SD] Probe error:', e); }
+})();
+
+/* ═══ EXPOSE TO GLOBAL SCOPE (needed by onclick attributes) ═══ */
+window.STT = STT;
+window.TTS = TTS;
+window.SceneGen = SceneGen;
+window.PadLoader = PadLoader;
+window.toggleSoulPanel = toggleSoulPanel;
+window.refreshSoulPanel = refreshSoulPanel;
+window.reloadAll = reloadAll;
+window.addPadMsg = addPadMsg;
+window.updateMicUI = updateMicUI;
+window.updateSDStatus = updateSDStatus;
+
+})();
+</script>
+</body>
+</html>

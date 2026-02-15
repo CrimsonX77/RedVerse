@@ -54,7 +54,7 @@ from PyQt6.QtCore import (
 CONFIG = {
     # Ollama
     "ollama_url": "http://localhost:11434/api/generate",
-    "ollama_model": "CrimsonDragonX7/Sable:latest",
+    "ollama_model": "CrimsonDragonX7/Oracle:latest",
     "ollama_timeout": 100,
 
     # Audio — TTS/STT integrated from speaker.py and scribe.py
@@ -83,15 +83,15 @@ CONFIG = {
     "sd_width": 768,
     "sd_height": 768,
     "sd_model": "Aetherion",
-    "sd_denoising_strength": 0.45,
+    "sd_denoising_strength": 0.44,
     # Hi-Res Upscale
-    "sd_hires_enabled": True,
-    "sd_hires_upscale": 1.6,
-    "sd_hires_steps": 15,
+    "sd_hires_enabled": False,
+    "sd_hires_upscale": 1.65,
+    "sd_hires_steps": 10,
     "sd_hires_upscaler": "R-ESRGAN 4x+ Anime6B",
     # Refiner
-    "sd_refiner": "Cat [0d1720e0e7]",
-    "sd_refiner_switch_at": 0.54,
+    "sd_refiner": "Bunny.safetensors [6d15e4ac22]",
+    "sd_refiner_switch_at": 0.80,
     # Display
     "sd_backdrop_opacity": 0.70,
     "image_output_dir": "eros_outputs/convo_image",  # relative to script dir

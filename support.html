@@ -6,7 +6,6 @@
 <title>Support the Church — RedVerse</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&family=JetBrains+Mono:wght@300;400&display=swap" rel="stylesheet">
-<script src="https://js.stripe.com/v3/"></script>
 <style>
 /* ═══════════════════════════════════════════════════════════════
    SUPPORT CHAPEL — PAYMENTS & PATRONAGE
@@ -371,6 +370,29 @@ body {
   color: var(--crimson);
 }
 
+/* Offering buttons (Stripe Payment Links) */
+.offering-btn {
+  display: block;
+  text-align: center;
+  font-family: var(--font-display);
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  padding: 10px 20px;
+  margin-top: 1.2rem;
+  color: var(--text-primary);
+  background: linear-gradient(135deg, var(--crimson-dark) 0%, var(--crimson) 100%);
+  border: 1px solid var(--crimson);
+  border-radius: 6px;
+  text-decoration: none;
+  transition: all 0.3s;
+}
+.offering-btn:hover {
+  background: linear-gradient(135deg, var(--crimson) 0%, var(--crimson-glow) 100%);
+  box-shadow: 0 0 20px rgba(196, 18, 48, 0.3);
+  color: #fff;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .offering-grid {
@@ -385,14 +407,54 @@ body {
     padding: 1.5rem;
   }
 }
+
+/* Navigation */
+.support-nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 1rem 2rem;
+  background: rgba(10, 10, 12, 0.85);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(196, 18, 48, 0.2);
+  transition: background 0.3s;
+}
+.support-nav.scrolled { background: rgba(10, 10, 12, 0.96); }
+.support-nav .nav-brand {
+  font-family: var(--font-display);
+  font-size: 1.2rem; font-weight: 700;
+  color: var(--crimson); text-decoration: none; letter-spacing: 0.1em;
+}
+.support-nav .nav-links {
+  display: flex; gap: 2rem; list-style: none;
+}
+.support-nav .nav-links a {
+  font-family: var(--font-mono); font-size: 0.7rem;
+  letter-spacing: 0.15em; text-transform: uppercase;
+  color: var(--silver-dim); text-decoration: none; transition: color 0.3s;
+}
+.support-nav .nav-links a:hover { color: var(--gold); }
+.support-nav .nav-links a.active { color: var(--gold); }
 </style>
 </head>
 <body>
 
+<!-- ═══ NAVIGATION ═══ -->
+<nav class="support-nav" id="supportNav">
+  <a href="redverse.html" class="nav-brand">RedVerse</a>
+  <ul class="nav-links">
+    <li><a href="redverse.html">Home</a></li>
+    <li><a href="redverse.html#map">The Map</a></li>
+    <li><a href="oracle.html">Oracle</a></li>
+    <li><a href="EDrive.html">E-Drive</a></li>
+    <li><a href="setup.html">Setup</a></li>
+    <li><a href="support.html" class="active">Support</a></li>
+  </ul>
+</nav>
+
 <div class="bg-constellation"></div>
 <div class="vignette"></div>
 
-<div class="chapel-container">
+<div class="chapel-container" style="padding-top: 5rem;">
   
   <a href="index_entrance.html" class="back-link">← RETURN TO THE CHURCH</a>
 
@@ -408,7 +470,7 @@ body {
   <!-- Offering Tiers -->
   <div class="offering-grid">
     
-    <div class="offering-card" data-amount="500">
+    <div class="offering-card" data-tier="candle">
       <div class="offering-tier">ACOLYTE</div>
       <h3>The Candle</h3>
       <div class="offering-price">$5<span>/once</span></div>
@@ -417,9 +479,10 @@ body {
         <li>Your name in the credits</li>
         <li>Eternal gratitude</li>
       </ul>
+      <a class="offering-btn" href="https://buy.stripe.com/PLACEHOLDER_5" target="_blank" rel="noopener">Light the Candle</a>
     </div>
 
-    <div class="offering-card" data-amount="1500">
+    <div class="offering-card" data-tier="flame">
       <div class="offering-tier">DEVOTEE</div>
       <h3>The Flame</h3>
       <div class="offering-price">$15<span>/once</span></div>
@@ -428,9 +491,10 @@ body {
         <li>Early access to new sagas</li>
         <li>Behind-the-scenes lore drops</li>
       </ul>
+      <a class="offering-btn" href="https://buy.stripe.com/PLACEHOLDER_15" target="_blank" rel="noopener">Feed the Flame</a>
     </div>
 
-    <div class="offering-card" data-amount="5000">
+    <div class="offering-card" data-tier="pyre">
       <div class="offering-tier">ARCHITECT</div>
       <h3>The Pyre</h3>
       <div class="offering-price">$50<span>/once</span></div>
@@ -440,35 +504,22 @@ body {
         <li>Patron tier in all future works</li>
         <li>Direct line to Crimson</li>
       </ul>
+      <a class="offering-btn" href="https://buy.stripe.com/PLACEHOLDER_50" target="_blank" rel="noopener">Ignite the Pyre</a>
     </div>
 
   </div>
 
-  <!-- Custom Amount -->
-  <div class="custom-offering">
-    <h3>Name Your Offering</h3>
-    <div class="custom-input-wrapper">
-      <input 
-        type="number" 
-        id="customAmount" 
-        min="1" 
-        placeholder="Amount"
-        aria-label="Custom donation amount in dollars"
-      >
-      <span style="color: var(--gold); font-family: var(--font-mono);">USD</span>
-    </div>
-  </div>
-
-  <!-- Checkout -->
+  <!-- Payment Info -->
   <div class="checkout-section">
-    <h2>Complete Your Offering</h2>
-    <form id="payment-form">
-      <div id="card-element"></div>
-      <div id="card-errors" role="alert"></div>
-      <button type="submit" class="submit-btn" id="submit-btn">
-        Feed the Altar
-      </button>
-    </form>
+    <h2>How It Works</h2>
+    <p style="color:var(--text-secondary);font-size:0.95rem;line-height:1.7;margin-bottom:1rem;">
+      Each offering is processed through <strong style="color:var(--gold)">Stripe Payment Links</strong> — 
+      secure, immutable, server-locked payment sessions that route directly to the Church. 
+      No card data touches this site. No intermediaries. No exceptions.
+    </p>
+    <p style="color:var(--text-secondary);font-size:0.85rem;">
+      Click any tier above to open a secure Stripe checkout page. All transactions are encrypted end-to-end.
+    </p>
   </div>
 
   <!-- What You're Supporting -->
@@ -494,126 +545,15 @@ body {
 </div>
 
 <script>
-// Initialize Stripe
-const stripe = Stripe('pk_test_51SzrZ71vwsNjD6TFghJeXjtqWjHcUwjcd3Y8vaUAKxMxn2wSrzkwM8V0cYTS3BeyWtJ76e3qyeS8PsBb97Zml4YS00RBoIraVk');
-const elements = stripe.elements();
-
-// Custom styling for card element
-const style = {
-  base: {
-    color: '#e8e0d8',
-    fontFamily: '"JetBrains Mono", monospace',
-    fontSize: '16px',
-    '::placeholder': {
-      color: '#6b7280',
-    },
-  },
-  invalid: {
-    color: '#ff1a3d',
-  },
-};
-
-const cardElement = elements.create('card', { style });
-cardElement.mount('#card-element');
-
-// Handle card errors
-cardElement.on('change', (event) => {
-  const displayError = document.getElementById('card-errors');
-  if (event.error) {
-    displayError.textContent = event.error.message;
-  } else {
-    displayError.textContent = '';
-  }
-});
-
-// Selected amount tracking
-let selectedAmount = null;
-
-// Offering card selection
+// Offering card hover effects
 document.querySelectorAll('.offering-card').forEach(card => {
-  card.addEventListener('click', () => {
-    // Remove previous selection
-    document.querySelectorAll('.offering-card').forEach(c => c.classList.remove('selected'));
-    
-    // Select this card
-    card.classList.add('selected');
-    selectedAmount = parseInt(card.dataset.amount);
-    
-    // Clear custom amount
-    document.getElementById('customAmount').value = '';
-  });
+  card.addEventListener('mouseenter', () => card.classList.add('selected'));
+  card.addEventListener('mouseleave', () => card.classList.remove('selected'));
 });
 
-// Custom amount input
-document.getElementById('customAmount').addEventListener('input', (e) => {
-  const amount = parseInt(e.target.value);
-  if (amount > 0) {
-    // Deselect preset cards
-    document.querySelectorAll('.offering-card').forEach(c => c.classList.remove('selected'));
-    selectedAmount = amount * 100; // Convert to cents
-  }
-});
-
-// Form submission
-const form = document.getElementById('payment-form');
-const submitBtn = document.getElementById('submit-btn');
-
-form.addEventListener('submit', async (e) => {
-  e.preventDefault();
-  
-  if (!selectedAmount || selectedAmount <= 0) {
-    document.getElementById('card-errors').textContent = 'Please select or enter an amount';
-    return;
-  }
-  
-  submitBtn.disabled = true;
-  submitBtn.textContent = 'Processing...';
-  
-  try {
-    // Here you would create a payment intent on your backend
-    // For now, this is a frontend-only demo
-    
-    // In production, you'd do:
-    // 1. Call your backend to create a PaymentIntent
-    // 2. Get the clientSecret from the response
-    // 3. Confirm the payment with Stripe
-    
-    const response = await fetch('/create-payment-intent', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ amount: selectedAmount }),
-    });
-    
-    const { clientSecret } = await response.json();
-    
-    const { error, paymentIntent } = await stripe.confirmCardPayment(clientSecret, {
-      payment_method: {
-        card: cardElement,
-      }
-    });
-    
-    if (error) {
-      document.getElementById('card-errors').textContent = error.message;
-      submitBtn.disabled = false;
-      submitBtn.textContent = 'Feed the Altar';
-    } else {
-      // Payment successful!
-      alert('🔥 Offering accepted. The Church thanks you. 🔥');
-      form.reset();
-      cardElement.clear();
-      selectedAmount = null;
-      document.querySelectorAll('.offering-card').forEach(c => c.classList.remove('selected'));
-      submitBtn.disabled = false;
-      submitBtn.textContent = 'Feed the Altar';
-    }
-    
-  } catch (err) {
-    console.error('Payment error:', err);
-    document.getElementById('card-errors').textContent = 
-      'Backend not connected. Set up your payment endpoint to process offerings.';
-    submitBtn.disabled = false;
-    submitBtn.textContent = 'Feed the Altar';
-  }
+// Nav scroll effect
+window.addEventListener('scroll', () => {
+  document.getElementById('supportNav').classList.toggle('scrolled', window.scrollY > 50);
 });
 </script>
 

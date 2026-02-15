@@ -796,6 +796,9 @@ footer .footer-sigil {
     <li><a href="#" onclick="showPage('home')" class="active" data-page="home">Home</a></li>
     <li><a href="#" onclick="showPage('map')" data-page="map">The Map</a></li>
     <li><a href="#" onclick="showPage('cosmology')" data-page="cosmology">Cosmology</a></li>
+    <li><a href="oracle.html">Oracle</a></li>
+    <li><a href="EDrive.html">E-Drive</a></li>
+    <li><a href="setup.html">Setup</a></li>
     <li><a href="support.html">Support</a></li>
   </ul>
 </nav>
@@ -1335,6 +1338,12 @@ document.addEventListener('DOMContentLoaded', () => {
     card.style.opacity = '0';
     observer.observe(card);
   });
+
+  // Handle hash-based navigation from external pages
+  const hash = window.location.hash.replace('#', '');
+  if (hash && document.getElementById('page-' + hash)) {
+    showPage(hash);
+  }
 });
 </script>
 

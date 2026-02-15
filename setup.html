@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Setup Ritual — RedVerse</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&family=JetBrains+Mono:wght@300;400&display=swap" rel="stylesheet">
+<style>
+/* ═══════════════════════════════════════════════════════════════
+   SETUP RITUAL — INSTALLER & STATUS PAGE
+   ═══════════════════════════════════════════════════════════════ */
+:root {
+  --crimson: #c41230;
+  --crimson-dark: #8b0a20;
+  --crimson-glow: #ff1a3d;
+  --gold: #d4a846;
+  --gold-dim: #a8843a;
+  --silver: #b8c0cc;
+  --silver-dim: #6b7280;
+  --black: #0a0a0c;
+  --text-primary: #e8e0d8;
+  --text-secondary: #9b8e82;
+  --font-display: 'Cinzel', serif;
+  --font-body: 'Crimson Pro', serif;
+  --font-mono: 'JetBrains Mono', monospace;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  background: #000;
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Background */
+.bg-constellation {
+  position: fixed; inset: 0; z-index: 0;
+  background:
+    radial-gradient(ellipse at 20% 30%, rgba(196, 18, 48, 0.04) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 70%, rgba(212, 168, 70, 0.03) 0%, transparent 50%),
+    #000;
+}
+.vignette {
+  position: fixed; inset: 0; z-index: 1; pointer-events: none;
+  background: radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.6) 100%);
+}
+
+/* Navigation */
+.setup-nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 1rem 2rem;
+  background: rgba(10, 10, 12, 0.85);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(196, 18, 48, 0.2);
+  transition: background 0.3s;
+}
+.setup-nav.scrolled { background: rgba(10, 10, 12, 0.96); }
+.nav-brand {
+  font-family: var(--font-display);
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--crimson);
+  text-decoration: none;
+  letter-spacing: 0.1em;
+}
+.nav-links {
+  display: flex; gap: 2rem; list-style: none;
+}
+.nav-links a {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--silver-dim);
+  text-decoration: none;
+  transition: color 0.3s;
+}
+.nav-links a:hover { color: var(--gold); }
+.nav-links a.active { color: var(--gold); }
+
+/* Container */
+.setup-container {
+  position: relative; z-index: 2;
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 6rem 2rem 4rem;
+}
+
+/* Header */
+.setup-header {
+  text-align: center;
+  margin-bottom: 3rem;
+}
+.setup-sigil {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+}
+.setup-header h1 {
+  font-family: var(--font-display);
+  font-size: 2.2rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: 0.08em;
+}
+.setup-header p {
+  font-size: 1.1rem;
+  color: var(--text-secondary);
+  margin-top: 0.5rem;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* OS Detection */
+.os-detected {
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  letter-spacing: 0.1em;
+  color: var(--gold-dim);
+  margin-bottom: 2rem;
+}
+
+/* Status Panel */
+.status-panel {
+  background: rgba(20, 20, 24, 0.8);
+  border: 1px solid rgba(196, 18, 48, 0.2);
+  border-radius: 8px;
+  padding: 2rem;
+  margin-bottom: 2.5rem;
+}
+.status-panel h2 {
+  font-family: var(--font-display);
+  font-size: 1.3rem;
+  color: var(--gold);
+  margin-bottom: 1.5rem;
+  letter-spacing: 0.06em;
+}
+.status-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.8rem 0;
+  border-bottom: 1px solid rgba(100, 100, 100, 0.15);
+}
+.status-row:last-child { border-bottom: none; }
+.status-label {
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  color: var(--text-primary);
+}
+.status-label .desc {
+  display: block;
+  font-family: var(--font-body);
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  margin-top: 2px;
+}
+.status-badge {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 4px 12px;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+.status-badge.online  { background: rgba(34,197,94,0.15); color: #22c55e; border: 1px solid rgba(34,197,94,0.3); }
+.status-badge.offline { background: rgba(239,68,68,0.1); color: #ef4444; border: 1px solid rgba(239,68,68,0.2); }
+.status-badge.checking { background: rgba(212,168,70,0.1); color: var(--gold); border: 1px solid rgba(212,168,70,0.2); }
+
+.check-btn {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 8px 20px;
+  margin-top: 1.5rem;
+  background: transparent;
+  color: var(--gold);
+  border: 1px solid var(--gold-dim);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+.check-btn:hover {
+  background: rgba(212, 168, 70, 0.1);
+  border-color: var(--gold);
+}
+
+/* Install Cards */
+.install-section {
+  margin-bottom: 2.5rem;
+}
+.install-section h2 {
+  font-family: var(--font-display);
+  font-size: 1.3rem;
+  color: var(--gold);
+  margin-bottom: 1rem;
+  letter-spacing: 0.06em;
+}
+.install-section p.section-desc {
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+  margin-bottom: 1.5rem;
+}
+
+.install-card {
+  background: rgba(20, 20, 24, 0.8);
+  border: 1px solid rgba(196, 18, 48, 0.15);
+  border-radius: 8px;
+  padding: 1.5rem 2rem;
+  margin-bottom: 1rem;
+  transition: border-color 0.3s;
+}
+.install-card:hover {
+  border-color: rgba(196, 18, 48, 0.4);
+}
+.install-card h3 {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  color: var(--text-primary);
+  margin-bottom: 0.5rem;
+}
+.install-card .sub {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  margin-bottom: 1rem;
+}
+
+/* Step list */
+.step-list {
+  list-style: none;
+  counter-reset: steps;
+}
+.step-list li {
+  counter-increment: steps;
+  position: relative;
+  padding: 0.5rem 0 0.5rem 2.5rem;
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  color: var(--text-primary);
+  line-height: 1.5;
+}
+.step-list li::before {
+  content: counter(steps);
+  position: absolute;
+  left: 0;
+  width: 1.6rem;
+  height: 1.6rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: var(--gold);
+  border: 1px solid var(--gold-dim);
+  border-radius: 50%;
+}
+.step-list code {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  background: rgba(100, 100, 100, 0.15);
+  color: var(--crimson-glow);
+  padding: 2px 6px;
+  border-radius: 3px;
+}
+
+/* One-click button */
+.install-btn {
+  display: inline-block;
+  font-family: var(--font-display);
+  font-size: 0.9rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  padding: 12px 30px;
+  margin-top: 1rem;
+  color: var(--text-primary);
+  background: linear-gradient(135deg, var(--crimson-dark) 0%, var(--crimson) 100%);
+  border: 1px solid var(--crimson);
+  border-radius: 6px;
+  cursor: pointer;
+  text-decoration: none;
+  transition: all 0.3s;
+}
+.install-btn:hover {
+  background: linear-gradient(135deg, var(--crimson) 0%, var(--crimson-glow) 100%);
+  box-shadow: 0 0 20px rgba(196, 18, 48, 0.3);
+}
+.install-btn.secondary {
+  background: transparent;
+  border-color: var(--gold-dim);
+  color: var(--gold);
+}
+.install-btn.secondary:hover {
+  background: rgba(212, 168, 70, 0.1);
+  border-color: var(--gold);
+  box-shadow: 0 0 20px rgba(212, 168, 70, 0.15);
+}
+
+/* Command blocks */
+.cmd-block {
+  position: relative;
+  background: rgba(10, 10, 12, 0.9);
+  border: 1px solid rgba(100, 100, 100, 0.2);
+  border-radius: 6px;
+  padding: 1rem 1.2rem;
+  margin: 0.8rem 0;
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  color: var(--silver);
+  line-height: 1.6;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+.cmd-block .copy-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  padding: 3px 8px;
+  background: rgba(100, 100, 100, 0.2);
+  color: var(--silver-dim);
+  border: 1px solid rgba(100, 100, 100, 0.2);
+  border-radius: 3px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.cmd-block .copy-btn:hover {
+  color: var(--gold);
+  border-color: var(--gold-dim);
+}
+
+/* Optional section */
+.optional-badge {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 2px 8px;
+  color: var(--gold);
+  border: 1px solid var(--gold-dim);
+  border-radius: 3px;
+  margin-left: 0.5rem;
+  vertical-align: middle;
+}
+
+/* Requirements */
+.req-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin: 1rem 0;
+}
+.req-item {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  padding: 0.5rem 0;
+}
+.req-item strong {
+  color: var(--text-primary);
+  display: block;
+  margin-bottom: 2px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .setup-container { padding: 5rem 1rem 3rem; }
+  .nav-links { gap: 1rem; }
+  .nav-links a { font-size: 0.6rem; }
+  .install-card { padding: 1rem 1.2rem; }
+}
+</style>
+</head>
+<body>
+
+<div class="bg-constellation"></div>
+<div class="vignette"></div>
+
+<!-- ═══ NAVIGATION ═══ -->
+<nav class="setup-nav" id="setupNav">
+  <a href="redverse.html" class="nav-brand">RedVerse</a>
+  <ul class="nav-links">
+    <li><a href="redverse.html">Home</a></li>
+    <li><a href="redverse.html#map">The Map</a></li>
+    <li><a href="oracle.html">Oracle</a></li>
+    <li><a href="EDrive.html">E-Drive</a></li>
+    <li><a href="setup.html" class="active">Setup</a></li>
+    <li><a href="support.html">Support</a></li>
+  </ul>
+</nav>
+
+<div class="setup-container">
+
+  <header class="setup-header">
+    <div class="setup-sigil">⚙</div>
+    <h1>The Setup Ritual</h1>
+    <p>
+      Install the RedVerse backend on your machine to awaken the Oracle and power the E-Drive Heart.
+      Everything runs locally — your data never leaves your altar.
+    </p>
+  </header>
+
+  <div class="os-detected" id="osDetected">Detecting your system...</div>
+
+  <!-- ═══ STATUS PANEL ═══ -->
+  <div class="status-panel">
+    <h2>⧫ Altar Status</h2>
+    <div class="status-row">
+      <span class="status-label">
+        Backend Server
+        <span class="desc">serve_edrive.py — proxy &amp; TTS/STT</span>
+      </span>
+      <span class="status-badge checking" id="statusServer">checking</span>
+    </div>
+    <div class="status-row">
+      <span class="status-label">
+        Ollama
+        <span class="desc">LLM inference engine</span>
+      </span>
+      <span class="status-badge checking" id="statusOllama">checking</span>
+    </div>
+    <div class="status-row">
+      <span class="status-label">
+        Oracle Model
+        <span class="desc">CrimsonDragonX7/Oracle:latest</span>
+      </span>
+      <span class="status-badge checking" id="statusModel">checking</span>
+    </div>
+    <div class="status-row">
+      <span class="status-label">
+        Text-to-Speech
+        <span class="desc">edge-tts (en-GB-SoniaNeural)</span>
+      </span>
+      <span class="status-badge checking" id="statusTTS">checking</span>
+    </div>
+    <div class="status-row">
+      <span class="status-label">
+        Speech-to-Text
+        <span class="desc">SpeechRecognition + ffmpeg</span>
+      </span>
+      <span class="status-badge checking" id="statusSTT">checking</span>
+    </div>
+    <div class="status-row">
+      <span class="status-label">
+        Stable Diffusion <span class="optional-badge">optional</span>
+        <span class="desc">SD WebUI for scene generation</span>
+      </span>
+      <span class="status-badge checking" id="statusSD">checking</span>
+    </div>
+    <button class="check-btn" onclick="checkStatus()">Re-check Status</button>
+  </div>
+
+  <!-- ═══ QUICK INSTALL ═══ -->
+  <div class="install-section">
+    <h2>⧫ One-Command Install</h2>
+    <p class="section-desc">
+      Copy and run the command for your operating system. This installs Ollama, pulls the Oracle model,
+      installs Python dependencies, and starts the backend server.
+    </p>
+
+    <!-- Linux / macOS -->
+    <div class="install-card" id="cardUnix">
+      <h3>Linux &amp; macOS</h3>
+      <div class="sub">Bash — tested on Ubuntu 22+, Debian 12+, Fedora 38+, macOS 13+</div>
+      <div class="cmd-block" id="cmdUnix">curl -fsSL https://crimsonx77.github.io/RedVerse/installers/setup_redverse.sh | bash<button class="copy-btn" onclick="copyCmd('cmdUnix')">copy</button></div>
+      <p style="font-size:0.8rem;color:var(--text-secondary);margin-top:0.5rem;">
+        Or download and inspect first:
+      </p>
+      <div class="cmd-block" id="cmdUnixManual">curl -fsSL -o setup_redverse.sh https://crimsonx77.github.io/RedVerse/installers/setup_redverse.sh
+chmod +x setup_redverse.sh
+./setup_redverse.sh<button class="copy-btn" onclick="copyCmd('cmdUnixManual')">copy</button></div>
+    </div>
+
+    <!-- Windows -->
+    <div class="install-card" id="cardWindows">
+      <h3>Windows</h3>
+      <div class="sub">PowerShell (run as Administrator)</div>
+      <div class="cmd-block" id="cmdWindows">irm https://crimsonx77.github.io/RedVerse/installers/setup_redverse.ps1 | iex<button class="copy-btn" onclick="copyCmd('cmdWindows')">copy</button></div>
+      <p style="font-size:0.8rem;color:var(--text-secondary);margin-top:0.5rem;">
+        Or download and inspect first:
+      </p>
+      <div class="cmd-block" id="cmdWindowsManual">Invoke-WebRequest -Uri https://crimsonx77.github.io/RedVerse/installers/setup_redverse.ps1 -OutFile setup_redverse.ps1
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+.\setup_redverse.ps1<button class="copy-btn" onclick="copyCmd('cmdWindowsManual')">copy</button></div>
+    </div>
+  </div>
+
+  <!-- ═══ WHAT IT INSTALLS ═══ -->
+  <div class="install-section">
+    <h2>⧫ What Gets Installed</h2>
+    <div class="install-card">
+      <h3>Core Components</h3>
+      <ol class="step-list">
+        <li><strong>Ollama</strong> — local LLM inference engine (ollama.com)</li>
+        <li><strong>CrimsonDragonX7/Oracle:latest</strong> — the Oracle model (~4 GB)</li>
+        <li><strong>Python 3.10+</strong> — if not already installed</li>
+        <li><strong>pip packages:</strong> <code>edge-tts</code>, <code>SpeechRecognition</code></li>
+        <li><strong>ffmpeg</strong> — for audio transcription</li>
+        <li><strong>RedVerse repository</strong> — cloned from GitHub</li>
+      </ol>
+    </div>
+
+    <div class="install-card">
+      <h3>Stable Diffusion <span class="optional-badge">optional</span></h3>
+      <div class="sub">Scene image generation for E-Drive — requires a decent GPU (4GB+ VRAM)</div>
+      <p style="font-size:0.9rem;color:var(--text-secondary);margin-bottom:1rem;">
+        After running the main installer, optionally install SD WebUI:
+      </p>
+      <div class="cmd-block" id="cmdSD">curl -fsSL https://crimsonx77.github.io/RedVerse/installers/setup_sd.sh | bash<button class="copy-btn" onclick="copyCmd('cmdSD')">copy</button></div>
+      <ol class="step-list" style="margin-top:1rem;">
+        <li>Installs <strong>stable-diffusion-webui</strong> (AUTOMATIC1111) in headless/API mode</li>
+        <li>Downloads <strong>anyorangemixAnything_mint</strong> checkpoint from CivitAI</li>
+        <li>Configures API-only mode on port 7860</li>
+      </ol>
+    </div>
+  </div>
+
+  <!-- ═══ MANUAL INSTALL ═══ -->
+  <div class="install-section">
+    <h2>⧫ Manual Installation</h2>
+    <p class="section-desc">If you prefer to install components individually:</p>
+    <div class="install-card">
+      <h3>Step-by-Step</h3>
+      <ol class="step-list">
+        <li>Install Ollama: <code>curl -fsSL https://ollama.com/install.sh | sh</code></li>
+        <li>Pull the Oracle model: <code>ollama pull CrimsonDragonX7/Oracle:latest</code></li>
+        <li>Install Python dependencies: <code>pip install edge-tts SpeechRecognition</code></li>
+        <li>Install ffmpeg: <code>sudo apt install ffmpeg</code> (or <code>brew install ffmpeg</code>)</li>
+        <li>Clone the RedVerse repo: <code>git clone https://github.com/CrimsonX77/RedVerse.git</code></li>
+        <li>Start the backend: <code>cd RedVerse && python3 serve_edrive.py</code></li>
+        <li>Open <code>http://localhost:8666/EDrive.html</code> in your browser</li>
+      </ol>
+    </div>
+  </div>
+
+  <!-- ═══ REQUIREMENTS ═══ -->
+  <div class="install-section">
+    <h2>⧫ System Requirements</h2>
+    <div class="install-card">
+      <div class="req-grid">
+        <div class="req-item"><strong>OS</strong>Linux, macOS 13+, Windows 10+</div>
+        <div class="req-item"><strong>RAM</strong>8 GB minimum, 16 GB recommended</div>
+        <div class="req-item"><strong>Disk</strong>~6 GB (Ollama + Oracle model)</div>
+        <div class="req-item"><strong>Python</strong>3.10 or newer</div>
+        <div class="req-item"><strong>GPU (SD only)</strong>4 GB+ VRAM (NVIDIA recommended)</div>
+        <div class="req-item"><strong>Network</strong>Required for initial download only</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+(function() {
+
+  // ═══ OS Detection ═══
+  var ua = navigator.userAgent.toLowerCase();
+  var osEl = document.getElementById('osDetected');
+  var os = 'unknown';
+  if (ua.indexOf('win') !== -1) { os = 'windows'; osEl.textContent = 'Detected: Windows'; }
+  else if (ua.indexOf('mac') !== -1) { os = 'macos'; osEl.textContent = 'Detected: macOS'; }
+  else if (ua.indexOf('linux') !== -1) { os = 'linux'; osEl.textContent = 'Detected: Linux'; }
+  else { osEl.textContent = 'OS not detected — showing all options'; }
+
+  // Highlight relevant install card
+  if (os === 'windows') {
+    document.getElementById('cardWindows').style.borderColor = 'rgba(212, 168, 70, 0.5)';
+    document.getElementById('cardWindows').style.order = '-1';
+  } else if (os === 'linux' || os === 'macos') {
+    document.getElementById('cardUnix').style.borderColor = 'rgba(212, 168, 70, 0.5)';
+  }
+
+  // ═══ Copy Command ═══
+  window.copyCmd = function(id) {
+    var block = document.getElementById(id);
+    var text = block.textContent.replace('copy', '').trim();
+    navigator.clipboard.writeText(text).then(function() {
+      var btn = block.querySelector('.copy-btn');
+      btn.textContent = 'copied!';
+      setTimeout(function() { btn.textContent = 'copy'; }, 1500);
+    });
+  };
+
+  // ═══ Status Check ═══
+  var BACKEND_URL = 'http://localhost:8666';
+
+  function setBadge(id, online) {
+    var el = document.getElementById(id);
+    el.textContent = online ? 'online' : 'offline';
+    el.className = 'status-badge ' + (online ? 'online' : 'offline');
+  }
+
+  window.checkStatus = async function() {
+    // Reset all to checking
+    ['statusServer','statusOllama','statusModel','statusTTS','statusSTT','statusSD'].forEach(function(id) {
+      var el = document.getElementById(id);
+      el.textContent = 'checking';
+      el.className = 'status-badge checking';
+    });
+
+    try {
+      var resp = await fetch(BACKEND_URL + '/health', { signal: AbortSignal.timeout(5000) });
+      if (!resp.ok) throw new Error('not ok');
+      var data = await resp.json();
+
+      setBadge('statusServer', true);
+      setBadge('statusOllama', data.ollama);
+      setBadge('statusTTS', data.tts);
+      setBadge('statusSTT', data.stt);
+      setBadge('statusSD', data.sd);
+
+      // Check model separately
+      if (data.ollama) {
+        try {
+          var mResp = await fetch(BACKEND_URL + '/ollama/api/tags', { signal: AbortSignal.timeout(5000) });
+          var mData = await mResp.json();
+          var modelExists = mData.models && mData.models.some(function(m) {
+            return m.name.indexOf('CrimsonDragonX7/Oracle') === 0 ||
+                   m.name.indexOf('crimsondragonx7/oracle') === 0;
+          });
+          setBadge('statusModel', modelExists);
+        } catch(e) {
+          setBadge('statusModel', false);
+        }
+      } else {
+        setBadge('statusModel', false);
+      }
+    } catch(e) {
+      setBadge('statusServer', false);
+      setBadge('statusOllama', false);
+      setBadge('statusModel', false);
+      setBadge('statusTTS', false);
+      setBadge('statusSTT', false);
+      setBadge('statusSD', false);
+    }
+  };
+
+  // Run on load
+  checkStatus();
+
+  // Nav scroll
+  window.addEventListener('scroll', function() {
+    document.getElementById('setupNav').classList.toggle('scrolled', window.scrollY > 30);
+  });
+
+})();
+</script>
+</body>
+</html>
