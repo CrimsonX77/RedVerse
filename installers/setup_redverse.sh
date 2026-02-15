@@ -51,6 +51,42 @@ PYTHON_FOUND=false
 PYTHON_PACKAGES_FOUND=false
 FFMPEG_FOUND=false
 REDVERSE_FOUND=false
+VENV_ACTIVATED=false
+VENV_DIR=""
+
+# ─── Virtual Environment Detection ────────────────────────
+# Search common locations for an existing RedVerse venv and activate it.
+# Priority: project dir → ~/Desktop/Redverse → ~/Desktop/RedVerse → ~/RedVerse
+info "Searching for existing virtual environments..."
+VENV_SEARCH_ROOTS=(
+  "$SCRIPT_DIR"
+  "$HOME/Desktop/Redverse"
+  "$HOME/Desktop/RedVerse"
+  "$HOME/Desktop/redverse"
+  "$HOME/Redverse"
+  "$HOME/RedVerse"
+)
+VENV_NAMES=("venv" ".venv" "env" "redverse-venv" "redverse_venv")
+
+for root in "${VENV_SEARCH_ROOTS[@]}"; do
+  for vname in "${VENV_NAMES[@]}"; do
+    candidate="$root/$vname"
+    if [[ -f "$candidate/bin/activate" ]]; then
+      VENV_DIR="$candidate"
+      break 2
+    fi
+  done
+done
+
+if [[ -n "$VENV_DIR" ]]; then
+  info "Found virtual environment at: $VENV_DIR"
+  # shellcheck disable=SC1091
+  source "$VENV_DIR/bin/activate"
+  VENV_ACTIVATED=true
+  success "✓ Virtual environment activated: $VENV_DIR"
+else
+  info "  No existing virtual environment found"
+fi
 
 # Check for Ollama (system-wide or local)
 if command -v ollama &>/dev/null; then
@@ -124,15 +160,24 @@ else
   info "  ffmpeg not found"
 fi
 
-# Check for RedVerse repository (in script dir or standard install location)
-if [[ -d "$SCRIPT_DIR/.git" && -f "$SCRIPT_DIR/serve_edrive.py" ]]; then
-  REDVERSE_FOUND=true
-  INSTALL_DIR="$SCRIPT_DIR"
-  success "✓ RedVerse repository found at: $INSTALL_DIR"
-elif [[ -d "$INSTALL_DIR/.git" && -f "$INSTALL_DIR/serve_edrive.py" ]]; then
-  REDVERSE_FOUND=true
-  success "✓ RedVerse repository found at: $INSTALL_DIR"
-else
+# Check for RedVerse repository (in script dir, standard, or Desktop locations)
+REDVERSE_SEARCH_DIRS=(
+  "$SCRIPT_DIR"
+  "$HOME/RedVerse"
+  "$HOME/Redverse"
+  "$HOME/Desktop/Redverse"
+  "$HOME/Desktop/RedVerse"
+  "$HOME/Desktop/redverse"
+)
+for rdir in "${REDVERSE_SEARCH_DIRS[@]}"; do
+  if [[ -d "$rdir/.git" && -f "$rdir/serve_edrive.py" ]]; then
+    REDVERSE_FOUND=true
+    INSTALL_DIR="$rdir"
+    success "✓ RedVerse repository found at: $INSTALL_DIR"
+    break
+  fi
+done
+if [ "$REDVERSE_FOUND" = false ]; then
   info "  RedVerse repository not found"
 fi
 
@@ -328,6 +373,18 @@ echo ""
 if [ "$PYTHON_PACKAGES_FOUND" = true ]; then
   info "Step 4/6 — Python packages already installed, skipping..."
 else
+  # Create a venv if we don't already have one active
+  if [ "$VENV_ACTIVATED" = false ] && [ "$REDVERSE_FOUND" = true ]; then
+    VENV_DIR="$INSTALL_DIR/venv"
+    info "Creating virtual environment at $VENV_DIR..."
+    $PYTHON -m venv "$VENV_DIR" 2>/dev/null || true
+    if [[ -f "$VENV_DIR/bin/activate" ]]; then
+      # shellcheck disable=SC1091
+      source "$VENV_DIR/bin/activate"
+      VENV_ACTIVATED=true
+      success "✓ Virtual environment created and activated"
+    fi
+  fi
   info "Step 4/6 — Installing Python packages..."
   $PYTHON -m pip install --upgrade pip --quiet 2>/dev/null || true
   $PYTHON -m pip install edge-tts SpeechRecognition --quiet

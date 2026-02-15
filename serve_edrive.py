@@ -16,12 +16,75 @@ import tempfile
 import subprocess
 import asyncio
 import shutil
+import glob as _glob
+import site
 
 PORT = 8666
 OLLAMA_BACKEND = "http://127.0.0.1:11434"
 SD_BACKEND = "http://127.0.0.1:7860"
 SERVE_DIR = os.path.dirname(os.path.abspath(__file__))
 TTS_VOICE = os.environ.get("EDRIVE_TTS_VOICE", "en-GB-SoniaNeural")
+
+
+# ── Virtual-environment auto-detection ────────────────────
+def _find_and_activate_venv():
+    """Search common locations for an existing RedVerse venv and activate it.
+
+    Priority order:
+      1. Already inside a venv (VIRTUAL_ENV set) — nothing to do.
+      2. Venvs inside the project directory (./venv, ./.venv, ./env).
+      3. Venvs at ~/Desktop/Redverse/<venv-name>.
+      4. Venvs at ~/Desktop/RedVerse/<venv-name>.
+      5. Venvs at ~/Redverse/<venv-name> or ~/RedVerse/<venv-name>.
+    """
+    if sys.prefix != sys.base_prefix or os.environ.get("VIRTUAL_ENV"):
+        return  # already in a venv
+
+    home = os.path.expanduser("~")
+    venv_names = ("venv", ".venv", "env", "redverse-venv", "redverse_venv")
+
+    candidate_roots = [
+        SERVE_DIR,                                        # project dir
+        os.path.join(home, "Desktop", "Redverse"),        # ~/Desktop/Redverse
+        os.path.join(home, "Desktop", "RedVerse"),        # ~/Desktop/RedVerse
+        os.path.join(home, "Desktop", "redverse"),        # ~/Desktop/redverse
+        os.path.join(home, "Redverse"),                   # ~/Redverse
+        os.path.join(home, "RedVerse"),                   # ~/RedVerse
+    ]
+
+    for root in candidate_roots:
+        for name in venv_names:
+            venv_dir = os.path.join(root, name)
+            # Unix-style site-packages
+            sp_pattern = os.path.join(venv_dir, "lib", "python*", "site-packages")
+            sp_matches = _glob.glob(sp_pattern)
+            if sp_matches:
+                _activate_venv_path(venv_dir, sp_matches[0])
+                return
+            # Windows-style site-packages
+            sp_win = os.path.join(venv_dir, "Lib", "site-packages")
+            if os.path.isdir(sp_win):
+                _activate_venv_path(venv_dir, sp_win)
+                return
+
+
+def _activate_venv_path(venv_dir, site_packages):
+    """Add a discovered venv's site-packages to sys.path and update env."""
+    os.environ["VIRTUAL_ENV"] = venv_dir
+    # Prepend the venv bin to PATH so subprocess calls use venv tools
+    if os.name == "nt":
+        bin_dir = os.path.join(venv_dir, "Scripts")
+    else:
+        bin_dir = os.path.join(venv_dir, "bin")
+    os.environ["PATH"] = bin_dir + os.pathsep + os.environ.get("PATH", "")
+
+    # Add site-packages so imports resolve
+    if site_packages not in sys.path:
+        site.addsitedir(site_packages)
+    print(f"[E-Drive Server] Activated venv: {venv_dir}")
+
+
+_find_and_activate_venv()
 
 # Route prefixes → backend URLs
 PROXY_ROUTES = {
