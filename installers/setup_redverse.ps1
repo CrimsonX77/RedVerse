@@ -36,6 +36,42 @@ $pythonPackagesFound = $false
 $ffmpegFound = $false
 $redverseFound = $false
 $pythonCmd = $null
+$venvActivated = $false
+$venvDir = $null
+
+# ─── Virtual Environment Detection ────────────────────────
+Write-Step "Searching for existing virtual environments..."
+$venvSearchRoots = @(
+    $scriptDir,
+    "$env:USERPROFILE\Desktop\Redverse",
+    "$env:USERPROFILE\Desktop\RedVerse",
+    "$env:USERPROFILE\Desktop\redverse",
+    "$env:USERPROFILE\Redverse",
+    "$env:USERPROFILE\RedVerse"
+)
+$venvNames = @("venv", ".venv", "env", "redverse-venv", "redverse_venv")
+
+foreach ($root in $venvSearchRoots) {
+    foreach ($vname in $venvNames) {
+        $candidate = Join-Path $root $vname
+        $activateScript = Join-Path $candidate "Scripts\Activate.ps1"
+        if (Test-Path $activateScript) {
+            $venvDir = $candidate
+            break
+        }
+    }
+    if ($venvDir) { break }
+}
+
+if ($venvDir) {
+    Write-Step "Found virtual environment at: $venvDir"
+    $activateScript = Join-Path $venvDir "Scripts\Activate.ps1"
+    & $activateScript
+    $venvActivated = $true
+    Write-Ok "✓ Virtual environment activated: $venvDir"
+} else {
+    Write-Step "  No existing virtual environment found"
+}
 
 # Check for Ollama
 $ollamaPath = Get-Command ollama -ErrorAction SilentlyContinue
@@ -115,15 +151,24 @@ if (Get-Command ffmpeg -ErrorAction SilentlyContinue) {
     Write-Step "  ffmpeg not found"
 }
 
-# Check for RedVerse repository (in script dir or standard install location)
-if ((Test-Path "$scriptDir\.git") -and (Test-Path "$scriptDir\serve_edrive.py")) {
-    $redverseFound = $true
-    $installDir = $scriptDir
-    Write-Ok "✓ RedVerse repository found at: $installDir"
-} elseif ((Test-Path "$installDir\.git") -and (Test-Path "$installDir\serve_edrive.py")) {
-    $redverseFound = $true
-    Write-Ok "✓ RedVerse repository found at: $installDir"
-} else {
+# Check for RedVerse repository (in script dir, standard, or Desktop locations)
+$redverseSearchDirs = @(
+    $scriptDir,
+    "$env:USERPROFILE\RedVerse",
+    "$env:USERPROFILE\Redverse",
+    "$env:USERPROFILE\Desktop\Redverse",
+    "$env:USERPROFILE\Desktop\RedVerse",
+    "$env:USERPROFILE\Desktop\redverse"
+)
+foreach ($rdir in $redverseSearchDirs) {
+    if ((Test-Path "$rdir\.git") -and (Test-Path "$rdir\serve_edrive.py")) {
+        $redverseFound = $true
+        $installDir = $rdir
+        Write-Ok "✓ RedVerse repository found at: $installDir"
+        break
+    }
+}
+if (-not $redverseFound) {
     Write-Step "  RedVerse repository not found"
 }
 
@@ -288,6 +333,18 @@ Write-Host ""
 if ($pythonPackagesFound) {
     Write-Step "Step 4/6 — Python packages already installed, skipping..."
 } else {
+    # Create a venv if we don't already have one active
+    if (-not $venvActivated -and $redverseFound) {
+        $venvDir = Join-Path $installDir "venv"
+        Write-Step "Creating virtual environment at $venvDir..."
+        try { & $pythonCmd -m venv $venvDir } catch { Write-Warn "Could not create virtual environment — installing packages globally" }
+        $activateScript = Join-Path $venvDir "Scripts\Activate.ps1"
+        if (Test-Path $activateScript) {
+            & $activateScript
+            $venvActivated = $true
+            Write-Ok "✓ Virtual environment created and activated"
+        }
+    }
     Write-Step "Step 4/6 — Installing Python packages..."
     & $pythonCmd -m pip install --upgrade pip --quiet 2>$null
     & $pythonCmd -m pip install edge-tts SpeechRecognition --quiet

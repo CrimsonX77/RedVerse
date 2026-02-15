@@ -27,11 +27,32 @@ echo -e "${DIM}with the anyorangemixAnything_mint checkpoint for E-Drive scenes.
 echo -e "${DIM}Requires: GPU with 4GB+ VRAM (NVIDIA recommended), ~8GB disk.${RESET}"
 echo ""
 
-SD_DIR="$HOME/stable-diffusion-webui"
-MODEL_DIR="$SD_DIR/models/Stable-diffusion"
+SD_DIR=""
 MODEL_NAME="anyorangemixAnything_mint.safetensors"
 # CivitAI direct download URL for anyorangemixAnything_mint
 CIVITAI_URL="https://civitai.com/api/download/models/8099"
+
+# ─── Detect existing SD installation ─────────────────────
+# Search common locations for an existing stable-diffusion-webui
+SD_SEARCH_DIRS=(
+  "$HOME/stable-diffusion-webui"
+  "$HOME/Desktop/Redverse/stable-diffusion-webui"
+  "$HOME/Desktop/RedVerse/stable-diffusion-webui"
+  "$HOME/Desktop/redverse/stable-diffusion-webui"
+  "$HOME/Desktop/stable-diffusion-webui"
+)
+for sdir in "${SD_SEARCH_DIRS[@]}"; do
+  if [[ -d "$sdir/.git" ]]; then
+    SD_DIR="$sdir"
+    success "Existing SD WebUI found at: $SD_DIR"
+    break
+  fi
+done
+# Default if not found
+if [[ -z "$SD_DIR" ]]; then
+  SD_DIR="$HOME/stable-diffusion-webui"
+fi
+MODEL_DIR="$SD_DIR/models/Stable-diffusion"
 
 # ─── Detect OS ──────────────────────────────────────────
 OS="$(uname -s)"
