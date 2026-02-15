@@ -62,11 +62,15 @@ foreach ($cmd in @("python", "python3", "py")) {
     $p = Get-Command $cmd -ErrorAction SilentlyContinue
     if ($p) {
         $ver = & $cmd --version 2>&1
-        if ($ver -match "3\.1[0-9]|3\.[2-9][0-9]") {
-            $pythonCmd = $cmd
-            $pythonFound = $true
-            Write-Ok "✓ Python 3.10+ found: $ver"
-            break
+        if ($ver -match "(\d+)\.(\d+)") {
+            $major = [int]$matches[1]
+            $minor = [int]$matches[2]
+            if (($major -gt 3) -or ($major -eq 3 -and $minor -ge 10)) {
+                $pythonCmd = $cmd
+                $pythonFound = $true
+                Write-Ok "✓ Python 3.10+ found: $ver"
+                break
+            }
         }
     }
 }
@@ -77,9 +81,19 @@ if (-not $pythonFound) {
 # Check for Python packages (if Python is available)
 if ($pythonFound) {
     $missingPackages = @()
+    # Map of package names to their import names
+    $pkgMap = @{
+        "edge-tts" = "edge_tts"
+        "SpeechRecognition" = "speech_recognition"
+        "PyQt6" = "PyQt6"
+        "Pillow" = "PIL"
+        "flask" = "flask"
+        "ollama" = "ollama"
+    }
+    
     foreach ($pkg in @("edge-tts", "SpeechRecognition", "PyQt6", "Pillow", "flask", "ollama")) {
-        $pkgImport = $pkg -replace "-", "_"
-        $null = & $pythonCmd -c "import $pkgImport" 2>&1
+        $importName = $pkgMap[$pkg]
+        $null = & $pythonCmd -c "import $importName" 2>&1
         if ($LASTEXITCODE -ne 0) {
             $missingPackages += $pkg
         }

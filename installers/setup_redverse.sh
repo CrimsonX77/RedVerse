@@ -74,10 +74,10 @@ fi
 PYTHON=""
 for cmd in python3 python; do
   if command -v "$cmd" &>/dev/null; then
-    ver=$("$cmd" --version 2>&1 | grep -oP '\d+\.\d+' | head -1)
+    ver=$("$cmd" --version 2>&1 | sed -n 's/Python \([0-9]*\.[0-9]*\).*/\1/p')
     major=$(echo "$ver" | cut -d. -f1)
     minor=$(echo "$ver" | cut -d. -f2)
-    if [[ "$major" -ge 3 && "$minor" -ge 10 ]]; then
+    if [[ $major -gt 3 || ($major -eq 3 && $minor -ge 10) ]]; then
       PYTHON="$cmd"
       PYTHON_FOUND=true
       success "✓ Python 3.10+ found: $($cmd --version)"
@@ -92,8 +92,19 @@ fi
 # Check for Python packages (if Python is available)
 if [ "$PYTHON_FOUND" = true ]; then
   MISSING_PACKAGES=()
+  # Map of package names to their import names
+  declare -A PKG_MAP=(
+    ["edge-tts"]="edge_tts"
+    ["SpeechRecognition"]="speech_recognition"
+    ["PyQt6"]="PyQt6"
+    ["Pillow"]="PIL"
+    ["flask"]="flask"
+    ["ollama"]="ollama"
+  )
+  
   for pkg in edge-tts SpeechRecognition PyQt6 Pillow flask ollama; do
-    if ! $PYTHON -c "import ${pkg//-/_}" &>/dev/null; then
+    import_name="${PKG_MAP[$pkg]}"
+    if ! $PYTHON -c "import $import_name" &>/dev/null; then
       MISSING_PACKAGES+=("$pkg")
     fi
   done
