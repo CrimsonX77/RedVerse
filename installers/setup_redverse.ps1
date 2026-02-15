@@ -337,7 +337,7 @@ if ($pythonPackagesFound) {
     if (-not $venvActivated -and $redverseFound) {
         $venvDir = Join-Path $installDir "venv"
         Write-Step "Creating virtual environment at $venvDir..."
-        & $pythonCmd -m venv $venvDir 2>$null
+        try { & $pythonCmd -m venv $venvDir } catch { Write-Warn "Could not create virtual environment — installing packages globally" }
         $activateScript = Join-Path $venvDir "Scripts\Activate.ps1"
         if (Test-Path $activateScript) {
             & $activateScript

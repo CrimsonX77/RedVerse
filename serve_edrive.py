@@ -16,7 +16,7 @@ import tempfile
 import subprocess
 import asyncio
 import shutil
-import glob as _glob
+import glob
 import site
 
 PORT = 8666
@@ -37,8 +37,8 @@ def _find_and_activate_venv():
       4. Venvs at ~/Desktop/RedVerse/<venv-name>.
       5. Venvs at ~/Redverse/<venv-name> or ~/RedVerse/<venv-name>.
     """
-    if sys.prefix != sys.base_prefix or os.environ.get("VIRTUAL_ENV"):
-        return  # already in a venv
+    if sys.prefix != sys.base_prefix:
+        return  # already running inside a venv
 
     home = os.path.expanduser("~")
     venv_names = ("venv", ".venv", "env", "redverse-venv", "redverse_venv")
@@ -57,7 +57,7 @@ def _find_and_activate_venv():
             venv_dir = os.path.join(root, name)
             # Unix-style site-packages
             sp_pattern = os.path.join(venv_dir, "lib", "python*", "site-packages")
-            sp_matches = _glob.glob(sp_pattern)
+            sp_matches = sorted(glob.glob(sp_pattern), reverse=True)
             if sp_matches:
                 _activate_venv_path(venv_dir, sp_matches[0])
                 return

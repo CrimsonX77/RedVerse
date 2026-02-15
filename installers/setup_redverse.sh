@@ -377,7 +377,9 @@ else
   if [ "$VENV_ACTIVATED" = false ] && [ "$REDVERSE_FOUND" = true ]; then
     VENV_DIR="$INSTALL_DIR/venv"
     info "Creating virtual environment at $VENV_DIR..."
-    $PYTHON -m venv "$VENV_DIR" 2>/dev/null || true
+    if ! $PYTHON -m venv "$VENV_DIR" 2>&1; then
+      warn "Could not create virtual environment — installing packages globally"
+    fi
     if [[ -f "$VENV_DIR/bin/activate" ]]; then
       # shellcheck disable=SC1091
       source "$VENV_DIR/bin/activate"
