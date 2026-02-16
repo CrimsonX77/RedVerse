@@ -1121,8 +1121,33 @@ var speeds = [0.4, -0.25, 0.15];
 var rotAxes = ['z','x','y'];
 var timeStep = 0, pulseIntensity = 0, pulseDamp = 0.97, currentZone = 'neutral_flow';
 var trails = [[], [], []], maxTrail = 25;
+
 var simParams = { emotionalIntensity:50, empathyWeight:85, truthWeight:90,
   loveWeight:100, resonanceFreq:1.0, damping:0.95, coupling:0.3 };
+
+// === STAR PNGS & ANIMATION HELPERS ===
+const starImgs = [
+  new Image(),
+  new Image(),
+  new Image()
+];
+starImgs[0].src = 'assets/E_Drive_rings/Star1.png';
+starImgs[1].src = 'assets/E_Drive_rings/Star2.png';
+starImgs[2].src = 'assets/E_Drive_rings/Star3.png';
+
+const redSealImg = new Image();
+redSealImg.src = 'assets/E_Drive_rings/redseal.png';
+
+function getStarAnimProps(idx, t) {
+  // idx: 0,1,2 for star type; t: time
+  // Pulse: scale between 0.85-1.15
+  const scale = 1 + 0.15 * Math.sin(t * 1.5 + idx);
+  // Spin: rotate slowly, each star different speed
+  const rot = t * (0.7 + idx * 0.3);
+  // Glow: alpha pulse
+  const glow = 0.4 + 0.3 * Math.abs(Math.sin(t * 1.2 + idx));
+  return { scale, rot, glow };
+}
 
 function resizeCanvas() {
   var wrap = canvas.parentElement;
@@ -1275,40 +1300,49 @@ function draw() {
 
   for (var ri=0; ri<rings.length; ri++) {
     var ring=rings[ri];
-    var cr=ring.color[0],cg=ring.color[1],cb=ring.color[2];
-    var gr=ring.glow[0],gg=ring.glow[1],gb=ring.glow[2];
     for (var ni=0; ni<ring.nodes; ni++) {
       var v=ring.values[ni], ba=(ni/ring.nodes)*Math.PI*2;
       var x=ring.radius*scl*Math.cos(ba),y=ring.radius*scl*Math.sin(ba);
       var z=ring.zValues[ni]*50*scl;
       var p=project3D(x,y,z,ring.rotationX,ring.rotationY,ring.rotation);
       var ds=Math.max(0.6,Math.min(1.4,1-p[2]/(ring.radius*scl*2.5)));
-      var ns=(3+(v/100)*10)*ds*scl;
-      var intensity=v/100;
       var nx=cx+p[0],ny=cy+p[1];
-      var na=Math.round(200*ds);
-      if (v>65) {
-        var gs=ns*2.5, ga=(0.15*intensity*ds).toFixed(2);
-        ctx2.fillStyle='rgba('+gr+','+gg+','+gb+','+ga+')';
-        ctx2.beginPath(); ctx2.arc(nx,ny,gs,0,Math.PI*2); ctx2.fill();
-      }
-      var br=Math.round(cr*(0.4+intensity*0.6));
-      var bg2=Math.round(cg*(0.4+intensity*0.6));
-      var bb=Math.round(cb*(0.4+intensity*0.6));
-      ctx2.fillStyle='rgba('+br+','+bg2+','+bb+','+(na/255).toFixed(2)+')';
-      ctx2.beginPath(); ctx2.arc(nx,ny,ns,0,Math.PI*2); ctx2.fill();
+      // Only show star if value is high enough
       if (v>50) {
-        var cs2=ns*0.4;
-        ctx2.fillStyle='rgba(255,255,255,'+(0.4*intensity*ds).toFixed(2)+')';
-        ctx2.beginPath(); ctx2.arc(nx,ny,cs2,0,Math.PI*2); ctx2.fill();
+        var starIdx = ni % 3;
+        var img = starImgs[starIdx];
+        var t = timeStep * 0.05 + ni * 0.18 + ri * 0.4;
+        var anim = getStarAnimProps(starIdx, t);
+        ctx2.save();
+        ctx2.translate(nx, ny);
+        ctx2.rotate(anim.rot);
+        ctx2.scale(anim.scale * ds, anim.scale * ds);
+        ctx2.shadowColor = `rgba(255,${starIdx===0?64:starIdx===1?0:255},${starIdx===2?255:0},${anim.glow})`;
+        ctx2.shadowBlur = 18 + 10 * anim.glow;
+        var ringMultiplier = ri === 0 ? 2 : ri === 1 ? 3 : 4; // inner=2x, middle=3x, outer=4x
+        var sz = 32 * ringMultiplier * Math.max(0.7, v/100); // scale with value
+        ctx2.globalAlpha = 0.85 + 0.15 * anim.glow;
+        ctx2.drawImage(img, -sz/2, -sz/2, sz, sz);
+        ctx2.globalAlpha = 1.0;
+        ctx2.restore();
       }
     }
   }
 
-  ctx2.fillStyle='rgba(196,18,48,1)';
-  ctx2.beginPath(); ctx2.arc(cx,cy,Math.max(1,4*scl),0,Math.PI*2); ctx2.fill();
-  ctx2.fillStyle='rgba(255,255,255,0.7)';
-  ctx2.beginPath(); ctx2.arc(cx,cy,Math.max(0.5,1.5*scl),0,Math.PI*2); ctx2.fill();
+  // Draw central redseal.png with star-like animation
+  var t = timeStep * 0.05;
+  var anim = getStarAnimProps(0, t); // Use same animation as first star type
+  ctx2.save();
+  ctx2.translate(cx, cy);
+  ctx2.rotate(anim.rot);
+  ctx2.scale(anim.scale, anim.scale);
+  ctx2.shadowColor = `rgba(196,18,48,${anim.glow})`;
+  ctx2.shadowBlur = 25 + 15 * anim.glow;
+  var centerSize = 32 * 4.5; // 450% size
+  ctx2.globalAlpha = 0.85 + 0.15 * anim.glow;
+  ctx2.drawImage(redSealImg, -centerSize/2, -centerSize/2, centerSize, centerSize);
+  ctx2.globalAlpha = 1.0;
+  ctx2.restore();
 }
 
 /* ═══ UI UPDATES ═══ */
