@@ -1,0 +1,560 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   REDVERSE GATE SYSTEM — Doors That Open Only for the Worthy
+   Cathedral-styled access control overlays and auth modals
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ─── GATE LOCKED STATE ─── */
+.gate-locked {
+  position: relative;
+  overflow: hidden;
+}
+
+.gate-locked > *:not(.gate-lock-overlay) {
+  filter: blur(6px) saturate(0.3);
+  pointer-events: none;
+  user-select: none;
+  transition: filter 0.6s ease;
+}
+
+/* The lock overlay */
+.gate-lock-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: 
+    radial-gradient(ellipse at center, rgba(10, 10, 12, 0.7) 0%, rgba(10, 10, 12, 0.92) 100%);
+  backdrop-filter: blur(2px);
+  cursor: default;
+}
+
+.gate-lock-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  text-align: center;
+  padding: 1.5rem;
+}
+
+.gate-sigil {
+  font-size: 1.5rem;
+  opacity: 0.7;
+  animation: gatePulse 3s ease-in-out infinite;
+}
+
+.gate-text {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.55rem;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  color: #9b8e82;
+}
+
+.gate-action-btn {
+  font-family: 'Cinzel', serif;
+  font-size: 0.65rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: #c41230;
+  background: transparent;
+  border: 1px solid rgba(196, 18, 48, 0.3);
+  padding: 0.5rem 1.2rem;
+  cursor: pointer;
+  transition: all 0.4s ease;
+  margin-top: 0.25rem;
+}
+
+.gate-action-btn:hover {
+  background: rgba(196, 18, 48, 0.08);
+  border-color: rgba(196, 18, 48, 0.6);
+  color: #ff1a3d;
+  box-shadow: 0 0 20px rgba(196, 18, 48, 0.15);
+}
+
+@keyframes gatePulse {
+  0%, 100% { opacity: 0.5; transform: scale(1); }
+  50% { opacity: 0.8; transform: scale(1.05); }
+}
+
+/* ─── GATE UNLOCKED STATE ─── */
+.gate-unlocked > *:not(.gate-lock-overlay) {
+  filter: none;
+  pointer-events: all;
+  user-select: auto;
+}
+
+.gate-unlocked .gate-lock-overlay {
+  display: none !important;
+}
+
+/* Gate unlock animation */
+.gate-unlocking .gate-lock-overlay {
+  animation: gateOpen 0.8s ease forwards;
+}
+
+@keyframes gateOpen {
+  0% { opacity: 1; }
+  40% { background: radial-gradient(ellipse at center, rgba(196, 18, 48, 0.15) 0%, transparent 100%); }
+  100% { opacity: 0; pointer-events: none; }
+}
+
+.gate-unlocking > *:not(.gate-lock-overlay) {
+  animation: gateContentReveal 0.8s ease 0.3s both;
+}
+
+@keyframes gateContentReveal {
+  from { filter: blur(6px) saturate(0.3); opacity: 0.5; }
+  to { filter: none; opacity: 1; }
+}
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   CATHEDRAL MODAL — The Inscription Ritual
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.cathedral-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: rgba(5, 3, 6, 0);
+  backdrop-filter: blur(0);
+  opacity: 0;
+  transition: all 0.5s ease;
+  padding: 1rem;
+}
+
+.cathedral-modal-backdrop.active {
+  background: rgba(5, 3, 6, 0.85);
+  backdrop-filter: blur(8px);
+  opacity: 1;
+}
+
+.cathedral-modal {
+  position: relative;
+  width: 100%;
+  max-width: 420px;
+  max-height: 90vh;
+  overflow-y: auto;
+  background: #0a0a0c;
+  border: 1px solid rgba(196, 18, 48, 0.2);
+  box-shadow:
+    0 0 60px rgba(196, 18, 48, 0.08),
+    0 0 120px rgba(196, 18, 48, 0.04),
+    inset 0 1px 0 rgba(255, 255, 255, 0.03);
+  padding: 2.5rem 2rem 2rem;
+  transform: translateY(20px) scale(0.96);
+  transition: transform 0.5s ease;
+}
+
+.cathedral-modal-backdrop.active .cathedral-modal {
+  transform: translateY(0) scale(1);
+}
+
+.cathedral-modal-sm {
+  max-width: 360px;
+}
+
+/* Subtle blood drip on the top edge */
+.cathedral-modal::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 10%;
+  right: 10%;
+  height: 2px;
+  background: linear-gradient(90deg, 
+    transparent, 
+    rgba(196, 18, 48, 0.5) 20%, 
+    rgba(196, 18, 48, 0.8) 50%, 
+    rgba(196, 18, 48, 0.5) 80%, 
+    transparent
+  );
+}
+
+/* Close button */
+.modal-close {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  width: 28px;
+  height: 28px;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  color: #6b7280;
+  font-size: 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  line-height: 1;
+}
+
+.modal-close:hover {
+  color: #c41230;
+  border-color: rgba(196, 18, 48, 0.3);
+}
+
+/* ─── Modal Header ─── */
+.modal-header {
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+.modal-sigil {
+  width: 50px;
+  height: 50px;
+  margin: 0 auto 1rem;
+  opacity: 0.7;
+  animation: sigilSpin 20s linear infinite;
+}
+
+.modal-sigil svg {
+  width: 100%;
+  height: 100%;
+}
+
+@keyframes sigilSpin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.modal-sigil-sm {
+  font-size: 2rem;
+  margin-bottom: 1rem;
+  opacity: 0.6;
+}
+
+.cathedral-modal h2 {
+  font-family: 'Cinzel', serif;
+  font-weight: 700;
+  font-size: 1.2rem;
+  letter-spacing: 0.12em;
+  color: #e8e0d8;
+  margin-bottom: 0.5rem;
+}
+
+.modal-subtitle {
+  font-family: 'Crimson Pro', serif;
+  font-style: italic;
+  font-size: 0.9rem;
+  color: #9b8e82;
+  line-height: 1.6;
+}
+
+/* ─── Auth Tabs ─── */
+.auth-tabs {
+  display: flex;
+  gap: 0;
+  margin-bottom: 1.25rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.auth-tab {
+  flex: 1;
+  padding: 0.6rem;
+  background: transparent;
+  border: none;
+  font-family: 'Cinzel', serif;
+  font-size: 0.7rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: #6b7280;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+}
+
+.auth-tab:hover {
+  color: #9b8e82;
+}
+
+.auth-tab.active {
+  color: #c41230;
+  border-bottom-color: #c41230;
+}
+
+/* ─── Form Fields ─── */
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.form-field label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.55rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: #6b7280;
+}
+
+.form-field input {
+  font-family: 'Crimson Pro', serif;
+  font-size: 0.95rem;
+  color: #e8e0d8;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 0.65rem 0.85rem;
+  outline: none;
+  transition: all 0.3s ease;
+}
+
+.form-field input::placeholder {
+  color: #4a4a4a;
+  font-style: italic;
+}
+
+.form-field input:focus {
+  border-color: rgba(196, 18, 48, 0.4);
+  background: rgba(196, 18, 48, 0.03);
+  box-shadow: 0 0 15px rgba(196, 18, 48, 0.08);
+}
+
+/* ─── Submit Button ─── */
+.auth-submit {
+  font-family: 'Cinzel', serif;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: #e8e0d8;
+  background: linear-gradient(135deg, #8b0a20, #c41230);
+  border: 1px solid rgba(196, 18, 48, 0.5);
+  padding: 0.75rem 1.5rem;
+  cursor: pointer;
+  transition: all 0.4s ease;
+  margin-top: 0.5rem;
+}
+
+.auth-submit:hover {
+  background: linear-gradient(135deg, #a00c25, #d41438);
+  box-shadow: 0 0 30px rgba(196, 18, 48, 0.2);
+  transform: translateY(-1px);
+}
+
+.auth-submit:active {
+  transform: translateY(0);
+}
+
+/* Magic Link Button */
+.auth-magic-link {
+  font-family: 'Crimson Pro', serif;
+  font-size: 0.8rem;
+  font-style: italic;
+  color: #9b8e82;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: center;
+  transition: color 0.3s ease;
+  padding: 0.25rem;
+}
+
+.auth-magic-link:hover {
+  color: #d4a846;
+}
+
+/* ─── Status Messages ─── */
+.auth-status {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.6rem;
+  letter-spacing: 0.1em;
+  text-align: center;
+  padding: 0.5rem;
+  min-height: 1.5rem;
+  transition: all 0.3s ease;
+}
+
+.auth-status.pending { color: #d4a846; }
+.auth-status.success { color: #2ecc71; }
+.auth-status.error { color: #c41230; }
+
+/* ─── OAuth Divider ─── */
+.auth-divider {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin: 1.25rem 0;
+}
+
+.auth-divider::before,
+.auth-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.auth-divider span {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.5rem;
+  letter-spacing: 0.15em;
+  color: #4a4a4a;
+  white-space: nowrap;
+}
+
+/* ─── OAuth Provider Buttons ─── */
+.auth-providers {
+  display: flex;
+  justify-content: center;
+  gap: 0.75rem;
+}
+
+.auth-provider {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.auth-provider:hover {
+  border-color: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.06);
+  transform: translateY(-2px);
+}
+
+.auth-provider svg {
+  width: 18px;
+  height: 18px;
+}
+
+/* ─── Upgrade Modal Specific ─── */
+.upgrade-desc {
+  font-family: 'Crimson Pro', serif;
+  font-size: 0.95rem;
+  color: #9b8e82;
+  line-height: 1.7;
+  text-align: center;
+  margin-bottom: 1.25rem;
+}
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   NAV AUTH ELEMENTS
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.nav-auth {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-left: auto;
+}
+
+.nav-auth-btn {
+  font-family: 'Cinzel', serif;
+  font-size: 0.55rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: #c41230;
+  background: transparent;
+  border: 1px solid rgba(196, 18, 48, 0.25);
+  padding: 0.35rem 0.8rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.nav-auth-btn:hover {
+  background: rgba(196, 18, 48, 0.08);
+  border-color: rgba(196, 18, 48, 0.5);
+}
+
+.nav-user-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.nav-user-name {
+  font-family: 'Crimson Pro', serif;
+  font-size: 0.85rem;
+  color: #e8e0d8;
+}
+
+.tier-badge {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.5rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  padding: 0.2rem 0.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.tier-badge[data-tier="wanderer"] { color: #6b7280; border-color: rgba(107, 114, 128, 0.3); }
+.tier-badge[data-tier="acolyte"] { color: #b8c0cc; border-color: rgba(184, 192, 204, 0.3); }
+.tier-badge[data-tier="devotee"] { color: #d4a846; border-color: rgba(212, 168, 70, 0.3); }
+.tier-badge[data-tier="crimson_circle"] { color: #c41230; border-color: rgba(196, 18, 48, 0.4); text-shadow: 0 0 10px rgba(196, 18, 48, 0.3); }
+
+/* Nav sign out button */
+.nav-signout {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.5rem;
+  color: #4a4a4a;
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: color 0.3s ease;
+}
+
+.nav-signout:hover {
+  color: #c41230;
+}
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   RESPONSIVE
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+@media (max-width: 768px) {
+  .cathedral-modal {
+    padding: 2rem 1.5rem 1.5rem;
+    max-width: 95vw;
+  }
+  
+  .auth-providers {
+    gap: 0.5rem;
+  }
+  
+  .nav-auth {
+    gap: 0.5rem;
+  }
+  
+  .nav-user-name {
+    display: none;
+  }
+}
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SCROLLBAR FOR MODAL (matches RedVerse aesthetic)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.cathedral-modal::-webkit-scrollbar {
+  width: 4px;
+}
+
+.cathedral-modal::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.cathedral-modal::-webkit-scrollbar-thumb {
+  background: rgba(196, 18, 48, 0.3);
+}

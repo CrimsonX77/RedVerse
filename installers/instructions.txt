@@ -1,0 +1,592 @@
+# RedVerse Memory & Auth System — Technical Spec
+### For: Coding Agent Implementation
+### Author: Crimson (Admin / Architect)
+### Date: 2026-02-16
+
+---
+
+## EXECUTIVE SUMMARY
+
+We're building a **per-user memory system** backed by JSONL databases, using the existing **Aurora steganography card generator** as a **placeholder authentication layer**. Each user gets a generated card with a **RedSeal.png (75×75)** composited to the bottom, containing steganographically embedded identity verification data. The admin (Crimson) gets elevated visibility across all user memory stores.
+
+This document tells you exactly what to build, what already exists, and how the pieces connect.
+
+---
+
+## 1. WHAT ALREADY EXISTS (Don't Rewrite These)
+
+The following modules are already functional and should be **imported, not rewritten**:
+
+| Module | Purpose | Key Classes/Functions |
+|--------|---------|----------------------|
+| `mutable_steganography.py` | LSB embed/extract with overwrite + async locks | `MutableCardSteganography` — `.embed_data()`, `.extract_data()` |
+| `steganography_module.py` | Original stego module (sync, simpler API) | `CardSteganography` — `.embed_member_data()`, `.extract_member_data()`, `.verify_card()` |
+| `seal_compositor.py` | Resize RedSeal → embed data → composite onto card | `SealCompositor` — `.embed_and_composite()`, `.extract_seal_data()`, `.validate_seal()` |
+| `card_generation.py` | Dual-backend image gen (Grok API + Stable Diffusion) | `CardGenerator` — `.generate_static_card()` |
+| `member_manager.py` | Member CRUD, age-based tier logic, card creation | `MemberManager` — `.create_new_member()`, `.create_member_card()` |
+| `database_manager.py` | JSON + JSONL dual storage, in-memory cache | `DatabaseManager` / `get_database()` singleton |
+| `obelisk_customs.py` | Card validation gate (checks sigil, seal, authority) | `ObeliskValidator` — `.validate_soulcard()`, `.append_validation_mark()` |
+| `aurora_pyqt6_main.py` | Full PyQt6 card generator GUI with stego embedding | Card generation + steganography pre-authentication flow |
+
+### Current Auth Flow (Desktop — PyQt6):
+```
+Aurora Card Generator → Generate Card Image
+    → Embed steganography data (card_id, timestamp, tier, etc.)
+    → SealCompositor appends RedSeal with compact member data
+    → Obelisk Customs validates card (checks sigil, seal, authority)
+    → If valid → append_validation_mark() → enter Archive Sanctum
+```
+
+### Current Database Pattern (`database_manager.py`):
+- **Primary**: `data/members_database.json` (full JSON, in-memory cached)
+- **Redundancy**: `data/members_database.jsonl` (one member per line, append-friendly)
+- **Transactions**: `data/transactions.jsonl` (append-only log)
+- Singleton via `get_database()`
+
+---
+
+## 2. WHAT TO BUILD: Per-User Memory JSONL Database
+
+### 2.1 Architecture Overview
+
+```
+data/
+├── memory/
+│   ├── index.json              ← Master index: user_id → metadata
+│   ├── admin_manifest.json     ← Admin-only: full visibility map
+│   ├── users/
+│   │   ├── {user_id}/
+│   │   │   ├── memory.jsonl    ← Per-user memory (append-only)
+│   │   │   ├── profile.json    ← User profile snapshot
+│   │   │   ├── sessions.jsonl  ← Session history log
+│   │   │   └── card_ref.json   ← Link to their authenticated card
+│   │   ├── {user_id_2}/
+│   │   │   └── ...
+│   └── admin/
+│       ├── global_feed.jsonl   ← Aggregated feed (admin only)
+│       ├── audit_log.jsonl     ← All CRUD ops across all users
+│       └── analytics.json      ← Usage stats, trends
+```
+
+### 2.2 Memory Entry Schema (`memory.jsonl` — one JSON object per line)
+
+```jsonl
+{"entry_id": "mem_a1b2c3", "user_id": "m_8f14e45f", "timestamp": "2026-02-16T18:30:00Z", "type": "interaction", "category": "preference", "content": {"key": "art_style", "value": "cyberpunk", "context": "User requested cyberpunk card theme 3 times"}, "visibility": "user", "ttl": null, "tags": ["preference", "card", "style"]}
+{"entry_id": "mem_d4e5f6", "user_id": "m_8f14e45f", "timestamp": "2026-02-16T19:00:00Z", "type": "system", "category": "auth_event", "content": {"event": "card_validated", "card_id": "aurora_m_8f14e45f_001", "gate": "obelisk"}, "visibility": "admin", "ttl": null, "tags": ["auth", "obelisk", "validation"]}
+```
+
+### 2.3 Field Definitions
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `entry_id` | string | yes | Unique ID: `mem_{8-char-hex}` |
+| `user_id` | string | yes | Matches member_id from MemberManager |
+| `timestamp` | ISO 8601 | yes | When memory was created |
+| `type` | enum | yes | `interaction` / `system` / `preference` / `milestone` / `admin_note` |
+| `category` | string | yes | Freeform category for filtering |
+| `content` | object | yes | The actual memory payload (flexible schema) |
+| `visibility` | enum | yes | `user` (owner sees) / `admin` (Crimson sees) / `private` (user-only, hidden from admin unless escalated) / `global` (everyone sees) |
+| `ttl` | int or null | no | Time-to-live in seconds, null = permanent |
+| `tags` | string[] | no | Searchable tags for retrieval |
+
+### 2.4 Visibility & Privilege Model
+
+```
+┌─────────────────────────────────────────────────┐
+│  ADMIN (Crimson) — Full Omniscient View         │
+│  ┌─────────────────────────────────────────────┐ │
+│  │  Can see ALL users' memories                │ │
+│  │  Can see "admin" visibility entries         │ │
+│  │  Can see "user" visibility entries          │ │
+│  │  Cannot see "private" unless escalated      │ │
+│  │  Can write admin_note to any user's store   │ │
+│  │  Can read global_feed.jsonl aggregate       │ │
+│  │  Can read audit_log.jsonl for all ops       │ │
+│  └─────────────────────────────────────────────┘ │
+│                                                   │
+│  REGULAR USER — Own Memories Only                │
+│  ┌─────────────────────────────────────────────┐ │
+│  │  Can see own "user" and "private" entries   │ │
+│  │  Can see "global" entries                   │ │
+│  │  Cannot see other users' memories           │ │
+│  │  Cannot see "admin" visibility entries      │ │
+│  │  Cannot write admin_note type               │ │
+│  └─────────────────────────────────────────────┘ │
+└─────────────────────────────────────────────────┘
+```
+
+**Admin detection**: The admin is identified by their card's `authority` field matching `'Aurora Archive - Crimson Artisan Guild'` AND having the `crimson_collective` seal with valid sigil. This is already checked by `ObeliskValidator.validate_soulcard()`.
+
+---
+
+## 3. PLACEHOLDER AUTHENTICATION VIA AURORA CARD SYSTEM
+
+### 3.1 The Flow (Web-Adapted from Desktop)
+
+Since `index_entrance.html` is a web frontend (GitHub Pages), we need a **lightweight web-compatible auth flow** that reuses the card steganography concept:
+
+```
+index_entrance.html  (Church doors → Enter)
+    ↓
+redverse.html  (Main site loads)
+    ↓
+[User clicks "Enter the Archive" or account icon]
+    ↓
+Card Upload Modal  ← THIS IS WHAT WE'RE BUILDING
+    ↓
+  Option A: "I have a card" → Upload PNG → JS extracts seal region
+     → Send seal to Python backend → extract_data() → validate
+     → Return user_id + tier + session token
+    ↓
+  Option B: "Generate new card" → Hit card generation endpoint
+     → CardGenerator creates image
+     → SealCompositor embeds identity at 75×75 on bottom
+     → Return card PNG + session
+    ↓
+[Authenticated] → Load user memory from JSONL → Personalized experience
+```
+
+### 3.2 RedSeal Compositor Changes
+
+The current `SealCompositor` uses `SEAL_SIZE = (100, 100)`. **Change to (75, 75)** per Crimson's spec:
+
+```python
+# In seal_compositor.py or a new WebSealCompositor subclass:
+class WebSealCompositor(SealCompositor):
+    """Web-optimized seal compositor with 75x75 RedSeal"""
+
+    SEAL_SIZE = (75, 75)
+    SEAL_POSITION = (10, None)  # 10px from left, 10px from bottom
+
+    def embed_and_composite(self, card_path, member_data, output_path=None):
+        """
+        Same flow as parent but with 75x75 seal:
+        1. Resize RedSeal.png to 75×75
+        2. Embed compact identity data into seal via steganography
+        3. Composite seal onto bottom-left of card image
+        """
+        # Compact payload for 75×75 seal capacity:
+        # 75×75 = 5625 pixels × 3 channels = 16,875 bits ≈ 2,109 bytes
+        # Plenty of room for identity JSON
+        compact_identity = {
+            "uid": member_data.get("member_id"),
+            "name": member_data.get("member_profile", {}).get("name"),
+            "tier": member_data.get("subscription", {}).get("tier"),
+            "email_hash": hashlib.sha256(
+                member_data.get("member_profile", {}).get("email", "").encode()
+            ).hexdigest()[:16],
+            "role": "admin" if self._is_admin(member_data) else "user",
+            "issued": datetime.utcnow().isoformat() + "Z",
+            "seal_v": "2.0"
+        }
+        # ... rest of embed flow using parent's steganography
+
+    def _is_admin(self, member_data):
+        """Check if this member is admin (Crimson)"""
+        # Match the Obelisk's authority check
+        cc = member_data.get("crimson_collective", {})
+        return cc.get("authority") == "Aurora Archive - Crimson Artisan Guild"
+```
+
+### 3.3 What Gets Embedded in the RedSeal
+
+The 75×75 PNG has capacity for ~2KB of steganographic data. The embedded payload:
+
+```json
+{
+    "uid": "m_8f14e45f",
+    "name": "Crimson",
+    "tier": "Premium",
+    "email_hash": "a1b2c3d4e5f67890",
+    "role": "admin",
+    "issued": "2026-02-16T18:30:00Z",
+    "seal_v": "2.0",
+    "memory_path": "data/memory/users/m_8f14e45f/",
+    "crimson_sigil": "abcdef1234567890"
+}
+```
+
+This is the **identity token** — when a user uploads their card, we crop the bottom-left 75×75 region, extract this JSON, and that's their auth context.
+
+---
+
+## 4. MEMORY DATABASE MANAGER — New Module
+
+### 4.1 Create: `user_memory_store.py` (NEW MODULE)
+
+> **CRITICAL**: `memory_bridge.py` ALREADY EXISTS and is the **E-Drive emotional trajectory tracker** — it handles session-level emotional state, conversation turns, relational context injection, and mood shift detection for the AI persona pipeline. **DO NOT overwrite or merge into it.** That module is part of the SoulStacker → MemoryBridge → E-Drive → Core prompt pipeline. What we're building here is a completely separate **per-user persistent memory database** for the web auth/identity layer. Name the new module `user_memory_store.py` to avoid collision.
+
+```python
+"""
+RedVerse User Memory Store
+Per-user JSONL memory database with admin visibility privileges
+
+Connects the Aurora card auth system to persistent user memory stores.
+NOTE: This is SEPARATE from memory_bridge.py (E-Drive emotional tracker).
+"""
+
+import json
+import hashlib
+from pathlib import Path
+from datetime import datetime
+from typing import Dict, List, Optional
+
+class UserMemoryStore:
+    """
+    Per-user memory manager with admin elevation.
+
+    Each authenticated user gets their own JSONL memory store.
+    Admin (Crimson) gets read access across all stores + a global feed.
+    """
+
+    def __init__(self, data_dir: str = "data/memory"):
+        self.data_dir = Path(data_dir)
+        self.users_dir = self.data_dir / "users"
+        self.admin_dir = self.data_dir / "admin"
+        self._ensure_dirs()
+
+    def _ensure_dirs(self):
+        self.users_dir.mkdir(parents=True, exist_ok=True)
+        self.admin_dir.mkdir(parents=True, exist_ok=True)
+
+    # ── User Memory CRUD ──────────────────────────────
+
+    def init_user_store(self, user_id: str, profile: Dict) -> Path:
+        """Create memory directory for a new user"""
+        user_dir = self.users_dir / user_id
+        user_dir.mkdir(exist_ok=True)
+
+        # Initialize files
+        (user_dir / "memory.jsonl").touch()
+        (user_dir / "sessions.jsonl").touch()
+
+        # Save profile snapshot
+        with open(user_dir / "profile.json", "w") as f:
+            json.dump(profile, f, indent=2)
+
+        # Update master index
+        self._update_index(user_id, profile)
+
+        return user_dir
+
+    def append_memory(self, user_id: str, entry: Dict) -> str:
+        """Append a memory entry to user's JSONL store"""
+        entry_id = f"mem_{hashlib.md5(str(datetime.utcnow().timestamp()).encode()).hexdigest()[:8]}"
+
+        record = {
+            "entry_id": entry_id,
+            "user_id": user_id,
+            "timestamp": datetime.utcnow().isoformat() + "Z",
+            **entry
+        }
+
+        # Write to user's memory.jsonl
+        user_file = self.users_dir / user_id / "memory.jsonl"
+        with open(user_file, "a") as f:
+            f.write(json.dumps(record, ensure_ascii=False) + "\n")
+
+        # If admin-visible, also append to global feed
+        if record.get("visibility") in ("admin", "global"):
+            self._append_global_feed(record)
+
+        # Audit log
+        self._audit_log("memory_append", user_id, entry_id)
+
+        return entry_id
+
+    def read_memories(
+        self,
+        user_id: str,
+        requester_role: str = "user",
+        category: Optional[str] = None,
+        tags: Optional[List[str]] = None,
+        limit: int = 50
+    ) -> List[Dict]:
+        """
+        Read memories with role-based filtering.
+
+        If requester_role == "admin": sees user + admin + global entries
+        If requester_role == "user": sees user + private + global entries
+        """
+        user_file = self.users_dir / user_id / "memory.jsonl"
+        if not user_file.exists():
+            return []
+
+        memories = []
+        with open(user_file, "r") as f:
+            for line in f:
+                if not line.strip():
+                    continue
+                entry = json.loads(line)
+
+                # Visibility filtering
+                vis = entry.get("visibility", "user")
+                if requester_role == "admin":
+                    if vis in ("user", "admin", "global"):
+                        memories.append(entry)
+                    # "private" excluded unless escalated
+                else:
+                    if vis in ("user", "private", "global"):
+                        memories.append(entry)
+
+                # Category filter
+                if category and entry.get("category") != category:
+                    continue
+
+                # Tag filter
+                if tags:
+                    entry_tags = set(entry.get("tags", []))
+                    if not entry_tags.intersection(set(tags)):
+                        continue
+
+        return memories[-limit:]  # Most recent N
+
+    # ── Admin Operations ──────────────────────────────
+
+    def admin_read_all_users(self) -> List[str]:
+        """Admin: list all user IDs with memory stores"""
+        return [d.name for d in self.users_dir.iterdir() if d.is_dir()]
+
+    def admin_read_global_feed(self, limit: int = 100) -> List[Dict]:
+        """Admin: read the aggregated global feed"""
+        feed_file = self.admin_dir / "global_feed.jsonl"
+        if not feed_file.exists():
+            return []
+
+        entries = []
+        with open(feed_file, "r") as f:
+            for line in f:
+                if line.strip():
+                    entries.append(json.loads(line))
+        return entries[-limit:]
+
+    def admin_write_note(self, target_user_id: str, note: str) -> str:
+        """Admin: write a note to any user's memory store"""
+        return self.append_memory(target_user_id, {
+            "type": "admin_note",
+            "category": "admin",
+            "content": {"note": note, "author": "Crimson"},
+            "visibility": "admin",
+            "tags": ["admin_note"]
+        })
+
+    def admin_get_audit_log(self, limit: int = 200) -> List[Dict]:
+        """Admin: read full audit trail"""
+        audit_file = self.admin_dir / "audit_log.jsonl"
+        if not audit_file.exists():
+            return []
+
+        entries = []
+        with open(audit_file, "r") as f:
+            for line in f:
+                if line.strip():
+                    entries.append(json.loads(line))
+        return entries[-limit:]
+
+    # ── Internal Helpers ──────────────────────────────
+
+    def _update_index(self, user_id: str, profile: Dict):
+        index_file = self.data_dir / "index.json"
+        index = {}
+        if index_file.exists():
+            with open(index_file, "r") as f:
+                index = json.load(f)
+
+        index[user_id] = {
+            "name": profile.get("name", "Unknown"),
+            "tier": profile.get("tier", "Standard"),
+            "created": datetime.utcnow().isoformat() + "Z",
+            "memory_entries": 0
+        }
+
+        with open(index_file, "w") as f:
+            json.dump(index, f, indent=2)
+
+    def _append_global_feed(self, record: Dict):
+        feed_file = self.admin_dir / "global_feed.jsonl"
+        with open(feed_file, "a") as f:
+            f.write(json.dumps(record, ensure_ascii=False) + "\n")
+
+    def _audit_log(self, action: str, user_id: str, detail: str = ""):
+        audit_file = self.admin_dir / "audit_log.jsonl"
+        entry = {
+            "timestamp": datetime.utcnow().isoformat() + "Z",
+            "action": action,
+            "user_id": user_id,
+            "detail": detail
+        }
+        with open(audit_file, "a") as f:
+            f.write(json.dumps(entry, ensure_ascii=False) + "\n")
+```
+
+---
+
+## 5. PYTHON BACKEND — Serve It
+
+### 5.1 API Endpoints (Flask/FastAPI — extend `serve_edrive.py` or create new)
+
+```
+POST   /api/auth/validate-card     ← Upload card PNG, extract seal, return session
+POST   /api/auth/generate-card     ← Generate new card with RedSeal identity
+GET    /api/memory/{user_id}       ← Read user memories (role-filtered)
+POST   /api/memory/{user_id}       ← Append memory entry
+GET    /api/admin/users            ← Admin: list all users
+GET    /api/admin/feed             ← Admin: global feed
+POST   /api/admin/note/{user_id}  ← Admin: write note to user's store
+GET    /api/admin/audit            ← Admin: full audit log
+```
+
+### 5.2 Card Validation Endpoint Logic
+
+```python
+@app.post("/api/auth/validate-card")
+async def validate_card(card_file: UploadFile):
+    # 1. Save uploaded card temporarily
+    temp_path = save_temp(card_file)
+
+    # 2. Try Obelisk validation (full card stego check)
+    validator = ObeliskValidator()
+    is_valid, reason, card_data = validator.validate_soulcard(temp_path)
+
+    if not is_valid:
+        # 3. Fallback: try seal-only extraction (75×75 bottom-left)
+        compositor = WebSealCompositor()
+        seal_data = compositor.extract_seal_data(temp_path)
+
+        if seal_data and seal_data.get("uid"):
+            # Seal is valid even if full card validation failed
+            return create_session(seal_data)
+
+        return {"error": reason, "authenticated": False}
+
+    # 4. Full validation passed — extract identity from seal
+    compositor = WebSealCompositor()
+    seal_data = compositor.extract_seal_data(temp_path)
+
+    # 5. Determine role
+    role = "admin" if card_data.get("crimson_collective", {}).get(
+        "authority") == "Aurora Archive - Crimson Artisan Guild" else "user"
+
+    # 6. Create/load memory store
+    memory = UserMemoryStore()
+    user_id = seal_data.get("uid") or card_data.get("member_id")
+
+    if user_id not in [d.name for d in memory.users_dir.iterdir()]:
+        memory.init_user_store(user_id, {
+            "name": seal_data.get("name"),
+            "tier": seal_data.get("tier"),
+            "role": role
+        })
+
+    # 7. Log auth event to memory
+    memory.append_memory(user_id, {
+        "type": "system",
+        "category": "auth_event",
+        "content": {"event": "card_validated", "role": role},
+        "visibility": "admin",
+        "tags": ["auth"]
+    })
+
+    # 8. Return session
+    return {
+        "authenticated": True,
+        "user_id": user_id,
+        "role": role,
+        "tier": seal_data.get("tier"),
+        "name": seal_data.get("name")
+    }
+```
+
+---
+
+## 6. FRONTEND INTEGRATION
+
+### 6.1 Card Upload Modal (Add to `redverse.html` or as separate component)
+
+The web UI needs a modal where users can:
+- Upload an existing Aurora card PNG for validation
+- OR generate a new card (hits the backend card generation endpoint)
+- See their validation status
+- Access their personalized memory-powered experience
+
+### 6.2 Admin Dashboard (New page or section)
+
+For Crimson, when `role === "admin"`:
+- Show a **Memory Observatory** panel: browse all users, read their memories
+- **Global Feed** view: real-time aggregated entries
+- **Audit Log** viewer with filters
+- Ability to write admin notes to any user's memory store
+- User count, active sessions, memory entry stats
+
+---
+
+## 7. IMPLEMENTATION ORDER
+
+```
+Phase 1: Memory Infrastructure
+  ├── [1] Create user_memory_store.py with UserMemoryStore class (NOT in memory_bridge.py)
+  ├── [2] Create data/memory/ directory structure
+  ├── [3] Unit test: init_user_store, append_memory, read_memories
+  └── [4] Unit test: admin operations (global feed, audit, notes)
+
+Phase 2: Auth Bridge
+  ├── [5] Create WebSealCompositor (75×75 variant)
+  ├── [6] Create /api/auth/validate-card endpoint
+  ├── [7] Create /api/auth/generate-card endpoint
+  └── [8] Test: upload card → extract seal → create session → load memory
+
+Phase 3: Web Frontend
+  ├── [9]  Card upload modal in redverse.html
+  ├── [10] Memory-powered personalization hooks
+  └── [11] Admin dashboard (Crimson-only, role-gated)
+
+Phase 4: Integration
+  ├── [12] Connect index_entrance.html → auth flow → memory
+  ├── [13] End-to-end test: new user → generate card → validate → memory
+  └── [14] Admin test: Crimson card → full visibility → global feed
+```
+
+---
+
+## 8. KEY DECISIONS & CONSTRAINTS
+
+1. **JSONL over SQLite**: Append-only, git-friendly, human-readable, matches existing `database_manager.py` patterns
+2. **75×75 RedSeal** (not 100×100): Crimson's spec. Still gives ~2KB stego capacity — more than enough for identity JSON
+3. **Seal position**: Bottom-left, 10px padding (same convention as existing `SealCompositor`)
+4. **Admin detection**: Via `crimson_collective.authority === "Aurora Archive - Crimson Artisan Guild"` — already validated by `ObeliskValidator`
+5. **No JWT/OAuth yet**: Card-based auth is the placeholder. The steganographic seal IS the token. Future: layer proper auth on top when needed
+6. **Memory visibility is server-enforced**: The JSONL files live server-side. Clients never see raw files — they go through the API which filters by role
+
+---
+
+## 9. REFERENCE: Existing File Locations
+
+```
+/Redverse/
+├── mutable_steganography.py    ← Primary stego engine (use this)
+├── steganography_module.py     ← Legacy stego (reference only)
+├── seal_compositor.py          ← RedSeal compositing (subclass for 75×75)
+├── card_generation.py          ← Dual-backend card generator
+├── member_manager.py           ← Member CRUD + tier logic
+├── member_manager_gui.py       ← PyQt6 admin GUI (reference for patterns)
+├── database_manager.py         ← JSON+JSONL dual storage pattern
+├── obelisk_customs.py          ← Card validation logic (reuse ObeliskValidator)
+├── archive_sanctum.py          ← Account realm (post-auth landing)
+├── aurora_pyqt6_main.py        ← Desktop card gen GUI (reference)
+├── memory_bridge.py            ← EXISTING: E-Drive emotional trajectory tracker (DO NOT TOUCH)
+├── user_memory_store.py        ← NEW: Per-user JSONL memory database (BUILD THIS)
+├── serve_edrive.py             ← Existing Python server (extend or parallel)
+├── index_entrance.html         ← Church doors entrance (Phase 1 landing)
+├── redverse.html               ← Main RedVerse site (Phase 2 content)
+├── data/
+│   ├── RedSeal.png             ← The seal image (or data/RedSeal.png)
+│   ├── members_database.json
+│   ├── members_database.jsonl
+│   └── memory/                 ← NEW: Per-user memory stores
+└── Assets/
+    └── generated_cards/        ← Where card PNGs land
+```
+
+---
+
+*"Only cards bearing the true Crimson Collective seal may pass. The memory endures."*

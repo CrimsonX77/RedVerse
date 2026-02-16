@@ -19,6 +19,18 @@ import shutil
 import glob
 import site
 
+# Logging setup
+import datetime
+LOG_PATH = os.path.join(os.path.dirname(__file__), "memory", "server_log.jsonl")
+
+def log_event(event):
+    """Append a JSONL event to the server log."""
+    try:
+        with open(LOG_PATH, "a", encoding="utf-8") as f:
+            f.write(json.dumps(event, ensure_ascii=False) + "\n")
+    except Exception as e:
+        sys.stderr.write(f"[LOGGING ERROR] {e}\n")
+
 PORT = 8666
 OLLAMA_BACKEND = "http://127.0.0.1:11434"
 SD_BACKEND = "http://127.0.0.1:7860"
@@ -135,6 +147,17 @@ class ProxyHandler(http.server.SimpleHTTPRequestHandler):
             except Exception:
                 pass
 
+        # Log the incoming proxied request
+        log_event({
+            "type": "proxy_request",
+            "timestamp": datetime.datetime.utcnow().isoformat(),
+            "method": method,
+            "path": self.path,
+            "target": target,
+            "headers": dict(headers),
+            "body": body.decode("utf-8", errors="replace") if body else None
+        })
+
         try:
             resp = urllib.request.urlopen(req, timeout=300)
             if is_stream:
@@ -155,6 +178,16 @@ class ProxyHandler(http.server.SimpleHTTPRequestHandler):
                 self.wfile.write(b"0\r\n\r\n")
                 self.wfile.flush()
                 resp.close()
+                # Log streaming response as a single event (not chunked)
+                log_event({
+                    "type": "proxy_response",
+                    "timestamp": datetime.datetime.utcnow().isoformat(),
+                    "method": method,
+                    "path": self.path,
+                    "status": resp.status,
+                    "headers": dict(resp.headers),
+                    "body": "[streamed]"
+                })
             else:
                 data = resp.read()
                 resp.close()
@@ -164,6 +197,16 @@ class ProxyHandler(http.server.SimpleHTTPRequestHandler):
                 self.send_header("Access-Control-Allow-Origin", "*")
                 self.end_headers()
                 self.wfile.write(data)
+                # Log non-streaming response
+                log_event({
+                    "type": "proxy_response",
+                    "timestamp": datetime.datetime.utcnow().isoformat(),
+                    "method": method,
+                    "path": self.path,
+                    "status": resp.status,
+                    "headers": dict(resp.headers),
+                    "body": data.decode("utf-8", errors="replace")
+                })
         except urllib.error.HTTPError as e:
             body_err = e.read()
             self.send_response(e.code)
@@ -171,12 +214,30 @@ class ProxyHandler(http.server.SimpleHTTPRequestHandler):
             self.send_header("Access-Control-Allow-Origin", "*")
             self.end_headers()
             self.wfile.write(body_err)
+            log_event({
+                "type": "proxy_error",
+                "timestamp": datetime.datetime.utcnow().isoformat(),
+                "method": method,
+                "path": self.path,
+                "status": e.code,
+                "headers": dict(e.headers) if hasattr(e, 'headers') else {},
+                "body": body_err.decode("utf-8", errors="replace")
+            })
         except Exception as e:
             self.send_response(502)
             self.send_header("Content-Type", "application/json")
             self.send_header("Access-Control-Allow-Origin", "*")
             self.end_headers()
             self.wfile.write(json.dumps({"error": str(e)}).encode())
+            log_event({
+                "type": "proxy_error",
+                "timestamp": datetime.datetime.utcnow().isoformat(),
+                "method": method,
+                "path": self.path,
+                "status": 502,
+                "headers": {},
+                "body": str(e)
+            })
         return True
 
     def do_GET(self):
@@ -241,6 +302,14 @@ class ProxyHandler(http.server.SimpleHTTPRequestHandler):
         if not text:
             self._json_error(400, "no text")
             return
+        # Log TTS request
+        log_event({
+            "type": "tts_request",
+            "timestamp": datetime.datetime.utcnow().isoformat(),
+            "path": self.path,
+            "text": text,
+            "voice": voice
+        })
         try:
             import edge_tts
         except ImportError:
@@ -261,8 +330,26 @@ class ProxyHandler(http.server.SimpleHTTPRequestHandler):
             self.send_header("Access-Control-Allow-Origin", "*")
             self.end_headers()
             self.wfile.write(audio_bytes)
+            log_event({
+                "type": "tts_response",
+                "timestamp": datetime.datetime.utcnow().isoformat(),
+                "path": self.path,
+                "status": 200,
+                "voice": voice,
+                "text": text,
+                "audio_length": len(audio_bytes)
+            })
         except Exception as e:
             self._json_error(500, f"TTS failed: {e}")
+            log_event({
+                "type": "tts_error",
+                "timestamp": datetime.datetime.utcnow().isoformat(),
+                "path": self.path,
+                "status": 500,
+                "voice": voice,
+                "text": text,
+                "error": str(e)
+            })
 
     # ── STT endpoint (SpeechRecognition + ffmpeg) ────────────
     def _handle_stt(self):
@@ -274,14 +361,35 @@ class ProxyHandler(http.server.SimpleHTTPRequestHandler):
         if len(audio_data) < 100:
             self._json_error(400, "audio too short")
             return
+        # Log STT request
+        log_event({
+            "type": "stt_request",
+            "timestamp": datetime.datetime.utcnow().isoformat(),
+            "path": self.path,
+            "audio_length": len(audio_data)
+        })
         # Check ffmpeg
         if not shutil.which("ffmpeg"):
             self._json_error(500, "ffmpeg not installed — sudo apt install ffmpeg")
+            log_event({
+                "type": "stt_error",
+                "timestamp": datetime.datetime.utcnow().isoformat(),
+                "path": self.path,
+                "status": 500,
+                "error": "ffmpeg not installed"
+            })
             return
         try:
             import speech_recognition as sr
         except ImportError:
             self._json_error(500, "SpeechRecognition not installed — pip install SpeechRecognition")
+            log_event({
+                "type": "stt_error",
+                "timestamp": datetime.datetime.utcnow().isoformat(),
+                "path": self.path,
+                "status": 500,
+                "error": "SpeechRecognition not installed"
+            })
             return
         webm_path = wav_path = None
         try:
@@ -296,6 +404,13 @@ class ProxyHandler(http.server.SimpleHTTPRequestHandler):
             )
             if result.returncode != 0:
                 self._json_error(500, f"ffmpeg error: {result.stderr.decode()[:200]}")
+                log_event({
+                    "type": "stt_error",
+                    "timestamp": datetime.datetime.utcnow().isoformat(),
+                    "path": self.path,
+                    "status": 500,
+                    "error": f"ffmpeg error: {result.stderr.decode()[:200]}"
+                })
                 return
             recognizer = sr.Recognizer()
             recognizer.energy_threshold = 300
@@ -307,12 +422,40 @@ class ProxyHandler(http.server.SimpleHTTPRequestHandler):
             self.send_header("Access-Control-Allow-Origin", "*")
             self.end_headers()
             self.wfile.write(json.dumps({"text": text}).encode())
+            log_event({
+                "type": "stt_response",
+                "timestamp": datetime.datetime.utcnow().isoformat(),
+                "path": self.path,
+                "status": 200,
+                "text": text
+            })
         except sr.UnknownValueError:
             self._json_error(200, "")
+            log_event({
+                "type": "stt_response",
+                "timestamp": datetime.datetime.utcnow().isoformat(),
+                "path": self.path,
+                "status": 200,
+                "text": ""
+            })
         except sr.RequestError as e:
             self._json_error(500, f"Google STT unavailable: {e}")
+            log_event({
+                "type": "stt_error",
+                "timestamp": datetime.datetime.utcnow().isoformat(),
+                "path": self.path,
+                "status": 500,
+                "error": f"Google STT unavailable: {e}"
+            })
         except Exception as e:
             self._json_error(500, f"STT failed: {e}")
+            log_event({
+                "type": "stt_error",
+                "timestamp": datetime.datetime.utcnow().isoformat(),
+                "path": self.path,
+                "status": 500,
+                "error": f"STT failed: {e}"
+            })
         finally:
             for p in [webm_path, wav_path]:
                 if p:
