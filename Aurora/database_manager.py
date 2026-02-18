@@ -14,6 +14,8 @@ from datetime import datetime, timedelta
 from typing import Dict, List, Optional
 import hashlib
 import math
+import os
+from dotenv import load_dotenv
 
 # Setup logging
 log_dir = Path('logs')
@@ -42,7 +44,23 @@ class DatabaseManager:
     def __init__(self, data_dir: str = "data"):
         self.data_dir = Path(data_dir)
         self.data_dir.mkdir(parents=True, exist_ok=True)
-        
+
+        # Load environment variables
+        load_dotenv()
+
+        # Parse admin emails from environment
+        admin_emails_str = os.getenv('ADMIN_EMAILS', '')
+        self.admin_emails = set(
+            email.strip().lower()
+            for email in admin_emails_str.split(',')
+            if email.strip()
+        )
+
+        if self.admin_emails:
+            logger.info(f"Admin emails configured: {len(self.admin_emails)} admins")
+        else:
+            logger.warning("No admin emails configured in ADMIN_EMAILS environment variable")
+
         # Database paths
         self.members_db = self.data_dir / "members_database.json"
         self.members_jsonl = self.data_dir / "members_database.jsonl"
@@ -236,6 +254,19 @@ class DatabaseManager:
                 return member
         return None
 
+    def _is_admin_email(self, email: str) -> bool:
+        """
+        Check if email address is in admin whitelist
+
+        Args:
+            email: Email address to check
+
+        Returns:
+            True if email is in ADMIN_EMAILS list, False otherwise
+        """
+        email_lower = email.lower().strip()
+        return email_lower in self.admin_emails
+
     def create_new_member_from_google(self, email: str, name: str, google_sub: str) -> Optional[Dict]:
         """Create new member from Google OAuth login"""
         try:
@@ -243,6 +274,10 @@ class DatabaseManager:
 
             member_id = str(uuid.uuid4())
             thread_id = str(uuid.uuid4())
+
+            # Determine if user is admin based on email whitelist
+            is_admin = self._is_admin_email(email)
+            admin_status = "PROMOTED TO ADMIN" if is_admin else "regular user"
 
             member_data = {
                 'id': member_id,
@@ -253,7 +288,7 @@ class DatabaseManager:
                 'access_tier': 1,  # Default to Tier 1 (Wanderer)
                 'tier_name': 'Wanderer',
                 'thread_id': thread_id,
-                'is_admin': False,
+                'is_admin': is_admin,  # ← Determined by email whitelist
                 'auth_method': 'google',
                 'created_at': datetime.now().isoformat(),
                 'member_profile': {
@@ -272,7 +307,7 @@ class DatabaseManager:
                     {
                         'action': 'account_created_via_google',
                         'timestamp': datetime.now().isoformat(),
-                        'details': f'Created via Google OAuth: {email}'
+                        'details': f'Created via Google OAuth: {email} ({admin_status})'
                     }
                 ]
             }
@@ -297,10 +332,11 @@ class DatabaseManager:
                 "member_id": member_id,
                 "email": email,
                 "timestamp": datetime.now().isoformat(),
-                "google_sub": google_sub
+                "google_sub": google_sub,
+                "is_admin": is_admin
             })
 
-            logger.info(f"Created new member from Google OAuth: {email} (ID: {member_id}, Thread: {thread_id})")
+            logger.info(f"Created new member from Google OAuth: {email} (ID: {member_id}, Thread: {thread_id}, {admin_status})")
             return member_data
 
         except Exception as e:
