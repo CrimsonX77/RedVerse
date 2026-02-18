@@ -13,7 +13,12 @@ from enum import Enum
 from typing import Optional, Dict, List, Tuple, Callable
 from pathlib import Path
 from datetime import datetime
-from dotenv import load_dotenv
+try:
+    from dotenv import load_dotenv
+except ImportError:
+    def load_dotenv(*args, **kwargs):
+        import warnings
+        warnings.warn("python-dotenv is not installed. Environment variables from .env will not be loaded.")
 
 # Load environment variables from sd_config.env
 load_dotenv('sd_config.env')

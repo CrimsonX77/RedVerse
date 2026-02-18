@@ -449,7 +449,7 @@ class ObeliskMainWindow(QMainWindow):
         file_path, _ = QFileDialog.getOpenFileName(
             self,
             "Select Soul Card for Validation",
-            str(Path.home() / "Desktop"),
+            str(Path.home() / "Desktop/Redverse/Assets/generated_cards"),
             "Image Files (*.png *.jpg *.jpeg);;All Files (*.*)"
         )
         

@@ -140,7 +140,7 @@ class SealCompositor:
             seal_resized = seal_img.resize(self.SEAL_SIZE, Image.Resampling.LANCZOS)
             
             # Save temporary resized seal
-            temp_seal_path = self.seal_path.parent / "temp_seal_25x25.png"
+            temp_seal_path = self.seal_path.parent / "Redseal.png"
             seal_resized.save(str(temp_seal_path), 'PNG')
             
             logger.debug(f"Resized seal to {self.SEAL_SIZE}")
@@ -159,7 +159,7 @@ class SealCompositor:
             }
             
             # Embed into seal
-            embedded_seal_path = self.seal_path.parent / "temp_seal_embedded.png"
+            embedded_seal_path = self.seal_path.parent / "Redseal_embedded.png"
             self.stego.embed_data(
                 str(temp_seal_path),
                 compact_data,
@@ -251,7 +251,7 @@ class SealCompositor:
             ))
             
             # Save temporary seal
-            temp_seal_path = self.seal_path.parent / "temp_extracted_seal.png"
+            temp_seal_path = self.seal_path.parent / "Redseal_extracted.png"
             seal_region.save(str(temp_seal_path), 'PNG')
             
             # Extract data from seal

@@ -26,7 +26,6 @@ from PyQt6.QtGui import QFont, QPixmap, QColor
 from database_manager import get_database
 from member_manager import MemberManager
 from seal_compositor import SealCompositor, validate_card_seal
-from payment_module import process_tier_upgrade
 from mutable_steganography import MutableCardSteganography
 
 # Setup logging
@@ -197,9 +196,6 @@ class MemberManagerGUI(QMainWindow):
         self.tabs.addTab(self.tab5, "📊 Detailed View")
         
         layout.addWidget(self.tabs)
-        
-        # Connect tab change
-        self.tabs.currentChanged.connect(self.on_tab_changed)
     
     def create_header(self):
         """Create application header"""
@@ -280,28 +276,25 @@ class MemberManagerGUI(QMainWindow):
     def filter_members(self):
         """Filter members table based on search"""
         search_text = self.search_input.text().lower()
-        
+
         for row in range(self.members_table.rowCount()):
-            show_row = False
-            
-            # Check each column
-            for col in range(self.members_table.columnCount() - 1):  # Exclude actions column
-                item = self.members_table.item(row, col)
-                if item and search_text in item.text().lower():
-                    show_row = True
-                    break
-            
+            show_row = any(
+                item and search_text in item.text().lower()
+                for col in range(self.members_table.columnCount() - 1)
+                if (item := self.members_table.item(row, col))
+            )
             self.members_table.setRowHidden(row, not show_row)
     
     def on_member_selected(self):
         """Handle member selection from table"""
         selected = self.members_table.selectedItems()
-        if selected:
-            row = selected[0].row()
-            member_id = self.members_table.item(row, 0).text()
-            self.current_member_id = member_id
-            self.update_detailed_view()
-            logger.debug(f"Selected member: {member_id}")
+        if not selected:
+            return
+
+        row = selected[0].row()
+        self.current_member_id = self.members_table.item(row, 0).text()
+        self.update_detailed_view()
+        logger.debug(f"Selected member: {self.current_member_id}")
     
     # ============================================
     # TAB 2: REGISTER NEW MEMBER
@@ -403,7 +396,7 @@ class MemberManagerGUI(QMainWindow):
             if not self.reg_name.text() or not self.reg_email.text():
                 QMessageBox.warning(self, "Validation Error", "Name and Email are required!")
                 return
-            
+
             # Create member
             member_data = self.member_mgr.create_new_member(
                 name=self.reg_name.text(),
@@ -417,39 +410,31 @@ class MemberManagerGUI(QMainWindow):
                 zip_code=self.reg_zip.text(),
                 tier=self.reg_tier.currentText()
             )
-            
+
             # Save to database
-            if self.db.add_member(member_data):
-                # Auto-generate generic card
-                generic_card_path = self._generate_generic_card(member_data)
-                
-                if generic_card_path:
-                    QMessageBox.information(
-                        self,
-                        "Success",
-                        f"✅ Member registered successfully!\n\n"
-                        f"Member ID: {member_data['member_id']}\n"
-                        f"Name: {member_data['member_profile']['name']}\n"
-                        f"Tier: {member_data['subscription']['tier']}\n\n"
-                        f"Generic card generated and auto-verified!\n"
-                        f"Card can be customized later in Archive Sanctum."
-                    )
-                else:
-                    QMessageBox.information(
-                        self,
-                        "Success",
-                        f"✅ Member registered successfully!\n\n"
-                        f"Member ID: {member_data['member_id']}\n"
-                        f"Name: {member_data['member_profile']['name']}\n"
-                        f"Tier: {member_data['subscription']['tier']}\n\n"
-                        f"Note: Generic card generation failed. Please use 'Apply Seal' tab."
-                    )
-                
-                self.clear_registration_form()
-                self.load_members()
-            else:
+            if not self.db.add_member(member_data):
                 QMessageBox.critical(self, "Error", "Failed to save member to database!")
-            
+                return
+
+            # Auto-generate generic card
+            generic_card_path = self._generate_generic_card(member_data)
+
+            success_msg = (
+                f"✅ Member registered successfully!\n\n"
+                f"Member ID: {member_data['member_id']}\n"
+                f"Name: {member_data['member_profile']['name']}\n"
+                f"Tier: {member_data['subscription']['tier']}\n\n"
+            )
+
+            if generic_card_path:
+                success_msg += "Generic card generated and auto-verified!\nCard can be customized later in Archive Sanctum."
+            else:
+                success_msg += "Note: Generic card generation failed. Please use 'Apply Seal' tab."
+
+            QMessageBox.information(self, "Success", success_msg)
+            self.clear_registration_form()
+            self.load_members()
+
         except Exception as e:
             logger.error(f"Registration error: {e}", exc_info=True)
             QMessageBox.critical(self, "Error", f"Registration failed:\n{str(e)}")
@@ -550,9 +535,8 @@ class MemberManagerGUI(QMainWindow):
     def populate_seal_members(self):
         """Populate member dropdown in seal tab"""
         self.seal_member_combo.clear()
-        
-        members = self.db.get_all_members()
-        for member in members:
+
+        for member in self.db.get_all_members():
             name = member.get('member_profile', {}).get('name', 'Unknown')
             member_id = member.get('member_id', 'N/A')
             self.seal_member_combo.addItem(f"{name} ({member_id})", member_id)
@@ -565,28 +549,28 @@ class MemberManagerGUI(QMainWindow):
             "",
             "Media Files (*.png *.mp4);;PNG Files (*.png);;MP4 Videos (*.mp4);;All Files (*)"
         )
-        
-        if file_path:
-            # Validate MP4 size
-            if file_path.lower().endswith('.mp4'):
-                file_size = Path(file_path).stat().st_size / (1024 * 1024)
-                if file_size > 10:
-                    QMessageBox.warning(
-                        self,
-                        "File Too Large",
-                        f"Video file is {file_size:.2f} MB.\n\n"
-                        f"Maximum allowed size is 10 MB."
-                    )
-                    return
-            
-            self.seal_card_path.setText(file_path)
-            self.preview_card_image(file_path)
+
+        if not file_path:
+            return
+
+        # Validate MP4 size
+        if file_path.lower().endswith('.mp4'):
+            file_size = Path(file_path).stat().st_size / (1024 * 1024)
+            if file_size > 10:
+                QMessageBox.warning(
+                    self,
+                    "File Too Large",
+                    f"Video file is {file_size:.2f} MB.\n\nMaximum allowed size is 10 MB."
+                )
+                return
+
+        self.seal_card_path.setText(file_path)
+        self.preview_card_image(file_path)
     
     def preview_card_image(self, path: str):
         """Preview card image or video"""
         try:
             if path.lower().endswith('.mp4'):
-                # Show video icon/placeholder for MP4
                 self.seal_preview_label.clear()
                 self.seal_preview_label.setText(
                     f"🎬 Video Selected\n\n{Path(path).name}\n\n"
@@ -598,68 +582,54 @@ class MemberManagerGUI(QMainWindow):
                     "font-size: 14px; font-weight: bold; }"
                 )
             else:
-                # Show image preview
                 pixmap = QPixmap(path)
-                scaled = pixmap.scaled(
-                    400, 600,
-                    Qt.AspectRatioMode.KeepAspectRatio,
-                    Qt.TransformationMode.SmoothTransformation
-                )
+                scaled = pixmap.scaled(400, 600, Qt.AspectRatioMode.KeepAspectRatio,
+                                     Qt.TransformationMode.SmoothTransformation)
                 self.seal_preview_label.setPixmap(scaled)
-                self.seal_preview_label.setStyleSheet(
-                    "background-color: rgba(0, 0, 0, 0.5); border-radius: 4px;"
-                )
+                self.seal_preview_label.setStyleSheet("background-color: rgba(0, 0, 0, 0.5); border-radius: 4px;")
         except Exception as e:
             logger.error(f"Preview error: {e}")
     
     def apply_seal_to_card(self):
         """Apply seal to selected card"""
         try:
-            # Get selected member
             member_id = self.seal_member_combo.currentData()
             if not member_id:
                 QMessageBox.warning(self, "Error", "Please select a member!")
                 return
-            
-            # Get card path
+
             card_path = self.seal_card_path.text()
             if not card_path or not Path(card_path).exists():
                 QMessageBox.warning(self, "Error", "Please select a valid card image!")
                 return
-            
-            # Get member data
+
             member_data = self.db.get_member(member_id)
             if not member_data:
                 QMessageBox.critical(self, "Error", "Member not found in database!")
                 return
-            
+
             # Apply seal
-            result_path = self.seal_comp.embed_and_composite(
-                card_path,
-                member_data,
-                None  # Overwrites original
-            )
-            
-            if result_path:
-                # Save to database
-                saved_path = self.db.save_member_card(member_id, result_path)
-                
-                if saved_path:
-                    QMessageBox.information(
-                        self,
-                        "Success",
-                        f"✅ Seal applied successfully!\n\n"
-                        f"Card saved to: {saved_path}\n\n"
-                        f"The card is now ready for Obelisk validation."
-                    )
-                    
-                    self.preview_card_image(saved_path)
-                    self.load_members()
-                else:
-                    QMessageBox.warning(self, "Warning", "Seal applied but failed to save to database!")
-            else:
+            result_path = self.seal_comp.embed_and_composite(card_path, member_data, None)
+
+            if not result_path:
                 QMessageBox.critical(self, "Error", "Failed to apply seal to card!")
-            
+                return
+
+            saved_path = self.db.save_member_card(member_id, result_path)
+
+            if saved_path:
+                QMessageBox.information(
+                    self,
+                    "Success",
+                    f"✅ Seal applied successfully!\n\n"
+                    f"Card saved to: {saved_path}\n\n"
+                    f"The card is now ready for Obelisk validation."
+                )
+                self.preview_card_image(saved_path)
+                self.load_members()
+            else:
+                QMessageBox.warning(self, "Warning", "Seal applied but failed to save to database!")
+
         except Exception as e:
             logger.error(f"Seal application error: {e}", exc_info=True)
             QMessageBox.critical(self, "Error", f"Seal application failed:\n{str(e)}")
@@ -670,24 +640,21 @@ class MemberManagerGUI(QMainWindow):
         if not card_path or not Path(card_path).exists():
             QMessageBox.warning(self, "Error", "Please select a card image first!")
             return
-        
-        # Validate seal
+
         is_valid = validate_card_seal(card_path)
-        
+
         if is_valid:
             QMessageBox.information(
                 self,
                 "Validation Passed",
-                "✅ Card has valid seal!\n\n"
-                "This card should pass Obelisk customs validation."
+                "✅ Card has valid seal!\n\nThis card should pass Obelisk customs validation."
             )
         else:
             QMessageBox.warning(
                 self,
                 "Validation Failed",
                 "❌ Invalid or missing seal!\n\n"
-                "This card will NOT pass Obelisk customs.\n"
-                "Please apply seal first."
+                "This card will NOT pass Obelisk customs.\nPlease apply seal first."
             )
     
     # ============================================
@@ -785,9 +752,8 @@ class MemberManagerGUI(QMainWindow):
     def populate_options_members(self):
         """Populate member dropdown in options tab"""
         self.options_member_combo.clear()
-        
-        members = self.db.get_all_members()
-        for member in members:
+
+        for member in self.db.get_all_members():
             name = member.get('member_profile', {}).get('name', 'Unknown')
             member_id = member.get('member_id', 'N/A')
             self.options_member_combo.addItem(f"{name} ({member_id})", member_id)
@@ -797,15 +763,15 @@ class MemberManagerGUI(QMainWindow):
         member_id = self.options_member_combo.currentData()
         if not member_id:
             return
-        
+
         member = self.db.get_member(member_id)
         if not member:
             return
-        
+
         name = member.get('member_profile', {}).get('name', 'Unknown')
         tier = member.get('subscription', {}).get('tier', 'N/A')
         status = member.get('subscription', {}).get('status', 'N/A')
-        
+
         self.options_info.setText(
             f"<b>Member:</b> {name}<br>"
             f"<b>Current Tier:</b> {tier}<br>"
@@ -814,24 +780,24 @@ class MemberManagerGUI(QMainWindow):
         )
     
     def upgrade_member_tier(self):
-        """Upgrade member tier with tier selection"""
+        """Upgrade member tier (admin direct upgrade)"""
         member_id = self.options_member_combo.currentData()
         if not member_id:
             QMessageBox.warning(self, "Error", "Please select a member!")
             return
-        
+
         member = self.db.get_member(member_id)
         current_tier = member.get('subscription', {}).get('tier', 'Standard')
-        
-        # Show tier selection dialog
+
+        # Determine available upgrades
         tier_order = ["Kids", "Standard", "Premium"]
         available_tiers = [t for t in tier_order if tier_order.index(t) > tier_order.index(current_tier)]
-        
+
         if not available_tiers:
             QMessageBox.information(self, "Info", "Member is already at highest tier (Premium)!")
             return
-        
-        # Create selection dialog
+
+        # Show tier selection dialog
         target_tier, ok = QInputDialog.getItem(
             self,
             "Select Target Tier",
@@ -840,54 +806,58 @@ class MemberManagerGUI(QMainWindow):
             0,
             False
         )
-        
+
         if not ok or not target_tier:
             return
-        
-        # Process payment
-        payment_result = process_tier_upgrade(member, target_tier, self)
-        
-        if payment_result:
-            # Update member tier
+
+        # Confirm upgrade
+        reply = QMessageBox.question(
+            self,
+            "Confirm Upgrade",
+            f"Upgrade from {current_tier} to {target_tier}?\n\n"
+            f"This will take effect immediately.",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+        )
+
+        if reply == QMessageBox.StandardButton.Yes:
+            # Update member tier directly
             self.db.update_member(member_id, {
                 'subscription': {
                     'tier': target_tier,
-                    'status': 'active',
-                    'auto_downgrade_date': payment_result['downgrade_date']
+                    'status': 'active'
                 }
             })
-            
+
             QMessageBox.information(
                 self,
                 "Success",
-                f"✅ Member upgraded to {target_tier}!\n\n"
-                f"Auto-downgrade scheduled for:\n{payment_result['downgrade_date'][:10]}"
+                f"✅ Member upgraded to {target_tier}!"
             )
-            
+
             self.load_members()
             self.update_options_info()
     
     def downgrade_member_tier(self):
-        """Downgrade member tier"""
+        """Downgrade member tier (admin direct downgrade)"""
         member_id = self.options_member_combo.currentData()
         if not member_id:
             QMessageBox.warning(self, "Error", "Please select a member!")
             return
-        
+
         member = self.db.get_member(member_id)
         current_tier = member.get('subscription', {}).get('tier', 'Standard')
-        
+
         # Determine target tier
         tier_order = ["Kids", "Standard", "Premium"]
         current_index = tier_order.index(current_tier) if current_tier in tier_order else 1
-        
+
         if current_index <= 0:
-            QMessageBox.information(self, "Info", "Cannot downgrade below current tier!")
+            QMessageBox.information(self, "Info", "Cannot downgrade below Kids tier!")
             return
-        
+
         target_tier = tier_order[current_index - 1]
-        
-        # Confirm
+
+        # Confirm downgrade
         reply = QMessageBox.question(
             self,
             "Confirm Downgrade",
@@ -895,7 +865,7 @@ class MemberManagerGUI(QMainWindow):
             f"This will take effect immediately.",
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
         )
-        
+
         if reply == QMessageBox.StandardButton.Yes:
             self.db.update_member(member_id, {
                 'subscription': {
@@ -903,30 +873,30 @@ class MemberManagerGUI(QMainWindow):
                     'status': 'active'
                 }
             })
-            
+
             QMessageBox.information(self, "Success", f"✅ Member downgraded to {target_tier}!")
             self.load_members()
             self.update_options_info()
     
     def view_member_in_sanctum(self):
-        """Open Archive Sanctum with selected member's data from Tab 4"""
+        """Open Archive Sanctum with selected member's data"""
         member_id = self.options_member_combo.currentData()
         if not member_id:
             QMessageBox.warning(self, "Error", "Please select a member!")
             return
-        
-        self.view_member_in_sanctum_direct(member_id)
-    
-    def view_member_in_sanctum_direct(self, member_id: str):
-        """Open Archive Sanctum with specified member ID"""
+
+        self._launch_sanctum(member_id)
+
+    def _launch_sanctum(self, member_id: str):
+        """Launch Archive Sanctum for specified member"""
         try:
             member = self.db.get_member(member_id)
             if not member:
                 QMessageBox.critical(self, "Error", "Member not found!")
                 return
-            
+
             card_path = self.db.get_member_card_path(member_id)
-            
+
             if not card_path or not Path(card_path).exists():
                 QMessageBox.warning(
                     self,
@@ -935,26 +905,19 @@ class MemberManagerGUI(QMainWindow):
                     "Please generate and seal a card first in 'Apply Seal' tab."
                 )
                 return
-            
+
             # Launch Archive Sanctum as separate process
             import subprocess
-            import json
-            
-            # Pass member data via temp file
-            temp_data = {
-                'card_path': str(card_path),
-                'member_id': member_id
-            }
-            
+
             subprocess.Popen([
                 sys.executable,
                 "archive_sanctum.py",
                 "--card", str(card_path),
                 "--member", member_id
             ])
-            
+
             logger.info(f"Launched Archive Sanctum for member: {member_id}")
-            
+
         except Exception as e:
             logger.error(f"Error launching Archive Sanctum: {e}", exc_info=True)
             QMessageBox.critical(self, "Error", f"Failed to launch Archive Sanctum:\n{str(e)}")
@@ -965,10 +928,10 @@ class MemberManagerGUI(QMainWindow):
         if not member_id:
             QMessageBox.warning(self, "Error", "Please select a member!")
             return
-        
+
         member = self.db.get_member(member_id)
         name = member.get('member_profile', {}).get('name', 'Unknown')
-        
+
         # Confirm deletion
         reply = QMessageBox.question(
             self,
@@ -981,20 +944,20 @@ class MemberManagerGUI(QMainWindow):
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
             QMessageBox.StandardButton.No
         )
-        
-        if reply == QMessageBox.StandardButton.Yes:
-            if self.db.delete_member(member_id):
-                QMessageBox.information(
-                    self,
-                    "Deleted",
-                    f"✅ Account deleted and archived.\n\n"
-                    f"Member: {name}"
-                )
-                
-                self.load_members()
-                self.populate_options_members()
-            else:
-                QMessageBox.critical(self, "Error", "Failed to delete member!")
+
+        if reply != QMessageBox.StandardButton.Yes:
+            return
+
+        if self.db.delete_member(member_id):
+            QMessageBox.information(
+                self,
+                "Deleted",
+                f"✅ Account deleted and archived.\n\nMember: {name}"
+            )
+            self.load_members()
+            self.populate_options_members()
+        else:
+            QMessageBox.critical(self, "Error", "Failed to delete member!")
     
     # ============================================
     # TAB 5: DETAILED VIEW
@@ -1151,20 +1114,15 @@ class MemberManagerGUI(QMainWindow):
             self.populate_options_members()
             
             logger.info(f"Loaded {len(members)} members")
-            
+
         except Exception as e:
             logger.error(f"Error loading members: {e}", exc_info=True)
-    
-    def on_tab_changed(self, index):
-        """Handle tab change"""
-        logger.debug(f"Tab changed to: {index}")
-    
+
     def launch_archive_sanctum(self):
         """Launch Archive Sanctum or login page"""
-        # Check if member selected in Tab 1
         if self.current_member_id:
             # Open Archive Sanctum directly with member data
-            self.view_member_in_sanctum_direct(self.current_member_id)
+            self._launch_sanctum(self.current_member_id)
         else:
             # Open Obelisk Customs login page
             try:
@@ -1179,63 +1137,53 @@ class MemberManagerGUI(QMainWindow):
         """Generate a generic card for new member with auto-verification"""
         try:
             from PIL import Image, ImageDraw, ImageFont
-            
+
             member_id = member_data.get('member_id')
             name = member_data.get('member_profile', {}).get('name', 'Member')
             tier = member_data.get('subscription', {}).get('tier', 'Standard')
-            
-            # Create generic card (512x768)
+
+            # Create card (512x768)
             card = Image.new('RGB', (512, 768), color='#1a0000')
             draw = ImageDraw.Draw(card)
-            
+
             # Draw gradient background
             for y in range(768):
                 shade = int(26 + (y / 768) * 30)
                 draw.line([(0, y), (512, y)], fill=(shade, 0, 0))
-            
+
             # Draw border
             draw.rectangle([(10, 10), (502, 758)], outline='#dc2626', width=3)
-            
-            # Add text
+
+            # Load fonts
             try:
-                # Try to load a nice font
                 font_large = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 36)
                 font_medium = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 24)
                 font_small = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 18)
             except:
                 font_large = font_medium = font_small = ImageFont.load_default()
-            
-            # Title
+
+            # Draw text elements
             draw.text((256, 100), "AURORA ARCHIVE", fill='#dc2626', font=font_large, anchor='mm')
             draw.text((256, 150), "Member Card", fill='#fca5a5', font=font_medium, anchor='mm')
-            
-            # Member info
             draw.text((256, 300), name, fill='#ffffff', font=font_medium, anchor='mm')
             draw.text((256, 350), f"Tier: {tier}", fill='#fca5a5', font=font_small, anchor='mm')
             draw.text((256, 400), f"ID: {member_id}", fill='#9ca3af', font=font_small, anchor='mm')
-            
-            # Footer
-            draw.text((256, 700), "Generic Card - Customize in Archive Sanctum", 
+            draw.text((256, 700), "Generic Card - Customize in Archive Sanctum",
                      fill='#6b7280', font=font_small, anchor='mm')
-            
+
             # Save card
             card_dir = Path("data/cards")
             card_dir.mkdir(parents=True, exist_ok=True)
             card_path = card_dir / f"{member_id}_generic.png"
             card.save(card_path)
-            
-            # Apply seal with auto-verification
-            sealed_path = self.seal_comp.embed_and_composite(
-                str(card_path),
-                member_data,
-                None
-            )
-            
+
+            # Apply seal
+            sealed_path = self.seal_comp.embed_and_composite(str(card_path), member_data, None)
+
             if sealed_path:
-                # Save to database
                 final_path = self.db.save_member_card(member_id, sealed_path)
-                
-                # Update member with crimson_collective fields (auto-verified)
+
+                # Mark card as verified
                 self.db.update_member(member_id, {
                     'card_data': {
                         'valid': True,
@@ -1246,12 +1194,12 @@ class MemberManagerGUI(QMainWindow):
                         }
                     }
                 })
-                
+
                 logger.info(f"Generated and verified generic card for {member_id}")
                 return final_path
-            
+
             return None
-            
+
         except Exception as e:
             logger.error(f"Generic card generation error: {e}", exc_info=True)
             return None

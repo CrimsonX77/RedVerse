@@ -22,7 +22,7 @@ Thank you for your interest in contributing to The RedVerse! This document provi
 
 ```bash
 # Fork and clone your fork
-git clone https://github.com/YOUR_USERNAME/Redverse.git
+git clone https://github.com/Crimsonx77/Redverse.git
 cd Redverse
 
 # Set up development environment

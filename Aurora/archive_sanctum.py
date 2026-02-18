@@ -27,7 +27,7 @@ from PyQt6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
     QPushButton, QLabel, QFrame, QGridLayout, QScrollArea,
     QGraphicsView, QGraphicsScene, QGraphicsEllipseItem, QGraphicsLineItem,
-    QProgressBar, QTextEdit, QDialog, QDialogButtonBox
+    QProgressBar, QTextEdit, QDialog, QDialogButtonBox, QMessageBox
 )
 from PyQt6.QtCore import (
     Qt, QTimer, QPropertyAnimation, QEasingCurve, 
@@ -1495,9 +1495,10 @@ class ArchiveSanctumWindow(QMainWindow):
             import sys
             
             # Launch aurora_pyqt6_main.py
+            aurora_script = Path(__file__).parent / "aurora_pyqt6_main.py"
             subprocess.Popen([
                 sys.executable,
-                "aurora_pyqt6_main.py"
+                str(aurora_script)
             ])
             
             self.status_label.setText("✨ Card Generator launched!")
@@ -1704,8 +1705,8 @@ def main():
                 }
             }
     else:
-        # Default test mode
-        card_path = "/home/crimson/Desktop/Authunder/test_card.png"
+        # Default test mode with example data
+        card_path = str(Path(__file__).parent.parent / "Assets" / "generated_cards" / "test_card.png")
         card_data = {
             "user_id": "CrimsonMage",
             "tier": "Premium",

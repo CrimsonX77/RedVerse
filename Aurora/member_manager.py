@@ -6,6 +6,7 @@ Age-based tier assignment with Kids tier restrictions
 
 import json
 import hashlib
+import uuid
 from pathlib import Path
 from datetime import datetime, timedelta, date
 from typing import Dict, Optional, Tuple
@@ -17,7 +18,18 @@ class MemberManager:
     Manages member creation, editing, and card generation
     Handles complete member_schema structure with age-based tier restrictions
     """
-    
+
+    # Phase 2: 7-Tier Access System Configuration
+    TIER_CONFIG = {
+        1: {"name": "Wanderer",      "memory_depth": 0,   "cross_site": False, "custom_soul": False},
+        2: {"name": "Initiate",      "memory_depth": 10,  "cross_site": False, "custom_soul": False},
+        3: {"name": "Acolyte",       "memory_depth": 25,  "cross_site": False, "custom_soul": False},
+        4: {"name": "Keeper",        "memory_depth": 50,  "cross_site": True,  "custom_soul": False},
+        5: {"name": "Sentinel",      "memory_depth": 100, "cross_site": True,  "custom_soul": True},
+        6: {"name": "Archon",        "memory_depth": 500, "cross_site": True,  "custom_soul": True},
+        7: {"name": "Inner Sanctum", "memory_depth": -1,  "cross_site": True,  "custom_soul": True},
+    }
+
     def __init__(self):
         self.stego = MutableCardSteganography()
     
@@ -210,7 +222,14 @@ class MemberManager:
         # Generate IDs
         member_id = self.generate_member_id(email)
         card_id = self.generate_card_id(member_id)
-        
+
+        # Phase 2: Generate thread_id for per-user JSONL memory
+        thread_id = str(uuid.uuid4())
+
+        # Phase 2: Assign access tier (default Tier 1 - Wanderer)
+        access_tier = 1
+        tier_name = self.TIER_CONFIG[access_tier]["name"]
+
         # Timestamps
         now = datetime.utcnow()
         now_iso = now.isoformat() + "Z"
@@ -238,7 +257,16 @@ class MemberManager:
         member_data = {
             "card_id": card_id,
             "member_id": member_id,
-            
+
+            # Phase 2: Per-User Memory & Access Control
+            "thread_id": thread_id,
+            "access_tier": access_tier,
+            "tier_name": tier_name,
+            "seal_status": "unsigned",
+            "seal_verification_layer": None,
+            "oracle_context": {},
+            "edrive_context": {},
+
             "member_profile": {
                 "name": name,
                 "email": email,

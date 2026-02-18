@@ -12,7 +12,7 @@ from PIL import Image
 from typing import Dict, Optional, Tuple
 from pathlib import Path
 
-card_image_path = Path("Desktop/Authunder/test_card_embedded.png")
+card_image_path = Path("Desktop/Redverse/Sables_Room/test_card_embedded.png")
 
 
 class SteganographyError(Exception):
@@ -341,7 +341,7 @@ class CardSteganography:
     
     # Aliases for compatibility with aurora_pyqt6_main.py
     def embed_data(self, card_image_path: str, member_data: Dict, 
-                   output_path: Optional[str] = None, overwrite: bool = False) -> str:
+                   output_path: Optional[str] = None, force_overwrite: bool = False) -> str:
         """
         Alias for embed_member_data() - compatible with Aurora main app
         
@@ -349,12 +349,12 @@ class CardSteganography:
             card_image_path: Path to source card image
             member_data: Dictionary containing member/card information
             output_path: Where to save modified image (default: auto-generate)
-            overwrite: If True, overwrite the original file
+            force_overwrite: If True, force_overwrite the original file
             
         Returns:
             Path to the output image with embedded data
         """
-        if overwrite:
+        if force_overwrite:
             output_path = card_image_path
         return self.embed_member_data(card_image_path, member_data, output_path)
     
@@ -438,7 +438,7 @@ if __name__ == '__main__':
     print("=" * 50)
     
     # Test with a sample image (you'll need to provide an actual image path)
-    test_image = "home/crimson/Desktop/Authunder/test_card_embedded22.png"  # Replace with your card image path
+    test_image = "home/crimson/Desktop/Redverse/Sables_Room/test_card_embedded22.png"  # Replace with your card image path
     
     try:
         # Create steganography instance

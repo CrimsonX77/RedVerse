@@ -1,0 +1,11 @@
+# Phase 2: Memory API Server Dependencies
+
+Flask==3.0.0
+Flask-CORS==4.0.0
+Werkzeug==3.0.1
+
+# Already installed in main project (not needed if main environment active):
+# pathlib (built-in)
+# logging (built-in)
+# json (built-in)
+# uuid (built-in)

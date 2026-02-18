@@ -108,7 +108,7 @@ cp dragon_forge.desktop ~/.local/share/applications/
 curl https://ollama.ai/install.sh | sh
 
 # Pull a model (example: llama2)
-ollama pull llama2
+ollama pull CrimsonDragonX7/Oracle:latest
 
 # Start Ollama service
 ollama serve

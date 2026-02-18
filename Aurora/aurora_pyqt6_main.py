@@ -3127,10 +3127,6 @@ class AuroraMainWindow(QMainWindow):
             self.api_manager.export_to_env(api_type)
             
             # Reload environment variables immediately
-            from dotenv import load_dotenv
-            load_dotenv('.env', override=True)
-            logger.info(f"Reloaded .env file with updated {api_type} configuration")
-            
             # Also update both GROK_API_KEY and XAI_API_KEY for compatibility
             if api_type == 'grok' and api_key:
                 os.environ['GROK_API_KEY'] = api_key

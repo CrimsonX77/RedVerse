@@ -1,6 +1,6 @@
 """
 Aurora Archive - Mutable Steganography System
-Advanced card data management with overwrite and async edit capabilities
+Advanced card data management with force_overwrite and async edit capabilities
 
 Python 3.10+
 Dependencies: Pillow, aiofiles
@@ -25,7 +25,7 @@ class CardLockError(Exception):
 class MutableCardSteganography:
     """
     Advanced steganography system with:
-    - Overwrite capability (embed new data regardless of existing data)
+    - force_overwrite capability (embed new data regardless of existing data)
     - Async read-modify-write operations
     - Card locking for concurrent access control
     - Edit history tracking
@@ -56,8 +56,8 @@ class MutableCardSteganography:
         Args:
             image_path: Source image path
             data: Dictionary to embed
-            output_path: Where to save (None = overwrite source)
-            force_overwrite: If True, ignore existing data and overwrite
+            output_path: Where to save (None = force_overwrite source)
+            force_overwrite: If True, ignore existing data and force_overwrite
             
         Returns:
             Path to output image
@@ -267,6 +267,28 @@ class MutableCardSteganography:
             
         except:
             return None
+        
+    def update_data(self, image_path: str, updates: Dict) -> Dict:
+        """
+        Update specific fields in embedded data
+        
+        Args:
+            image_path: Card to update
+            updates: Dict of field -> new value
+            
+        Returns:
+            Updated data
+        """
+        # Extract current data
+        current_data = self.extract_data(image_path)
+        
+        # Update fields
+        current_data.update(updates)
+        
+        # Re-embed (force_overwrite)
+        self.embed_data(image_path, current_data, output_path=image_path, force_overwrite=True)
+        
+        return current_data 
     
     # ============================================
     # ASYNC OPERATIONS

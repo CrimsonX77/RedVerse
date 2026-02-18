@@ -50,8 +50,8 @@ class DatabaseManager:
         self.transactions_db = self.data_dir / "transactions.jsonl"
         
         # Card storage paths
-        self.cards_dir = self.data_dir / "member_cards"
-        self.cards_dir.mkdir(exist_ok=True)
+        self.cards_dir = Path(__file__).parent.parent / "Assets" / "member_cards"
+        self.cards_dir.mkdir(parents=True, exist_ok=True)
         self.archived_cards_dir = self.data_dir / "archived_cards"
         self.archived_cards_dir.mkdir(exist_ok=True)
         

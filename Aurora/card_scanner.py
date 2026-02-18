@@ -602,7 +602,7 @@ if __name__ == '__main__':
     print()
     
     # Test with Aurora member card (project-relative test fixture)
-    test_aurora_card = str(Path(__file__).parent / 'test_data' / 'test_card_embedded22.png')
+    test_aurora_card = str(Path(__file__).parent.parent / 'data' / 'cards' / 'm_c4a05352_generic.png')
     
     scanner = CardScanner()
     
