@@ -585,6 +585,8 @@ body::after {
 .sd-status.online { color: #4CAF50; }
 .sd-status.offline { color: var(--silver-dim); }
 </style>
+<!-- FrontGate Phase 2 Integration -->
+<link rel="stylesheet" href="frontgate/redverse-gate.css">
 </head>
 <body>
 <nav class="edrive-nav" id="edriveNav">
@@ -596,6 +598,7 @@ body::after {
     <li><a href="EDrive.html" class="active">E-Drive</a></li>
     <li><a href="setup.html">Setup</a></li>
     <li><a href="support.html">Support</a></li>
+    <li><a href="crimson-control-hall.html" data-auth-show="admin" style="color: #ff1a3d; font-weight: bold;">🔴 Control Hall</a></li>
   </ul>
 </nav>
 <div class="edrive-container">
@@ -2252,5 +2255,7 @@ window.updateSDStatus = updateSDStatus;
 
 })();
 </script>
+<!-- FrontGate Phase 2 Integration -->
+<script src="frontgate/redverse-auth.js"></script>
 </body>
 </html>

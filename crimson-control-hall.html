@@ -433,7 +433,10 @@
                 <span id="admin-name">Loading...</span>
                 <span id="admin-tier">TIER: —</span>
             </div>
-            <button class="logout-btn" onclick="logout()">LOGOUT</button>
+            <div style="display: flex; gap: 10px;">
+                <button class="logout-btn" style="background: #4a4a4a; border-color: #666;" onclick="navigateToMain()">← RETURN TO MAIN</button>
+                <button class="logout-btn" onclick="logout()">LOGOUT</button>
+            </div>
         </div>
     </div>
 
@@ -799,6 +802,12 @@
         function logout() {
             sessionStorage.removeItem('aurora_session_jwt');
             window.location.href = 'google_auth.html';
+        }
+
+        function navigateToMain() {
+            // Return to main site (E-Drive for regular users, first contact for guests)
+            // Admin status already verified on this page, so safe to navigate
+            window.location.href = 'EDrive.html';
         }
     </script>
 </body>
