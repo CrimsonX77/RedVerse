@@ -119,6 +119,58 @@ class UserMemoryBridge:
             logger.error(f"Error loading user context: {e}", exc_info=True)
             return []
 
+    def load_shared_context(self, thread_ids: List[str], last_n: Optional[int] = None) -> List[Dict]:
+        """
+        Load events from multiple thread_ids (for shared memories)
+
+        Args:
+            thread_ids: List of thread_ids to load from
+            last_n: Number of events to load per thread (None uses tier default)
+
+        Returns:
+            Combined list of events from all threads, sorted by timestamp (newest first)
+        """
+        if last_n is None:
+            last_n = self.memory_depth
+
+        if last_n == 0:
+            logger.debug(f"Tier {self.access_tier}: No memory access")
+            return []
+
+        all_events = []
+
+        for thread_id in thread_ids:
+            thread_file = self.threads_dir / f"{thread_id}.jsonl"
+            if not thread_file.exists():
+                logger.debug(f"Memory file not found for thread_id={thread_id}")
+                continue
+
+            try:
+                with open(thread_file, 'r', encoding='utf-8') as f:
+                    events = []
+                    for line in f:
+                        line = line.strip()
+                        if line:
+                            events.append(json.loads(line))
+
+                    # Add ownership marker
+                    for event in events:
+                        event['_from_thread'] = thread_id  # Track which user's memory
+                        all_events.append(event)
+
+            except Exception as e:
+                logger.warning(f"Error loading context from thread {thread_id}: {e}")
+                continue
+
+        # Sort by timestamp (newest first) and limit
+        all_events.sort(key=lambda x: x.get('timestamp', ''), reverse=True)
+
+        if last_n is not None and last_n > 0:
+            all_events = all_events[:last_n]
+
+        logger.info(f"Loaded {len(all_events)} shared events from {len(thread_ids)} threads")
+        return all_events
+
     def store_user_event(
         self,
         role: str,

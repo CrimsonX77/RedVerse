@@ -226,7 +226,251 @@ class DatabaseManager:
     def get_member(self, member_id: str) -> Optional[Dict]:
         """Get member data"""
         return self.members.get(member_id)
-    
+
+    def get_member_by_email(self, email: str) -> Optional[Dict]:
+        """Get member by email address - for Google auth"""
+        email_lower = email.lower().strip()
+        for member in self.members.values():
+            member_email = member.get('email', '').lower().strip()
+            if member_email == email_lower:
+                return member
+        return None
+
+    def create_new_member_from_google(self, email: str, name: str, google_sub: str) -> Optional[Dict]:
+        """Create new member from Google OAuth login"""
+        try:
+            import uuid
+
+            member_id = str(uuid.uuid4())
+            thread_id = str(uuid.uuid4())
+
+            member_data = {
+                'id': member_id,
+                'member_id': member_id,
+                'email': email.lower().strip(),
+                'display_name': name,
+                'google_sub': google_sub,
+                'access_tier': 1,  # Default to Tier 1 (Wanderer)
+                'tier_name': 'Wanderer',
+                'thread_id': thread_id,
+                'is_admin': False,
+                'auth_method': 'google',
+                'created_at': datetime.now().isoformat(),
+                'member_profile': {
+                    'name': name,
+                    'email': email.lower().strip()
+                },
+                'memory_sharing_mode': 'isolated',
+                'trusted_users': [],
+                'card_data': {
+                    'current_card_path': None,
+                    'last_updated': None,
+                    'valid': False
+                },
+                'rentals': [],
+                'audit_trail': [
+                    {
+                        'action': 'account_created_via_google',
+                        'timestamp': datetime.now().isoformat(),
+                        'details': f'Created via Google OAuth: {email}'
+                    }
+                ]
+            }
+
+            # Add to memory
+            self.members[member_id] = member_data
+
+            # Save to disk
+            self._save_members_db({
+                "metadata": {
+                    "created": datetime.now().isoformat(),
+                    "version": "1.0",
+                    "total_members": len(self.members),
+                    "last_updated": datetime.now().isoformat()
+                },
+                "members": self.members
+            })
+
+            # Log transaction
+            self._log_transaction({
+                "type": "member_created_google",
+                "member_id": member_id,
+                "email": email,
+                "timestamp": datetime.now().isoformat(),
+                "google_sub": google_sub
+            })
+
+            logger.info(f"Created new member from Google OAuth: {email} (ID: {member_id}, Thread: {thread_id})")
+            return member_data
+
+        except Exception as e:
+            logger.error(f"Error creating member from Google OAuth: {e}", exc_info=True)
+            return None
+
+    def set_memory_sharing_mode(self, member_id: str, mode: str, pooled_tier: Optional[int] = None) -> bool:
+        """
+        Set memory sharing mode for member (isolated, trusted, or pooled)
+
+        Args:
+            member_id: Member ID
+            mode: "isolated" | "trusted" | "pooled"
+            pooled_tier: Tier number (4-7) if mode is "pooled"
+
+        Returns:
+            True if successful
+        """
+        try:
+            if member_id not in self.members:
+                logger.error(f"Member not found: {member_id}")
+                return False
+
+            if mode not in ["isolated", "trusted", "pooled"]:
+                logger.error(f"Invalid sharing mode: {mode}")
+                return False
+
+            # Only Tier 4+ can use sharing
+            member = self.members[member_id]
+            if member.get('access_tier', 1) < 4 and mode != "isolated":
+                logger.warning(f"Member {member_id} tier < 4, cannot use {mode} sharing")
+                return False
+
+            self.members[member_id]['memory_sharing_mode'] = mode
+            if mode == "pooled":
+                self.members[member_id]['pooled_tier'] = pooled_tier or member.get('access_tier')
+
+            self.update_member(member_id, {'memory_sharing_mode': mode, 'pooled_tier': pooled_tier})
+            logger.info(f"Set {mode} sharing mode for member {member_id}")
+            return True
+
+        except Exception as e:
+            logger.error(f"Error setting sharing mode: {e}", exc_info=True)
+            return False
+
+    def add_trusted_user(self, member_id: str, trusted_member_id: str) -> bool:
+        """
+        Add trusted user (bidirectional)
+
+        Args:
+            member_id: The user adding a trusted connection
+            trusted_member_id: The user being trusted
+
+        Returns:
+            True if successful
+        """
+        try:
+            if member_id not in self.members or trusted_member_id not in self.members:
+                logger.error(f"One or both members not found")
+                return False
+
+            member = self.members[member_id]
+            trusted_member = self.members[trusted_member_id]
+
+            # Both must be Tier 4+ for sharing
+            if member.get('access_tier', 1) < 4 or trusted_member.get('access_tier', 1) < 4:
+                logger.warning(f"Both members must be Tier 4+ for trusted sharing")
+                return False
+
+            # Add bidirectional trust
+            if 'trusted_users' not in member:
+                member['trusted_users'] = []
+            if trusted_member_id not in member['trusted_users']:
+                member['trusted_users'].append(trusted_member_id)
+
+            if 'trusted_users' not in trusted_member:
+                trusted_member['trusted_users'] = []
+            if member_id not in trusted_member['trusted_users']:
+                trusted_member['trusted_users'].append(member_id)
+
+            # Save changes
+            self.update_member(member_id, {'trusted_users': member['trusted_users']})
+            self.update_member(trusted_member_id, {'trusted_users': trusted_member['trusted_users']})
+
+            logger.info(f"Added trusted connection: {member_id} <-> {trusted_member_id}")
+            return True
+
+        except Exception as e:
+            logger.error(f"Error adding trusted user: {e}", exc_info=True)
+            return False
+
+    def get_accessible_thread_ids(self, member_id: str) -> List[str]:
+        """
+        Get all thread_ids a member can access based on sharing mode
+
+        Args:
+            member_id: Member ID
+
+        Returns:
+            List of thread_ids the member can access
+        """
+        try:
+            member = self.members.get(member_id)
+            if not member:
+                logger.error(f"Member not found: {member_id}")
+                return []
+
+            accessible = [member.get('thread_id')]  # Always own thread
+            mode = member.get('memory_sharing_mode', 'isolated')
+            tier = member.get('access_tier', 1)
+
+            if tier < 4:
+                # Tier < 4: only own memory
+                return accessible
+
+            if mode == "trusted":
+                # Add trusted users' threads
+                for trusted_id in member.get('trusted_users', []):
+                    trusted = self.members.get(trusted_id)
+                    if trusted:
+                        accessible.append(trusted.get('thread_id'))
+
+            elif mode == "pooled":
+                # Add all users at same tier's threads
+                pool_tier = member.get('pooled_tier', tier)
+                for other_member in self.members.values():
+                    if other_member.get('access_tier') == pool_tier and other_member.get('memory_sharing_mode') == 'pooled':
+                        if 'thread_id' in other_member:
+                            accessible.append(other_member.get('thread_id'))
+
+            return list(set(accessible))  # Remove duplicates
+
+        except Exception as e:
+            logger.error(f"Error getting accessible threads: {e}", exc_info=True)
+            return []
+
+    def add_admin_flag(self, member_id: str, note: str) -> bool:
+        """
+        Add admin observation flag (read-only, non-modifying)
+
+        Args:
+            member_id: Member ID
+            note: Admin observation note
+
+        Returns:
+            True if successful
+        """
+        try:
+            if member_id not in self.members:
+                logger.error(f"Member not found: {member_id}")
+                return False
+
+            member = self.members[member_id]
+            if 'admin_flags' not in member:
+                member['admin_flags'] = []
+
+            member['admin_flags'].append({
+                'note': note,
+                'timestamp': datetime.now().isoformat(),
+                'admin_id': 'system'  # Would be replaced with actual admin ID
+            })
+
+            self.update_member(member_id, {'admin_flags': member['admin_flags']})
+            logger.info(f"Added admin flag for {member_id}: {note}")
+            return True
+
+        except Exception as e:
+            logger.error(f"Error adding admin flag: {e}", exc_info=True)
+            return False
+
     def get_all_members(self) -> List[Dict]:
         """Get all members"""
         return list(self.members.values())

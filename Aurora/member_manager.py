@@ -267,6 +267,13 @@ class MemberManager:
             "oracle_context": {},
             "edrive_context": {},
 
+            # Phase 2B: Memory Sharing System
+            "memory_sharing_mode": "isolated",  # "isolated" | "trusted" | "pooled"
+            "trusted_users": [],  # List of member_ids to share memory with
+            "pooled_tier": None,  # Tier number (4-7) if user enabled pooled tier sharing
+            "admin_flags": [],  # Admin observation notes (read-only, no modification allowed)
+            "is_admin": False,  # Whether user has admin access to Crimson Control Hall
+
             "member_profile": {
                 "name": name,
                 "email": email,
