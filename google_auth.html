@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RedVerse — Enter</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --crimson: #c41230;
+    --crimson-dark: #8b0a20;
+    --crimson-glow: #ff1a3d;
+    --navi: #cc99ff;
+    --text: #e8e0d8;
+    --text-dim: #6b6460;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: #000;
+    color: var(--text);
+    font-family: 'Share Tech Mono', monospace;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+
+  /* Scanlines */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(
+      0deg, transparent, transparent 2px,
+      rgba(0,0,0,0.12) 2px, rgba(0,0,0,0.12) 4px
+    );
+    pointer-events: none;
+    z-index: 10;
+  }
+
+  /* Vignette */
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.85) 100%);
+    pointer-events: none;
+    z-index: 9;
+  }
+
+  /* Ambient glow */
+  .ambient {
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse at 50% 50%, rgba(196,18,48,0.06) 0%, transparent 60%);
+    pointer-events: none;
+    z-index: 1;
+    animation: breathe 6s ease-in-out infinite;
+  }
+
+  @keyframes breathe {
+    0%, 100% { opacity: 0.6; }
+    50% { opacity: 1; }
+  }
+
+  /* Main card */
+  .auth-card {
+    position: relative;
+    z-index: 20;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2.5rem;
+    padding: 3.5rem 3rem;
+    background: rgba(10, 0, 5, 0.85);
+    border: 1px solid rgba(196,18,48,0.25);
+    max-width: 420px;
+    width: 90%;
+    animation: fade-in 1.5s ease forwards;
+  }
+
+  @keyframes fade-in {
+    from { opacity: 0; transform: translateY(20px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .sigil {
+    font-family: 'Cinzel', serif;
+    font-size: 0.65rem;
+    letter-spacing: 0.5em;
+    text-transform: uppercase;
+    color: var(--crimson);
+    text-align: center;
+    opacity: 0.7;
+  }
+
+  .title {
+    font-family: 'Cinzel', serif;
+    font-size: clamp(2rem, 5vw, 2.8rem);
+    font-weight: 900;
+    letter-spacing: 0.15em;
+    color: var(--crimson);
+    text-align: center;
+    text-shadow: 0 0 40px rgba(196,18,48,0.4);
+    line-height: 1.1;
+  }
+
+  .subtitle {
+    font-size: 0.75rem;
+    letter-spacing: 0.2em;
+    color: var(--text-dim);
+    text-align: center;
+    line-height: 1.8;
+  }
+
+  /* Divider */
+  .divider {
+    width: 100%;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(196,18,48,0.3), transparent);
+  }
+
+  /* Google sign-in button wrapper */
+  .google-btn-wrapper {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+  }
+
+  /* Styled Google button override */
+  .google-signin-btn {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 28px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.15);
+    color: var(--text);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.85rem;
+    letter-spacing: 0.15em;
+    cursor: pointer;
+    width: 100%;
+    justify-content: center;
+    transition: all 0.3s;
+    text-transform: uppercase;
+  }
+
+  .google-signin-btn:hover {
+    background: rgba(255,255,255,0.1);
+    border-color: rgba(255,255,255,0.35);
+  }
+
+  .google-icon {
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+  }
+
+  /* GIS rendered button container */
+  #g_id_signin {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+  }
+
+  /* Guest link */
+  .guest-link {
+    font-size: 0.7rem;
+    letter-spacing: 0.2em;
+    color: var(--text-dim);
+    text-decoration: none;
+    text-transform: uppercase;
+    border-bottom: 1px solid transparent;
+    transition: all 0.3s;
+    cursor: pointer;
+    background: none;
+    border: none;
+    font-family: inherit;
+  }
+
+  .guest-link:hover {
+    color: var(--navi);
+    border-bottom-color: var(--navi);
+  }
+
+  /* Status message */
+  .status {
+    font-size: 0.75rem;
+    letter-spacing: 0.15em;
+    color: var(--text-dim);
+    text-align: center;
+    min-height: 1em;
+    transition: color 0.3s;
+  }
+
+  .status.success { color: #10b981; }
+  .status.error   { color: var(--crimson-glow); }
+
+  /* Flicker animation */
+  @keyframes flicker {
+    0%,100% { opacity: 1; }
+    92% { opacity: 1; }
+    93% { opacity: 0.4; }
+    94% { opacity: 1; }
+    96% { opacity: 0.6; }
+    97% { opacity: 1; }
+  }
+
+  .title { animation: flicker 8s infinite; }
+</style>
+</head>
+<body>
+
+<div class="ambient"></div>
+
+<div class="auth-card">
+  <div class="sigil">RedVerse // Authentication Gate</div>
+
+  <div class="title">REDVERSE</div>
+
+  <div class="subtitle">
+    identify yourself<br>
+    before you enter the church
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- Google Identity Services renders here -->
+  <div class="google-btn-wrapper">
+    <div id="g_id_signin"></div>
+  </div>
+
+  <div class="status" id="status"></div>
+
+  <div class="divider"></div>
+
+  <button class="guest-link" onclick="enterAsGuest()">
+    continue without signing in →
+  </button>
+</div>
+
+<!-- Google Identity Services -->
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<script>
+  const CLIENT_ID = '23326348224-utv5ng3jq4u21ort7of2hgaed6hkql3u.apps.googleusercontent.com';
+  const NEXT_PAGE  = 'redverse_first_contact.html';
+
+  function setStatus(msg, type = '') {
+    const el = document.getElementById('status');
+    el.textContent = msg;
+    el.className = 'status ' + type;
+  }
+
+  // Called by GIS after a successful sign-in
+  function handleCredentialResponse(response) {
+    if (!response.credential) {
+      setStatus('sign-in failed — try again', 'error');
+      return;
+    }
+
+    // Decode the JWT payload (no signature verification needed client-side)
+    const payload = JSON.parse(atob(response.credential.split('.')[1]));
+
+    // Persist basic session info (not sensitive — display name and email only)
+    sessionStorage.setItem('rv_auth', JSON.stringify({
+      name:    payload.name,
+      email:   payload.email,
+      picture: payload.picture,
+      sub:     payload.sub,
+      auth_method: 'google'
+    }));
+
+    setStatus('authenticated — entering...', 'success');
+
+    setTimeout(() => {
+      window.location.href = NEXT_PAGE;
+    }, 800);
+  }
+
+  // Continue without Google auth (guest mode)
+  function enterAsGuest() {
+    sessionStorage.setItem('rv_auth', JSON.stringify({
+      name: 'Guest',
+      auth_method: 'guest'
+    }));
+    window.location.href = NEXT_PAGE;
+  }
+
+  // Initialize GIS once the script loads
+  window.addEventListener('load', () => {
+    if (typeof google === 'undefined') {
+      setStatus('could not reach google — use guest mode', 'error');
+      return;
+    }
+
+    google.accounts.id.initialize({
+      client_id:  CLIENT_ID,
+      callback:   handleCredentialResponse,
+      auto_select: false,
+      cancel_on_tap_outside: false
+    });
+
+    google.accounts.id.renderButton(
+      document.getElementById('g_id_signin'),
+      {
+        theme:     'filled_black',
+        size:      'large',
+        width:     320,
+        text:      'signin_with',
+        shape:     'rectangular',
+        logo_alignment: 'center'
+      }
+    );
+  });
+</script>
+</body>
+</html>
