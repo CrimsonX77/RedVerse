@@ -1,0 +1,1404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Obelisk — Present Your Seal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&family=JetBrains+Mono:wght@300;400&display=swap" rel="stylesheet">
+<style>
+/* ═══════════════════════════════════════════════════════════════
+   THE OBELISK GATE — RedVerse Authentication Portal
+   Present your Aurora Card to pass through the gate.
+   ═══════════════════════════════════════════════════════════════ */
+:root {
+  --crimson: #c41230;
+  --crimson-dark: #8b0a20;
+  --crimson-glow: #ff1a3d;
+  --crimson-deep: #3d0410;
+  --gold: #d4a846;
+  --gold-dim: #a8843a;
+  --gold-bright: #f0d078;
+  --silver: #b8c0cc;
+  --silver-dim: #6b7280;
+  --black: #0a0a0c;
+  --void: #050507;
+  --text-primary: #e8e0d8;
+  --text-secondary: #9b8e82;
+  --text-faint: #5a534d;
+  --font-display: 'Cinzel', serif;
+  --font-body: 'Crimson Pro', serif;
+  --font-mono: 'JetBrains Mono', monospace;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html, body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: var(--void);
+  font-family: var(--font-body);
+  color: var(--text-primary);
+  cursor: default;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   ATMOSPHERIC CANVAS — Particle fog
+   ═══════════════════════════════════════════════════════════════ */
+#atmosphere {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   BACKGROUND LAYERS — Depth & texture
+   ═══════════════════════════════════════════════════════════════ */
+.bg-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.bg-vignette {
+  background: radial-gradient(ellipse at 50% 30%, transparent 20%, rgba(5,5,7,0.6) 60%, rgba(5,5,7,0.95) 100%);
+}
+
+.bg-cathedral {
+  background:
+    radial-gradient(ellipse at 50% 0%, rgba(196, 18, 48, 0.04) 0%, transparent 50%),
+    radial-gradient(ellipse at 50% 100%, rgba(139, 10, 32, 0.06) 0%, transparent 40%),
+    linear-gradient(180deg, rgba(5,5,7,0) 0%, rgba(61, 4, 16, 0.08) 100%);
+}
+
+/* Subtle stone texture overlay */
+.bg-noise {
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+  background-size: 256px 256px;
+  opacity: 0.5;
+}
+
+/* Vertical cathedral light beams */
+.bg-beams {
+  background:
+    linear-gradient(90deg, transparent 20%, rgba(196,18,48,0.012) 20.5%, transparent 21%),
+    linear-gradient(90deg, transparent 49.5%, rgba(212,168,70,0.008) 50%, transparent 50.5%),
+    linear-gradient(90deg, transparent 79%, rgba(196,18,48,0.012) 79.5%, transparent 80%);
+  animation: beamDrift 20s ease-in-out infinite alternate;
+}
+
+@keyframes beamDrift {
+  0% { transform: translateX(-2px); }
+  100% { transform: translateX(2px); }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   MAIN LAYOUT
+   ═══════════════════════════════════════════════════════════════ */
+.gate-container {
+  position: relative;
+  z-index: 10;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   OBELISK HEADER — Title & lore text
+   ═══════════════════════════════════════════════════════════════ */
+.obelisk-header {
+  text-align: center;
+  margin-bottom: 2.5rem;
+  opacity: 0;
+  animation: riseReveal 1.8s cubic-bezier(0.16, 1, 0.3, 1) 0.3s forwards;
+}
+
+.obelisk-sigil {
+  width: 48px;
+  height: 48px;
+  margin: 0 auto 1.2rem;
+  position: relative;
+}
+
+/* Animated sigil — rotating diamond with inner cross */
+.obelisk-sigil::before {
+  content: '';
+  position: absolute;
+  inset: 4px;
+  border: 1.5px solid var(--crimson);
+  transform: rotate(45deg);
+  animation: sigilPulse 4s ease-in-out infinite;
+}
+
+.obelisk-sigil::after {
+  content: '✦';
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  color: var(--crimson);
+  filter: drop-shadow(0 0 8px rgba(196, 18, 48, 0.4));
+  animation: sigilGlow 4s ease-in-out infinite;
+}
+
+@keyframes sigilPulse {
+  0%, 100% { border-color: var(--crimson); transform: rotate(45deg) scale(1); }
+  50% { border-color: var(--crimson-glow); transform: rotate(45deg) scale(1.05); }
+}
+
+@keyframes sigilGlow {
+  0%, 100% { opacity: 0.7; filter: drop-shadow(0 0 8px rgba(196, 18, 48, 0.3)); }
+  50% { opacity: 1; filter: drop-shadow(0 0 14px rgba(196, 18, 48, 0.6)); }
+}
+
+.obelisk-title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(1.2rem, 3vw, 1.8rem);
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  color: var(--text-primary);
+  text-shadow: 0 0 30px rgba(196, 18, 48, 0.15);
+  margin-bottom: 0.6rem;
+}
+
+.obelisk-subtitle {
+  font-family: var(--font-body);
+  font-weight: 300;
+  font-style: italic;
+  font-size: clamp(0.85rem, 1.5vw, 1rem);
+  color: var(--text-secondary);
+  letter-spacing: 0.02em;
+  line-height: 1.6;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   THE ALTAR — Card drop zone
+   ═══════════════════════════════════════════════════════════════ */
+.altar-wrapper {
+  position: relative;
+  opacity: 0;
+  animation: riseReveal 1.8s cubic-bezier(0.16, 1, 0.3, 1) 0.6s forwards;
+}
+
+/* Outer glow ring around altar */
+.altar-aura {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 380px;
+  height: 480px;
+  border-radius: 12px;
+  background: radial-gradient(ellipse at center, rgba(196, 18, 48, 0.06) 0%, transparent 70%);
+  pointer-events: none;
+  transition: all 0.8s ease;
+}
+
+.altar-wrapper.hovering .altar-aura {
+  width: 420px;
+  height: 520px;
+  background: radial-gradient(ellipse at center, rgba(196, 18, 48, 0.12) 0%, rgba(212, 168, 70, 0.04) 40%, transparent 70%);
+}
+
+.altar-wrapper.validated .altar-aura {
+  background: radial-gradient(ellipse at center, rgba(212, 168, 70, 0.15) 0%, rgba(196, 18, 48, 0.06) 40%, transparent 70%);
+  animation: auraBreath 3s ease-in-out infinite;
+}
+
+@keyframes auraBreath {
+  0%, 100% { opacity: 0.8; transform: translate(-50%, -50%) scale(1); }
+  50% { opacity: 1; transform: translate(-50%, -50%) scale(1.03); }
+}
+
+.altar {
+  position: relative;
+  width: 320px;
+  height: 420px;
+  border: 1px solid rgba(196, 18, 48, 0.2);
+  border-radius: 8px;
+  background:
+    linear-gradient(135deg, rgba(10, 10, 12, 0.95) 0%, rgba(30, 5, 10, 0.9) 100%);
+  backdrop-filter: blur(20px);
+  cursor: pointer;
+  transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.altar::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  background: linear-gradient(135deg, rgba(196, 18, 48, 0.15), rgba(212, 168, 70, 0.08), rgba(196, 18, 48, 0.15)) border-box;
+  -webkit-mask: linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  opacity: 0;
+  transition: opacity 0.6s ease;
+  pointer-events: none;
+}
+
+.altar:hover::before,
+.altar.dragging::before {
+  opacity: 1;
+}
+
+/* Corner runes */
+.altar::after {
+  content: '';
+  position: absolute;
+  inset: 8px;
+  border: 1px solid rgba(196, 18, 48, 0.06);
+  border-radius: 4px;
+  pointer-events: none;
+  transition: border-color 0.6s ease;
+}
+
+.altar:hover::after,
+.altar.dragging::after {
+  border-color: rgba(196, 18, 48, 0.15);
+}
+
+/* Corner accents */
+.corner-rune {
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  pointer-events: none;
+  opacity: 0.3;
+  transition: opacity 0.5s ease;
+}
+
+.altar:hover .corner-rune,
+.altar.dragging .corner-rune {
+  opacity: 0.7;
+}
+
+.corner-rune::before,
+.corner-rune::after {
+  content: '';
+  position: absolute;
+  background: var(--crimson);
+}
+
+.corner-rune.tl { top: 14px; left: 14px; }
+.corner-rune.tr { top: 14px; right: 14px; }
+.corner-rune.bl { bottom: 14px; left: 14px; }
+.corner-rune.br { bottom: 14px; right: 14px; }
+
+.corner-rune.tl::before, .corner-rune.br::before { width: 14px; height: 1px; top: 0; left: 0; }
+.corner-rune.tl::after, .corner-rune.br::after { width: 1px; height: 14px; top: 0; left: 0; }
+.corner-rune.tr::before, .corner-rune.bl::before { width: 14px; height: 1px; top: 0; right: 0; }
+.corner-rune.tr::after, .corner-rune.bl::after { width: 1px; height: 14px; top: 0; right: 0; }
+.corner-rune.br::before { bottom: 0; right: 0; top: auto; left: auto; }
+.corner-rune.br::after { bottom: 0; right: 0; top: auto; left: auto; }
+.corner-rune.bl::before { bottom: 0; left: 0; top: auto; right: auto; }
+.corner-rune.bl::after { bottom: 0; left: 0; top: auto; right: auto; }
+
+/* ═══════════════════════════════════════════════════════════════
+   ALTAR STATES — Idle, Dragging, Loaded, Validating, Result
+   ═══════════════════════════════════════════════════════════════ */
+
+/* Idle state — prompt */
+.altar-idle {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1.2rem;
+  padding: 2rem;
+  text-align: center;
+  transition: opacity 0.4s ease;
+}
+
+.altar-idle .seal-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(196, 18, 48, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  color: var(--crimson);
+  position: relative;
+  animation: sealFloat 5s ease-in-out infinite;
+}
+
+.altar-idle .seal-icon::after {
+  content: '';
+  position: absolute;
+  inset: -6px;
+  border-radius: 50%;
+  border: 1px solid rgba(196, 18, 48, 0.08);
+  animation: sealRing 5s ease-in-out infinite reverse;
+}
+
+@keyframes sealFloat {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+
+@keyframes sealRing {
+  0%, 100% { transform: scale(1); opacity: 0.5; }
+  50% { transform: scale(1.1); opacity: 0.2; }
+}
+
+.altar-idle .prompt-text {
+  font-family: var(--font-display);
+  font-size: 0.65rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  transition: color 0.4s ease;
+}
+
+.altar:hover .altar-idle .prompt-text {
+  color: var(--crimson);
+}
+
+.altar-idle .prompt-sub {
+  font-family: var(--font-mono);
+  font-size: 0.55rem;
+  letter-spacing: 0.15em;
+  color: var(--text-faint);
+  line-height: 1.8;
+}
+
+.altar-idle .prompt-sub span {
+  color: var(--silver-dim);
+}
+
+/* Hidden file input */
+.altar input[type="file"] {
+  display: none;
+}
+
+/* Dragging state */
+.altar.dragging {
+  border-color: rgba(196, 18, 48, 0.5);
+  background: linear-gradient(135deg, rgba(30, 5, 10, 0.95) 0%, rgba(61, 4, 16, 0.3) 100%);
+  transform: scale(1.02);
+}
+
+.altar.dragging .altar-idle .prompt-text {
+  color: var(--crimson-glow);
+}
+
+/* Card preview state */
+.altar-preview {
+  position: absolute;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.altar-preview.visible {
+  display: flex;
+}
+
+.altar-preview img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  border-radius: 4px;
+  opacity: 0;
+  transform: scale(0.9) translateY(10px);
+  animation: cardPresent 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.1s forwards;
+  box-shadow:
+    0 0 40px rgba(196, 18, 48, 0.15),
+    0 20px 60px rgba(0, 0, 0, 0.5);
+}
+
+@keyframes cardPresent {
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   VALIDATION OVERLAY — Scanning animation
+   ═══════════════════════════════════════════════════════════════ */
+.validation-overlay {
+  position: absolute;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 1.2rem;
+  background: rgba(5, 5, 7, 0.85);
+  backdrop-filter: blur(8px);
+  border-radius: 8px;
+  z-index: 5;
+}
+
+.validation-overlay.active {
+  display: flex;
+}
+
+/* Scanning line effect */
+.scan-line {
+  position: absolute;
+  top: 0;
+  left: 10%;
+  width: 80%;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--crimson), var(--gold), var(--crimson), transparent);
+  box-shadow: 0 0 15px rgba(196, 18, 48, 0.5), 0 0 30px rgba(196, 18, 48, 0.2);
+  animation: scanDown 2s ease-in-out infinite;
+}
+
+@keyframes scanDown {
+  0% { top: 5%; opacity: 0; }
+  10% { opacity: 1; }
+  90% { opacity: 1; }
+  100% { top: 95%; opacity: 0; }
+}
+
+.validation-text {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--crimson);
+  text-shadow: 0 0 10px rgba(196, 18, 48, 0.3);
+}
+
+.validation-sigil-spinner {
+  width: 40px;
+  height: 40px;
+  border: 1.5px solid rgba(196, 18, 48, 0.15);
+  border-top-color: var(--crimson);
+  border-right-color: var(--gold-dim);
+  border-radius: 50%;
+  animation: spin 1.2s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   RESULT STATES — Approved / Rejected
+   ═══════════════════════════════════════════════════════════════ */
+.result-overlay {
+  position: absolute;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 1rem;
+  border-radius: 8px;
+  z-index: 6;
+  padding: 2rem;
+  text-align: center;
+}
+
+.result-overlay.active {
+  display: flex;
+}
+
+/* APPROVED */
+.result-overlay.approved {
+  background: linear-gradient(135deg, rgba(5, 5, 7, 0.9) 0%, rgba(20, 30, 10, 0.85) 100%);
+  border: 1px solid rgba(212, 168, 70, 0.3);
+}
+
+.result-overlay.approved .result-icon {
+  font-size: 36px;
+  color: var(--gold);
+  filter: drop-shadow(0 0 20px rgba(212, 168, 70, 0.4));
+  animation: approvedPulse 2s ease-in-out infinite;
+}
+
+@keyframes approvedPulse {
+  0%, 100% { transform: scale(1); filter: drop-shadow(0 0 20px rgba(212, 168, 70, 0.4)); }
+  50% { transform: scale(1.08); filter: drop-shadow(0 0 30px rgba(212, 168, 70, 0.6)); }
+}
+
+.result-overlay.approved .result-title {
+  font-family: var(--font-display);
+  font-size: 0.75rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--gold);
+}
+
+.result-overlay.approved .result-detail {
+  font-family: var(--font-mono);
+  font-size: 0.55rem;
+  letter-spacing: 0.1em;
+  color: var(--text-secondary);
+  line-height: 1.8;
+}
+
+.result-overlay.approved .result-detail .sigil-hash {
+  color: var(--gold-dim);
+  font-size: 0.5rem;
+}
+
+/* REJECTED */
+.result-overlay.rejected {
+  background: linear-gradient(135deg, rgba(5, 5, 7, 0.92) 0%, rgba(40, 5, 5, 0.85) 100%);
+  border: 1px solid rgba(196, 18, 48, 0.3);
+}
+
+.result-overlay.rejected .result-icon {
+  font-size: 32px;
+  color: var(--crimson);
+  filter: drop-shadow(0 0 15px rgba(196, 18, 48, 0.4));
+}
+
+.result-overlay.rejected .result-title {
+  font-family: var(--font-display);
+  font-size: 0.7rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--crimson);
+}
+
+.result-overlay.rejected .result-detail {
+  font-family: var(--font-mono);
+  font-size: 0.55rem;
+  letter-spacing: 0.1em;
+  color: var(--text-secondary);
+  line-height: 1.8;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   ACTION BUTTONS — Below the altar
+   ═══════════════════════════════════════════════════════════════ */
+.altar-actions {
+  margin-top: 1.8rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.8rem;
+  opacity: 0;
+  animation: riseReveal 1.8s cubic-bezier(0.16, 1, 0.3, 1) 0.9s forwards;
+}
+
+.btn-gate {
+  font-family: var(--font-display);
+  font-size: 0.6rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--crimson);
+  background: transparent;
+  border: 1px solid rgba(196, 18, 48, 0.3);
+  padding: 0.8rem 2.5rem;
+  cursor: pointer;
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-gate::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(196, 18, 48, 0.08), rgba(212, 168, 70, 0.04));
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+
+.btn-gate:hover {
+  border-color: var(--crimson);
+  color: var(--gold);
+  box-shadow: 0 0 25px rgba(196, 18, 48, 0.15), inset 0 0 25px rgba(196, 18, 48, 0.05);
+  transform: translateY(-1px);
+}
+
+.btn-gate:hover::before { opacity: 1; }
+
+.btn-gate:active {
+  transform: translateY(0);
+}
+
+.btn-gate:disabled {
+  opacity: 0.3;
+  cursor: default;
+  pointer-events: none;
+}
+
+.btn-gate.golden {
+  border-color: rgba(212, 168, 70, 0.4);
+  color: var(--gold);
+}
+
+.btn-gate.golden:hover {
+  border-color: var(--gold);
+  box-shadow: 0 0 25px rgba(212, 168, 70, 0.15), inset 0 0 25px rgba(212, 168, 70, 0.05);
+}
+
+.btn-gate.golden::before {
+  background: linear-gradient(135deg, rgba(212, 168, 70, 0.08), rgba(196, 18, 48, 0.04));
+}
+
+/* Secondary links */
+.altar-links {
+  display: flex;
+  gap: 2rem;
+  margin-top: 0.4rem;
+}
+
+.altar-links a {
+  font-family: var(--font-mono);
+  font-size: 0.5rem;
+  letter-spacing: 0.15em;
+  color: var(--text-faint);
+  text-decoration: none;
+  transition: color 0.3s ease;
+}
+
+.altar-links a:hover {
+  color: var(--silver);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   FOOTER — Obelisk version stamp
+   ═══════════════════════════════════════════════════════════════ */
+.gate-footer {
+  position: fixed;
+  bottom: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+  text-align: center;
+  opacity: 0;
+  animation: riseReveal 1.8s cubic-bezier(0.16, 1, 0.3, 1) 1.2s forwards;
+}
+
+.gate-footer p {
+  font-family: var(--font-mono);
+  font-size: 0.45rem;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+.gate-footer .crimson-mark {
+  color: rgba(196, 18, 48, 0.4);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   STATUS CONSOLE — Typewriter log below altar
+   ═══════════════════════════════════════════════════════════════ */
+.status-console {
+  position: fixed;
+  bottom: 3rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+  text-align: center;
+  min-height: 1.2rem;
+}
+
+.status-console p {
+  font-family: var(--font-mono);
+  font-size: 0.5rem;
+  letter-spacing: 0.15em;
+  color: var(--silver-dim);
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+
+.status-console p.visible {
+  opacity: 1;
+}
+
+.status-console p .highlight {
+  color: var(--crimson);
+}
+
+.status-console p .gold {
+  color: var(--gold-dim);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   TRANSITION — Fade to index_entrance.html
+   ═══════════════════════════════════════════════════════════════ */
+.gate-transition {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: var(--void);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1.5rem;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.8s ease;
+}
+
+.gate-transition.active {
+  opacity: 1;
+  pointer-events: all;
+}
+
+.gate-transition .passage-text {
+  font-family: var(--font-display);
+  font-size: 0.7rem;
+  letter-spacing: 0.4em;
+  text-transform: uppercase;
+  color: var(--gold);
+  text-shadow: 0 0 30px rgba(212, 168, 70, 0.3);
+  opacity: 0;
+  animation: passageReveal 1.5s ease 0.5s forwards;
+}
+
+.gate-transition .passage-sub {
+  font-family: var(--font-body);
+  font-weight: 300;
+  font-style: italic;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  opacity: 0;
+  animation: passageReveal 1.5s ease 1s forwards;
+}
+
+@keyframes passageReveal {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 0.9; transform: translateY(0); }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   ANIMATIONS — Shared
+   ═══════════════════════════════════════════════════════════════ */
+@keyframes riseReveal {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   RESPONSIVE
+   ═══════════════════════════════════════════════════════════════ */
+@media (max-width: 480px) {
+  .altar {
+    width: 260px;
+    height: 360px;
+  }
+  .altar-aura {
+    width: 300px;
+    height: 400px;
+  }
+  .obelisk-title {
+    font-size: 1rem;
+    letter-spacing: 0.15em;
+  }
+  .btn-gate {
+    padding: 0.7rem 1.8rem;
+    font-size: 0.55rem;
+  }
+}
+
+@media (max-height: 700px) {
+  .obelisk-header { margin-bottom: 1.2rem; }
+  .obelisk-sigil { width: 32px; height: 32px; margin-bottom: 0.8rem; }
+  .altar { width: 260px; height: 340px; }
+  .altar-actions { margin-top: 1rem; }
+}
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     ATMOSPHERIC PARTICLE CANVAS
+     ═══════════════════════════════════════════════════════════════ -->
+<canvas id="atmosphere"></canvas>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     BACKGROUND LAYERS
+     ═══════════════════════════════════════════════════════════════ -->
+<div class="bg-layer bg-beams"></div>
+<div class="bg-layer bg-cathedral"></div>
+<div class="bg-layer bg-vignette"></div>
+<div class="bg-layer bg-noise"></div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     MAIN GATE INTERFACE
+     ═══════════════════════════════════════════════════════════════ -->
+<div class="gate-container">
+
+  <!-- Header -->
+  <header class="obelisk-header">
+    <div class="obelisk-sigil"></div>
+    <h1 class="obelisk-title">The Obelisk</h1>
+    <p class="obelisk-subtitle">Present your seal to cross the threshold</p>
+  </header>
+
+  <!-- The Altar — Card Upload Zone -->
+  <div class="altar-wrapper" id="altarWrapper">
+    <div class="altar-aura"></div>
+    <div class="altar" id="altar" role="button" tabindex="0" aria-label="Upload your Aurora card">
+
+      <!-- Corner accents -->
+      <div class="corner-rune tl"></div>
+      <div class="corner-rune tr"></div>
+      <div class="corner-rune bl"></div>
+      <div class="corner-rune br"></div>
+
+      <!-- STATE: Idle / Awaiting card -->
+      <div class="altar-idle" id="altarIdle">
+        <div class="seal-icon">◈</div>
+        <p class="prompt-text">Place Your Card</p>
+        <p class="prompt-sub">
+          <span>drag &amp; drop</span> your Aurora card here<br>
+          or <span>click</span> to browse
+        </p>
+      </div>
+
+      <!-- STATE: Card preview -->
+      <div class="altar-preview" id="altarPreview">
+        <img id="cardImage" alt="Your Aurora Card" />
+      </div>
+
+      <!-- STATE: Validating -->
+      <div class="validation-overlay" id="validationOverlay">
+        <div class="scan-line"></div>
+        <div class="validation-sigil-spinner"></div>
+        <p class="validation-text" id="validationText">Reading seal...</p>
+      </div>
+
+      <!-- STATE: Approved -->
+      <div class="result-overlay approved" id="resultApproved">
+        <div class="result-icon">✦</div>
+        <p class="result-title">Seal Verified</p>
+        <div class="result-detail">
+          <span id="approvedName">—</span><br>
+          <span id="approvedTier">—</span><br>
+          <span class="sigil-hash" id="approvedSigil">—</span>
+        </div>
+      </div>
+
+      <!-- STATE: Rejected -->
+      <div class="result-overlay rejected" id="resultRejected">
+        <div class="result-icon">✕</div>
+        <p class="result-title">Seal Rejected</p>
+        <div class="result-detail">
+          <span id="rejectedReason">No valid Crimson Collective mark detected</span>
+        </div>
+      </div>
+
+      <!-- Hidden file input -->
+      <input type="file" id="cardInput" accept="image/png,image/jpeg,image/webp" />
+    </div>
+  </div>
+
+  <!-- Action Buttons -->
+  <div class="altar-actions" id="altarActions">
+    <button class="btn-gate" id="btnValidate" disabled>Validate Seal</button>
+    <button class="btn-gate golden" id="btnEnter" style="display:none;">Enter the Church</button>
+    <div class="altar-links">
+      <a href="#" id="btnReset">present a different card</a>
+      <a href="#" id="btnWanderer">enter as wanderer</a>
+    </div>
+  </div>
+
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     STATUS CONSOLE
+     ═══════════════════════════════════════════════════════════════ -->
+<div class="status-console" id="statusConsole">
+  <p id="statusText"></p>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     GATE TRANSITION OVERLAY
+     ═══════════════════════════════════════════════════════════════ -->
+<div class="gate-transition" id="gateTransition">
+  <p class="passage-text">The gate opens</p>
+  <p class="passage-sub">Welcome to the RedVerse</p>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     FOOTER
+     ═══════════════════════════════════════════════════════════════ -->
+<footer class="gate-footer">
+  <p>Obelisk Customs <span class="crimson-mark">v1.0</span> · Crimson Collective</p>
+</footer>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     JAVASCRIPT — Gate Logic & Atmosphere
+     ═══════════════════════════════════════════════════════════════ -->
+<script>
+(function() {
+'use strict';
+
+/* ═══════════════════════════════════════════════════════════════
+   ATMOSPHERIC PARTICLES — Drifting embers & dust
+   ═══════════════════════════════════════════════════════════════ */
+const canvas = document.getElementById('atmosphere');
+const ctx = canvas.getContext('2d');
+let particles = [];
+let W, H;
+
+function resizeCanvas() {
+  W = canvas.width = window.innerWidth;
+  H = canvas.height = window.innerHeight;
+}
+resizeCanvas();
+window.addEventListener('resize', resizeCanvas);
+
+class Particle {
+  constructor() {
+    this.reset();
+  }
+  reset() {
+    this.x = Math.random() * W;
+    this.y = Math.random() * H;
+    this.size = Math.random() * 1.5 + 0.3;
+    this.speedX = (Math.random() - 0.5) * 0.15;
+    this.speedY = -(Math.random() * 0.2 + 0.05);
+    this.opacity = Math.random() * 0.25 + 0.05;
+    this.fadeSpeed = Math.random() * 0.0008 + 0.0002;
+    this.life = 1;
+    // Color: mix of crimson embers and warm dust
+    const r = Math.random();
+    if (r < 0.3) {
+      this.color = `rgba(196, 18, 48, `;  // crimson ember
+    } else if (r < 0.5) {
+      this.color = `rgba(212, 168, 70, `;  // gold dust
+    } else {
+      this.color = `rgba(180, 170, 155, `; // warm dust
+    }
+  }
+  update() {
+    this.x += this.speedX;
+    this.y += this.speedY;
+    this.life -= this.fadeSpeed;
+    if (this.life <= 0 || this.y < -10 || this.x < -10 || this.x > W + 10) {
+      this.reset();
+      this.y = H + 5;
+    }
+  }
+  draw() {
+    const alpha = this.opacity * this.life;
+    if (alpha <= 0) return;
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+    ctx.fillStyle = this.color + alpha.toFixed(3) + ')';
+    ctx.fill();
+  }
+}
+
+// Create particles
+const PARTICLE_COUNT = 80;
+for (let i = 0; i < PARTICLE_COUNT; i++) {
+  particles.push(new Particle());
+}
+
+function animateParticles() {
+  ctx.clearRect(0, 0, W, H);
+  particles.forEach(p => { p.update(); p.draw(); });
+  requestAnimationFrame(animateParticles);
+}
+animateParticles();
+
+
+/* ═══════════════════════════════════════════════════════════════
+   ELEMENTS
+   ═══════════════════════════════════════════════════════════════ */
+const altar        = document.getElementById('altar');
+const altarWrapper = document.getElementById('altarWrapper');
+const altarIdle    = document.getElementById('altarIdle');
+const altarPreview = document.getElementById('altarPreview');
+const cardImage    = document.getElementById('cardImage');
+const cardInput    = document.getElementById('cardInput');
+const btnValidate  = document.getElementById('btnValidate');
+const btnEnter     = document.getElementById('btnEnter');
+const btnReset     = document.getElementById('btnReset');
+const btnWanderer  = document.getElementById('btnWanderer');
+
+const validationOverlay = document.getElementById('validationOverlay');
+const validationText    = document.getElementById('validationText');
+const resultApproved    = document.getElementById('resultApproved');
+const resultRejected    = document.getElementById('resultRejected');
+const gateTransition    = document.getElementById('gateTransition');
+
+const statusText    = document.getElementById('statusText');
+
+let currentFile = null;
+let state = 'idle'; // idle | loaded | validating | approved | rejected
+
+
+/* ═══════════════════════════════════════════════════════════════
+   STATUS CONSOLE — Typewriter messages
+   ═══════════════════════════════════════════════════════════════ */
+function setStatus(html, duration = 0) {
+  statusText.innerHTML = html;
+  statusText.classList.add('visible');
+  if (duration > 0) {
+    setTimeout(() => statusText.classList.remove('visible'), duration);
+  }
+}
+
+function clearStatus() {
+  statusText.classList.remove('visible');
+}
+
+
+/* ═══════════════════════════════════════════════════════════════
+   DRAG & DROP
+   ═══════════════════════════════════════════════════════════════ */
+altar.addEventListener('dragenter', (e) => {
+  e.preventDefault();
+  if (state !== 'idle') return;
+  altar.classList.add('dragging');
+  altarWrapper.classList.add('hovering');
+  setStatus('Release to present your card...');
+});
+
+altar.addEventListener('dragover', (e) => {
+  e.preventDefault();
+});
+
+altar.addEventListener('dragleave', (e) => {
+  e.preventDefault();
+  altar.classList.remove('dragging');
+  altarWrapper.classList.remove('hovering');
+  clearStatus();
+});
+
+altar.addEventListener('drop', (e) => {
+  e.preventDefault();
+  altar.classList.remove('dragging');
+  altarWrapper.classList.remove('hovering');
+  const files = e.dataTransfer.files;
+  if (files.length > 0 && files[0].type.startsWith('image/')) {
+    loadCard(files[0]);
+  } else {
+    setStatus('The Obelisk only accepts <span class="highlight">image files</span>', 3000);
+  }
+});
+
+
+/* ═══════════════════════════════════════════════════════════════
+   CLICK TO BROWSE
+   ═══════════════════════════════════════════════════════════════ */
+altar.addEventListener('click', () => {
+  if (state === 'idle') {
+    cardInput.click();
+  }
+});
+
+altar.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' || e.key === ' ') {
+    e.preventDefault();
+    if (state === 'idle') cardInput.click();
+  }
+});
+
+cardInput.addEventListener('change', () => {
+  if (cardInput.files.length > 0) {
+    loadCard(cardInput.files[0]);
+  }
+});
+
+
+/* ═══════════════════════════════════════════════════════════════
+   LOAD CARD — Display preview
+   ═══════════════════════════════════════════════════════════════ */
+function loadCard(file) {
+  currentFile = file;
+  state = 'loaded';
+
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    cardImage.src = e.target.result;
+
+    // Transition: hide idle, show preview
+    altarIdle.style.opacity = '0';
+    setTimeout(() => {
+      altarIdle.style.display = 'none';
+      altarPreview.classList.add('visible');
+    }, 300);
+
+    // Enable validate button
+    btnValidate.disabled = false;
+
+    // Status
+    const sizeMB = (file.size / (1024 * 1024)).toFixed(2);
+    setStatus(`Card presented · <span class="gold">${file.name}</span> · ${sizeMB} MB`);
+  };
+  reader.readAsDataURL(file);
+}
+
+
+/* ═══════════════════════════════════════════════════════════════
+   VALIDATE SEAL — Send to backend for steganographic extraction
+   ═══════════════════════════════════════════════════════════════ */
+btnValidate.addEventListener('click', async () => {
+  if (state !== 'loaded' || !currentFile) return;
+  state = 'validating';
+
+  btnValidate.disabled = true;
+
+  // Show validation overlay
+  validationOverlay.classList.add('active');
+
+  // Typewriter sequence for validation steps
+  const steps = [
+    { text: 'Reading seal...', delay: 0 },
+    { text: 'Extracting sigil data...', delay: 800 },
+    { text: 'Verifying Crimson Collective mark...', delay: 1600 },
+    { text: 'Checking verification layer...', delay: 2400 },
+    { text: 'Authenticating identity...', delay: 3200 },
+  ];
+
+  steps.forEach(step => {
+    setTimeout(() => {
+      if (state === 'validating') {
+        validationText.textContent = step.text;
+        setStatus(`<span class="highlight">⟐</span> ${step.text}`);
+      }
+    }, step.delay);
+  });
+
+  // Send to backend for actual validation
+  try {
+    const formData = new FormData();
+    formData.append('card', currentFile);
+
+    /*
+     * ═══════════════════════════════════════════════════════════
+     * BACKEND ENDPOINT (implement in Flask/FastAPI)
+     *
+     * POST /api/validate-seal
+     * Body: FormData with 'card' image file
+     *
+     * Response (JSON):
+     * {
+     *   "valid": true/false,
+     *   "member_id": "AUR-XXXX-XXXX",
+     *   "thread_id": "uuid4",
+     *   "display_name": "Crimson",
+     *   "access_tier": 4,
+     *   "tier_name": "Keeper",
+     *   "sigil": "a3f8c2...",
+     *   "token": "jwt-session-token",
+     *   "reason": "..." (if rejected)
+     * }
+     * ═══════════════════════════════════════════════════════════
+     */
+
+    // === SIMULATED VALIDATION (replace with real endpoint) ===
+    const result = await simulateValidation(currentFile);
+
+    // Hide validation overlay
+    setTimeout(() => {
+      validationOverlay.classList.remove('active');
+
+      if (result.valid) {
+        showApproved(result);
+      } else {
+        showRejected(result.reason);
+      }
+    }, 4000);
+
+  } catch (err) {
+    setTimeout(() => {
+      validationOverlay.classList.remove('active');
+      showRejected('Connection to the Obelisk failed. Try again.');
+    }, 2000);
+  }
+});
+
+
+/* ═══════════════════════════════════════════════════════════════
+   SIMULATED VALIDATION — Replace with real API call
+   ═══════════════════════════════════════════════════════════════ */
+function simulateValidation(file) {
+  return new Promise((resolve) => {
+    // Simulate a ~4 second validation
+    // In production, this sends the image to the backend which runs
+    // MutableCardSteganography.extract_data() and validates the result
+    setTimeout(() => {
+      // For demo: accept any PNG, reject others
+      const isPNG = file.type === 'image/png';
+      if (isPNG) {
+        resolve({
+          valid: true,
+          member_id: 'AUR-7X77-CR1M',
+          thread_id: 'e4d8a2f1-9c33-4b0a-a7e6-1234567890ab',
+          display_name: 'Crimson',
+          access_tier: 4,
+          tier_name: 'Keeper',
+          sigil: 'a3f8c2e91b4d07fa',
+          token: 'demo-jwt-token-placeholder'
+        });
+      } else {
+        resolve({
+          valid: false,
+          reason: 'No Crimson Collective seal detected in this image.'
+        });
+      }
+    }, 100);
+  });
+}
+
+
+/* ═══════════════════════════════════════════════════════════════
+   SHOW APPROVED
+   ═══════════════════════════════════════════════════════════════ */
+function showApproved(data) {
+  state = 'approved';
+
+  // Populate details
+  document.getElementById('approvedName').textContent = data.display_name;
+  document.getElementById('approvedTier').textContent = `Tier ${data.access_tier} · ${data.tier_name}`;
+  document.getElementById('approvedSigil').textContent = `Sigil: ${data.sigil}`;
+
+  // Show overlay
+  resultApproved.classList.add('active');
+  altarWrapper.classList.add('validated');
+
+  // Store session
+  if (data.token) {
+    sessionStorage.setItem('redverse_token', data.token);
+    sessionStorage.setItem('redverse_member', JSON.stringify({
+      member_id: data.member_id,
+      thread_id: data.thread_id,
+      display_name: data.display_name,
+      access_tier: data.access_tier,
+      tier_name: data.tier_name,
+      sigil: data.sigil
+    }));
+  }
+
+  // Show enter button
+  btnValidate.style.display = 'none';
+  btnEnter.style.display = '';
+
+  // Status
+  setStatus(`<span class="gold">✦</span> Seal verified · Welcome, <span class="gold">${data.display_name}</span>`);
+}
+
+
+/* ═══════════════════════════════════════════════════════════════
+   SHOW REJECTED
+   ═══════════════════════════════════════════════════════════════ */
+function showRejected(reason) {
+  state = 'rejected';
+
+  document.getElementById('rejectedReason').textContent = reason;
+
+  resultRejected.classList.add('active');
+
+  btnValidate.disabled = false;
+  state = 'loaded'; // Allow retry
+
+  setStatus(`<span class="highlight">✕</span> ${reason}`, 5000);
+
+  // Auto-hide rejected overlay after 3s to let them retry
+  setTimeout(() => {
+    resultRejected.classList.remove('active');
+  }, 3500);
+}
+
+
+/* ═══════════════════════════════════════════════════════════════
+   ENTER THE CHURCH — Transition to index_entrance.html
+   ═══════════════════════════════════════════════════════════════ */
+btnEnter.addEventListener('click', () => {
+  if (state !== 'approved') return;
+
+  // Trigger transition overlay
+  gateTransition.classList.add('active');
+
+  // Redirect after animation
+  setTimeout(() => {
+    window.location.href = 'index_entrance.html';
+  }, 2500);
+});
+
+
+/* ═══════════════════════════════════════════════════════════════
+   ENTER AS WANDERER — Tier 1 bypass (no card needed)
+   ═══════════════════════════════════════════════════════════════ */
+btnWanderer.addEventListener('click', (e) => {
+  e.preventDefault();
+
+  // Set minimal session
+  sessionStorage.setItem('redverse_member', JSON.stringify({
+    member_id: null,
+    thread_id: null,
+    display_name: 'Wanderer',
+    access_tier: 1,
+    tier_name: 'Wanderer',
+    sigil: null
+  }));
+
+  setStatus('Entering as <span class="gold">Wanderer</span> · Tier 1 access...');
+
+  gateTransition.querySelector('.passage-text').textContent = 'You wander in, uncredentialed';
+  gateTransition.querySelector('.passage-sub').textContent = 'The deeper halls remain sealed...';
+  gateTransition.classList.add('active');
+
+  setTimeout(() => {
+    window.location.href = 'index_entrance.html';
+  }, 2500);
+});
+
+
+/* ═══════════════════════════════════════════════════════════════
+   RESET — Present a different card
+   ═══════════════════════════════════════════════════════════════ */
+btnReset.addEventListener('click', (e) => {
+  e.preventDefault();
+  resetAltar();
+});
+
+function resetAltar() {
+  state = 'idle';
+  currentFile = null;
+  cardInput.value = '';
+
+  // Hide all overlays
+  altarPreview.classList.remove('visible');
+  validationOverlay.classList.remove('active');
+  resultApproved.classList.remove('active');
+  resultRejected.classList.remove('active');
+  altarWrapper.classList.remove('validated');
+
+  // Show idle state
+  altarIdle.style.display = '';
+  altarIdle.style.opacity = '1';
+
+  // Reset buttons
+  btnValidate.disabled = true;
+  btnValidate.style.display = '';
+  btnEnter.style.display = 'none';
+
+  clearStatus();
+}
+
+
+})();
+</script>
+
+</body>
+</html>
