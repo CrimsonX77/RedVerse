@@ -195,35 +195,90 @@ html, body {
 }
 
 /* ═══════════════════════════════════════════════════════════════
-   BGM CONTROLS
+   BGM PLAYER CONTROLS
    ═══════════════════════════════════════════════════════════════ */
-#bgmToggle {
+.bgm-player {
   position: fixed;
   bottom: 16px;
   right: 16px;
   z-index: 200;
-  width: 36px;
-  height: 36px;
-  background: rgba(10, 10, 12, 0.7);
-  border: 1px solid rgba(196, 18, 48, 0.25);
-  color: var(--crimson);
-  font-size: 14px;
-  cursor: pointer;
   display: flex;
   align-items: center;
-  justify-content: center;
-  transition: all 0.3s ease;
+  gap: 8px;
+  background: rgba(10, 10, 12, 0.7);
+  border: 1px solid rgba(196, 18, 48, 0.25);
+  padding: 8px 12px;
+  border-radius: 6px;
   backdrop-filter: blur(8px);
+  transition: all 0.3s ease;
 }
 
-#bgmToggle:hover {
+.bgm-player:hover {
   border-color: var(--crimson);
   background: rgba(196, 18, 48, 0.1);
 }
 
-#bgmToggle.muted {
+.bgm-btn {
+  width: 28px;
+  height: 28px;
+  background: transparent;
+  border: 1px solid rgba(196, 18, 48, 0.4);
+  color: var(--crimson);
+  font-size: 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  border-radius: 3px;
+}
+
+.bgm-btn:hover {
+  border-color: var(--crimson);
+  background: rgba(196, 18, 48, 0.15);
+  transform: scale(1.05);
+}
+
+.bgm-btn.bgm-play {
+  width: 32px;
+  height: 32px;
+  font-size: 14px;
+  background: rgba(196, 18, 48, 0.05);
+}
+
+.bgm-btn.muted {
   color: var(--silver-dim);
-  border-color: rgba(255,255,255,0.06);
+  border-color: rgba(255, 255, 255, 0.06);
+}
+
+.bgm-btn.muted:hover {
+  border-color: var(--silver-dim);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.bgm-info {
+  display: none;
+  margin-left: 8px;
+  padding-left: 8px;
+  border-left: 1px solid rgba(196, 18, 48, 0.2);
+  max-width: 180px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.bgm-track-name {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  color: var(--silver-dim);
+  letter-spacing: 0.05em;
+}
+
+/* Show info on larger screens */
+@media (min-width: 768px) {
+  .bgm-info {
+    display: block;
+  }
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -292,16 +347,23 @@ html, body {
 <body>
 
 <!-- ═══════════════════════════════════════════════════════════════
-     BGM AUDIO
+     BGM AUDIO PLAYER
+     Dynamic playlist from assets/music folder
      ═══════════════════════════════════════════════════════════════ -->
-<audio id="bgm" loop preload="auto">
-  <source src="assets/RedShift.mp3" type="audio/mpeg">
-</audio>
+<audio id="bgm" preload="auto"></audio>
 
 <!-- ═══════════════════════════════════════════════════════════════
-     BGM TOGGLE BUTTON
+     BGM PLAYER CONTROLS
+     Previous / Play-Pause / Next with song info
      ═══════════════════════════════════════════════════════════════ -->
-<button id="bgmToggle" title="Toggle BGM">♫</button>
+<div id="bgmPlayer" class="bgm-player">
+  <button id="bgmPrev" class="bgm-btn bgm-nav" title="Previous track">◀</button>
+  <button id="bgmToggle" class="bgm-btn bgm-play" title="Play BGM">♫</button>
+  <button id="bgmNext" class="bgm-btn bgm-nav" title="Next track">▶</button>
+  <div class="bgm-info">
+    <span id="bgmTrack" class="bgm-track-name">Loading...</span>
+  </div>
+</div>
 
 <!-- ═══════════════════════════════════════════════════════════════
      PHASE 1: CHURCH ENTRANCE
@@ -370,7 +432,6 @@ html, body {
      ═══════════════════════════════════════════════════════════════ -->
 <script>
 (function() {
-  // ═══ ELEMENTS ═══
   const entrance      = document.getElementById('churchEntrance');
   const breathingVid  = document.getElementById('breathingVideo');
   const glowingVid    = document.getElementById('glowingVideo');
@@ -381,15 +442,74 @@ html, body {
   const doorHit       = document.getElementById('doorHitZone');
   const loading       = document.getElementById('loadingOverlay');
   const content       = document.getElementById('redverseContent');
-  const bgm           = document.getElementById('bgm');
-  const bgmBtn        = document.getElementById('bgmToggle');
 
   let state = 'breathing'; // breathing | glowing | entering | entered
+
+  // ═══ BGM PLAYLIST SETUP ═══
+  const bgm = document.getElementById('bgm');
+  const bgmBtn = document.getElementById('bgmToggle');
+  const bgmPrev = document.getElementById('bgmPrev');
+  const bgmNext = document.getElementById('bgmNext');
+  const bgmTrackName = document.getElementById('bgmTrack');
+
+  let bgmPlaylist = [];
+  let bgmCurrentIndex = 0;
   let bgmStarted = false;
   let bgmMuted = false;
+  let bgmLoading = false;
 
-  // ═══ BGM SETUP ═══
-  bgm.volume = 0.35; // ~35% volume — atmospheric, not overwhelming
+  bgm.volume = 0.35; // ~35% volume — atmospheric
+
+  // Fetch playlist from server
+  async function loadPlaylist() {
+    try {
+      const response = await fetch('/api/music/list');
+      if (!response.ok) throw new Error('Failed to fetch playlist');
+      const data = await response.json();
+      bgmPlaylist = data.files || [];
+      
+      if (bgmPlaylist.length > 0) {
+        loadTrack(0);
+        updateTrackDisplay();
+      }
+    } catch (error) {
+      console.warn('Could not load dynamic playlist:', error);
+      // Fallback to default track
+      bgmPlaylist = ['assets/music/RedShift.mp3'];
+      loadTrack(0);
+    }
+  }
+
+  function loadTrack(index) {
+    if (bgmPlaylist.length === 0) return;
+    
+    bgmCurrentIndex = (index + bgmPlaylist.length) % bgmPlaylist.length;
+    const trackPath = bgmPlaylist[bgmCurrentIndex];
+    bgm.src = trackPath;
+    bgm.load();
+    
+    if (bgmStarted && !bgmMuted) {
+      bgm.play().catch(() => {});
+    }
+    
+    updateTrackDisplay();
+  }
+
+  function updateTrackDisplay() {
+    if (bgmPlaylist.length === 0) {
+      bgmTrackName.textContent = 'No music loaded';
+      return;
+    }
+    
+    const trackPath = bgmPlaylist[bgmCurrentIndex];
+    const trackName = trackPath.split('/').pop().replace(/\.[^/.]+$/, '');
+    bgmTrackName.textContent = `${bgmCurrentIndex + 1}/${bgmPlaylist.length} • ${trackName}`;
+  }
+
+  // Auto-advance to next track when current one ends
+  bgm.addEventListener('ended', () => {
+    loadTrack(bgmCurrentIndex + 1);
+  });
 
   function startBGM() {
     if (!bgmStarted) {
@@ -398,25 +518,46 @@ html, body {
     }
   }
 
+  // Play/Pause toggle
   bgmBtn.addEventListener('click', (e) => {
     e.stopPropagation();
     if (!bgmStarted) {
       startBGM();
       return;
     }
+    
     bgmMuted = !bgmMuted;
     if (bgmMuted) {
       bgm.pause();
       bgmBtn.textContent = '♪';
       bgmBtn.classList.add('muted');
-      bgmBtn.title = 'Unmute BGM';
+      bgmBtn.title = 'Resume BGM';
     } else {
       bgm.play().catch(() => {});
       bgmBtn.textContent = '♫';
       bgmBtn.classList.remove('muted');
-      bgmBtn.title = 'Mute BGM';
+      bgmBtn.title = 'Pause BGM';
     }
   });
+
+  // Previous track
+  bgmPrev.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (bgmPlaylist.length === 0) return;
+    loadTrack(bgmCurrentIndex - 1);
+    startBGM();
+  });
+
+  // Next track
+  bgmNext.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (bgmPlaylist.length === 0) return;
+    loadTrack(bgmCurrentIndex + 1);
+    startBGM();
+  });
+
+  // Load playlist on startup
+  loadPlaylist();
 
   // ═══ START BREATHING VIDEO ═══
   breathingVid.play().catch(() => {

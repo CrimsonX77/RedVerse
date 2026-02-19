@@ -95,6 +95,40 @@ def create_payment_intent():
             'error': f'Server error: {str(e)}'
         }), 500
 
+@app.route('/api/music/list', methods=['GET'])
+def list_music():
+    """
+    List all music files in the assets/music folder
+    Returns a JSON array of file paths ready to play
+    """
+    try:
+        music_dir = os.path.join(os.path.dirname(__file__), 'assets', 'music')
+        
+        if not os.path.exists(music_dir):
+            return jsonify({'files': []}), 200
+        
+        # Get all audio files (mp3, wav, ogg, m4a)
+        audio_extensions = {'.mp3', '.wav', '.ogg', '.m4a', '.flac'}
+        files = []
+        
+        for filename in sorted(os.listdir(music_dir)):
+            if os.path.splitext(filename)[1].lower() in audio_extensions:
+                # Return relative path that can be served
+                file_path = f'assets/music/{filename}'
+                files.append(file_path)
+        
+        return jsonify({
+            'files': files,
+            'count': len(files),
+            'directory': music_dir
+        }), 200
+        
+    except Exception as e:
+        return jsonify({
+            'error': f'Failed to list music files: {str(e)}',
+            'files': []
+        }), 500
+
 @app.route('/webhook', methods=['POST'])
 def webhook():
     """
