@@ -17,6 +17,14 @@ load_dotenv()
 app = Flask(__name__)
 CORS(app)  # Enable CORS for frontend requests
 
+# Serve static music files
+from flask import send_from_directory
+
+@app.route('/assets/music/<path:filename>')
+def serve_music(filename):
+    music_dir = os.path.join(os.path.dirname(__file__), 'assets', 'music')
+    return send_from_directory(music_dir, filename)
+
 # Configure Stripe
 stripe.api_key = os.getenv('STRIPE_SECRET_KEY')
 
