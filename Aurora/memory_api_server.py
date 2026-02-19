@@ -28,6 +28,7 @@ from user_memory_bridge import UserMemoryBridge
 from database_manager import get_database
 from session_manager import SessionManager
 from admin_analytics import AdminAnalytics
+from member_card_service import create_member_card_for_account
 
 # Setup logging
 logging.basicConfig(
@@ -498,6 +499,17 @@ def validate_google_token():
             if not member:
                 logger.error(f"[AUTH] Failed to create member for {email}")
                 return jsonify({"error": "Failed to create member account"}), 500
+
+            # Generate member card with embedded seal on signup
+            try:
+                card_path = create_member_card_for_account(member, db)
+                if card_path:
+                    logger.info(f"[AUTH] Generated member card for {member.get('id')}: {card_path}")
+                else:
+                    logger.warning(f"[AUTH] Member card generation returned None for {email}")
+            except Exception as card_error:
+                logger.error(f"[AUTH] Error generating member card: {card_error}", exc_info=True)
+                # Don't fail auth if card generation fails - continue with session creation
 
         # Generate RedVerse JWT session token
         session_token = SessionManager.create_session_token(
