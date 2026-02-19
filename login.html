@@ -1,0 +1,927 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RedVerse — Enter the Church</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Cinzel+Decorative:wght@400;700;900&family=EB+Garamond:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  /* ═══════════════════════════════════════════════════════════════
+     CSS VARIABLES — RedVerse Palette
+     ═══════════════════════════════════════════════════════════════ */
+  :root {
+    --crimson:        #8b0000;
+    --crimson-bright: #cc1100;
+    --crimson-glow:   #ff2200;
+    --gold:           #c9a84c;
+    --gold-bright:    #e8c84c;
+    --gold-dim:       #8a7230;
+    --bone:           #d4c5a9;
+    --ash:            #1a1a1a;
+    --void:           #0a0a0a;
+    --smoke:          #2a2a2a;
+    --silver:         #8a8a8a;
+    --ember:          rgba(139, 0, 0, 0.15);
+    --font-display:   'Cinzel Decorative', serif;
+    --font-heading:   'Cinzel', serif;
+    --font-body:      'EB Garamond', serif;
+    --font-mono:      'JetBrains Mono', monospace;
+  }
+
+  /* ═══════════════════════════════════════════════════════════════
+     RESET & BASE
+     ═══════════════════════════════════════════════════════════════ */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    height: 100%;
+    background: var(--void);
+    color: var(--bone);
+    font-family: var(--font-body);
+    overflow: hidden;
+  }
+
+  /* ═══════════════════════════════════════════════════════════════
+     BACKGROUND — Cathedral Atmosphere
+     ═══════════════════════════════════════════════════════════════ */
+  .cathedral-bg {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    background:
+      radial-gradient(ellipse 60% 50% at 50% 20%, rgba(139, 0, 0, 0.08) 0%, transparent 70%),
+      radial-gradient(ellipse 40% 60% at 30% 80%, rgba(139, 0, 0, 0.04) 0%, transparent 60%),
+      radial-gradient(ellipse 40% 60% at 70% 80%, rgba(139, 0, 0, 0.04) 0%, transparent 60%),
+      linear-gradient(180deg, #050505 0%, #0a0808 40%, #0d0808 100%);
+  }
+
+  /* Animated smoke/dust particles */
+  .cathedral-bg::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='256' height='256' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+    opacity: 0.4;
+    animation: dustDrift 20s linear infinite;
+  }
+
+  /* Vertical light shaft from above */
+  .cathedral-bg::after {
+    content: '';
+    position: absolute;
+    top: -10%;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 2px;
+    height: 45%;
+    background: linear-gradient(180deg, 
+      rgba(201, 168, 76, 0.3) 0%, 
+      rgba(201, 168, 76, 0.08) 40%, 
+      transparent 100%);
+    filter: blur(20px);
+    animation: shaftPulse 8s ease-in-out infinite;
+  }
+
+  @keyframes dustDrift {
+    0% { transform: translate(0, 0); }
+    50% { transform: translate(-5px, -3px); }
+    100% { transform: translate(0, 0); }
+  }
+
+  @keyframes shaftPulse {
+    0%, 100% { opacity: 0.5; width: 2px; }
+    50% { opacity: 1; width: 4px; }
+  }
+
+  /* ═══════════════════════════════════════════════════════════════
+     VIGNETTE
+     ═══════════════════════════════════════════════════════════════ */
+  .vignette {
+    position: fixed;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+    background: radial-gradient(ellipse 70% 60% at center, transparent 30%, rgba(0,0,0,0.7) 100%);
+  }
+
+  /* ═══════════════════════════════════════════════════════════════
+     MAIN CONTAINER
+     ═══════════════════════════════════════════════════════════════ */
+  .page-container {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 2rem;
+  }
+
+  /* ═══════════════════════════════════════════════════════════════
+     BRAND MARK
+     ═══════════════════════════════════════════════════════════════ */
+  .brand {
+    text-align: center;
+    margin-bottom: 2.5rem;
+    animation: fadeInDown 1.2s ease-out;
+  }
+
+  .brand h1 {
+    font-family: var(--font-display);
+    font-size: 2.4rem;
+    font-weight: 900;
+    letter-spacing: 0.15em;
+    color: var(--gold);
+    text-shadow: 0 0 30px rgba(201, 168, 76, 0.3), 0 2px 4px rgba(0,0,0,0.8);
+    margin-bottom: 0.3rem;
+  }
+
+  .brand .subtitle {
+    font-family: var(--font-heading);
+    font-size: 0.75rem;
+    letter-spacing: 0.35em;
+    text-transform: uppercase;
+    color: var(--silver);
+  }
+
+  /* ═══════════════════════════════════════════════════════════════
+     AUTH CARD
+     ═══════════════════════════════════════════════════════════════ */
+  .auth-card {
+    width: 100%;
+    max-width: 420px;
+    background: linear-gradient(180deg, rgba(20, 16, 14, 0.95) 0%, rgba(12, 10, 10, 0.98) 100%);
+    border: 1px solid rgba(139, 0, 0, 0.25);
+    border-top: 1px solid rgba(201, 168, 76, 0.2);
+    border-radius: 2px;
+    padding: 2.5rem 2.2rem;
+    position: relative;
+    overflow: hidden;
+    animation: fadeInUp 1s ease-out 0.3s both;
+  }
+
+  /* Top gold accent line */
+  .auth-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 10%;
+    right: 10%;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--gold-dim), transparent);
+  }
+
+  /* Subtle inner glow */
+  .auth-card::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 60%;
+    height: 60%;
+    background: radial-gradient(ellipse at top, rgba(139, 0, 0, 0.06), transparent 70%);
+    pointer-events: none;
+  }
+
+  /* ═══════════════════════════════════════════════════════════════
+     TAB SWITCHER (Login / Register)
+     ═══════════════════════════════════════════════════════════════ */
+  .auth-tabs {
+    display: flex;
+    gap: 0;
+    margin-bottom: 2rem;
+    border-bottom: 1px solid rgba(139, 0, 0, 0.2);
+    position: relative;
+    z-index: 1;
+  }
+
+  .auth-tab {
+    flex: 1;
+    background: none;
+    border: none;
+    padding: 0.8rem 0;
+    font-family: var(--font-heading);
+    font-size: 0.85rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--silver);
+    cursor: pointer;
+    transition: all 0.4s ease;
+    position: relative;
+  }
+
+  .auth-tab:hover {
+    color: var(--bone);
+  }
+
+  .auth-tab.active {
+    color: var(--gold);
+  }
+
+  .auth-tab.active::after {
+    content: '';
+    position: absolute;
+    bottom: -1px;
+    left: 20%;
+    right: 20%;
+    height: 1px;
+    background: var(--gold);
+    box-shadow: 0 0 8px rgba(201, 168, 76, 0.5);
+  }
+
+  /* ═══════════════════════════════════════════════════════════════
+     FORM PANELS
+     ═══════════════════════════════════════════════════════════════ */
+  .form-panel {
+    display: none;
+    position: relative;
+    z-index: 1;
+  }
+
+  .form-panel.active {
+    display: block;
+    animation: fadeIn 0.4s ease;
+  }
+
+  /* ═══════════════════════════════════════════════════════════════
+     INPUT FIELDS
+     ═══════════════════════════════════════════════════════════════ */
+  .field {
+    margin-bottom: 1.4rem;
+  }
+
+  .field label {
+    display: block;
+    font-family: var(--font-heading);
+    font-size: 0.65rem;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--silver);
+    margin-bottom: 0.5rem;
+  }
+
+  .field input {
+    width: 100%;
+    background: rgba(10, 10, 10, 0.8);
+    border: 1px solid rgba(139, 0, 0, 0.2);
+    border-radius: 1px;
+    padding: 0.85rem 1rem;
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    color: var(--bone);
+    transition: all 0.3s ease;
+    outline: none;
+  }
+
+  .field input::placeholder {
+    color: rgba(138, 138, 138, 0.4);
+    font-style: italic;
+  }
+
+  .field input:focus {
+    border-color: var(--crimson);
+    box-shadow: 0 0 0 1px rgba(139, 0, 0, 0.15), inset 0 0 20px rgba(139, 0, 0, 0.05);
+  }
+
+  .field input:hover:not(:focus) {
+    border-color: rgba(139, 0, 0, 0.35);
+  }
+
+  /* ═══════════════════════════════════════════════════════════════
+     PASSWORD FIELD WITH TOGGLE
+     ═══════════════════════════════════════════════════════════════ */
+  .password-wrap {
+    position: relative;
+  }
+
+  .password-wrap input {
+    padding-right: 3rem;
+  }
+
+  .pw-toggle {
+    position: absolute;
+    right: 0.8rem;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: var(--silver);
+    cursor: pointer;
+    font-size: 0.75rem;
+    font-family: var(--font-mono);
+    padding: 0.3rem;
+    transition: color 0.3s ease;
+  }
+
+  .pw-toggle:hover {
+    color: var(--gold-dim);
+  }
+
+  /* ═══════════════════════════════════════════════════════════════
+     REMEMBER / FORGOT ROW
+     ═══════════════════════════════════════════════════════════════ */
+  .form-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.8rem;
+    font-size: 0.75rem;
+  }
+
+  .remember-me {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    color: var(--silver);
+    font-family: var(--font-body);
+  }
+
+  .remember-me input[type="checkbox"] {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 14px;
+    height: 14px;
+    border: 1px solid rgba(139, 0, 0, 0.3);
+    background: rgba(10, 10, 10, 0.8);
+    border-radius: 1px;
+    cursor: pointer;
+    position: relative;
+    transition: all 0.3s ease;
+  }
+
+  .remember-me input[type="checkbox"]:checked {
+    border-color: var(--crimson);
+    background: var(--crimson);
+  }
+
+  .remember-me input[type="checkbox"]:checked::after {
+    content: '✓';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: var(--bone);
+    font-size: 0.6rem;
+  }
+
+  .forgot-link {
+    color: var(--gold-dim);
+    text-decoration: none;
+    font-family: var(--font-body);
+    font-style: italic;
+    transition: color 0.3s ease;
+  }
+
+  .forgot-link:hover {
+    color: var(--gold);
+  }
+
+  /* ═══════════════════════════════════════════════════════════════
+     SUBMIT BUTTON
+     ═══════════════════════════════════════════════════════════════ */
+  .btn-submit {
+    width: 100%;
+    padding: 0.9rem 0;
+    background: linear-gradient(180deg, var(--crimson) 0%, #5a0000 100%);
+    border: 1px solid rgba(139, 0, 0, 0.5);
+    border-radius: 1px;
+    font-family: var(--font-heading);
+    font-size: 0.8rem;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--bone);
+    cursor: pointer;
+    transition: all 0.4s ease;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .btn-submit::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(201, 168, 76, 0.1) 0%, transparent 60%);
+    opacity: 0;
+    transition: opacity 0.4s ease;
+  }
+
+  .btn-submit:hover {
+    border-color: var(--crimson-bright);
+    box-shadow: 0 0 20px rgba(139, 0, 0, 0.3), inset 0 1px 0 rgba(201, 168, 76, 0.1);
+    transform: translateY(-1px);
+  }
+
+  .btn-submit:hover::before {
+    opacity: 1;
+  }
+
+  .btn-submit:active {
+    transform: translateY(0);
+    box-shadow: 0 0 10px rgba(139, 0, 0, 0.2);
+  }
+
+  /* ═══════════════════════════════════════════════════════════════
+     DIVIDER
+     ═══════════════════════════════════════════════════════════════ */
+  .divider {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin: 1.5rem 0;
+    font-family: var(--font-heading);
+    font-size: 0.6rem;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--silver);
+  }
+
+  .divider::before,
+  .divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(139, 0, 0, 0.2), transparent);
+  }
+
+  /* ═══════════════════════════════════════════════════════════════
+     SOCIAL / OAUTH BUTTONS
+     ═══════════════════════════════════════════════════════════════ */
+  .oauth-buttons {
+    display: flex;
+    gap: 0.8rem;
+  }
+
+  .btn-oauth {
+    flex: 1;
+    padding: 0.7rem 0;
+    background: rgba(15, 15, 15, 0.8);
+    border: 1px solid rgba(138, 138, 138, 0.15);
+    border-radius: 1px;
+    color: var(--silver);
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+  }
+
+  .btn-oauth:hover {
+    border-color: rgba(138, 138, 138, 0.3);
+    color: var(--bone);
+    background: rgba(25, 25, 25, 0.8);
+  }
+
+  .btn-oauth svg {
+    width: 16px;
+    height: 16px;
+    fill: currentColor;
+  }
+
+  /* ═══════════════════════════════════════════════════════════════
+     FOOTER NOTE
+     ═══════════════════════════════════════════════════════════════ */
+  .auth-footer {
+    text-align: center;
+    margin-top: 2rem;
+    font-family: var(--font-body);
+    font-size: 0.75rem;
+    color: var(--silver);
+    animation: fadeInUp 1s ease-out 0.6s both;
+  }
+
+  .auth-footer a {
+    color: var(--gold-dim);
+    text-decoration: none;
+    transition: color 0.3s;
+  }
+
+  .auth-footer a:hover {
+    color: var(--gold);
+  }
+
+  /* ═══════════════════════════════════════════════════════════════
+     DECORATIVE CORNER RUNES
+     ═══════════════════════════════════════════════════════════════ */
+  .rune {
+    position: fixed;
+    font-family: var(--font-display);
+    font-size: 1.2rem;
+    color: rgba(139, 0, 0, 0.12);
+    pointer-events: none;
+    animation: runePulse 6s ease-in-out infinite;
+  }
+
+  .rune-tl { top: 2rem; left: 2rem; }
+  .rune-tr { top: 2rem; right: 2rem; animation-delay: 1.5s; }
+  .rune-bl { bottom: 2rem; left: 2rem; animation-delay: 3s; }
+  .rune-br { bottom: 2rem; right: 2rem; animation-delay: 4.5s; }
+
+  @keyframes runePulse {
+    0%, 100% { opacity: 0.3; }
+    50% { opacity: 0.8; }
+  }
+
+  /* ═══════════════════════════════════════════════════════════════
+     ANIMATIONS
+     ═══════════════════════════════════════════════════════════════ */
+  @keyframes fadeInDown {
+    from { opacity: 0; transform: translateY(-20px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+
+  /* ═══════════════════════════════════════════════════════════════
+     RESPONSIVE
+     ═══════════════════════════════════════════════════════════════ */
+  @media (max-width: 480px) {
+    .auth-card { padding: 2rem 1.5rem; }
+    .brand h1 { font-size: 1.8rem; }
+    .rune { display: none; }
+  }
+
+  /* ═══════════════════════════════════════════════════════════════
+     STATUS MESSAGE
+     ═══════════════════════════════════════════════════════════════ */
+  .status-msg {
+    text-align: center;
+    padding: 0.6rem;
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    border-radius: 1px;
+    margin-bottom: 1rem;
+    display: none;
+  }
+
+  .status-msg.error {
+    display: block;
+    color: var(--crimson-bright);
+    background: rgba(139, 0, 0, 0.08);
+    border: 1px solid rgba(139, 0, 0, 0.2);
+  }
+
+  .status-msg.success {
+    display: block;
+    color: var(--gold);
+    background: rgba(201, 168, 76, 0.08);
+    border: 1px solid rgba(201, 168, 76, 0.2);
+  }
+
+  /* Terms checkbox styling */
+  .terms-label {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    font-size: 0.75rem;
+    color: var(--silver);
+    margin-bottom: 1.4rem;
+    cursor: pointer;
+    line-height: 1.4;
+  }
+
+  .terms-label input[type="checkbox"] {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 14px;
+    height: 14px;
+    min-width: 14px;
+    border: 1px solid rgba(139, 0, 0, 0.3);
+    background: rgba(10, 10, 10, 0.8);
+    border-radius: 1px;
+    cursor: pointer;
+    position: relative;
+    transition: all 0.3s ease;
+    margin-top: 2px;
+  }
+
+  .terms-label input[type="checkbox"]:checked {
+    border-color: var(--crimson);
+    background: var(--crimson);
+  }
+
+  .terms-label input[type="checkbox"]:checked::after {
+    content: '✓';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: var(--bone);
+    font-size: 0.6rem;
+  }
+
+  .terms-label a {
+    color: var(--gold-dim);
+    text-decoration: none;
+  }
+
+  .terms-label a:hover {
+    color: var(--gold);
+  }
+</style>
+</head>
+<body>
+
+<!-- Background layers -->
+<div class="cathedral-bg"></div>
+<div class="vignette"></div>
+
+<!-- Decorative corner runes -->
+<div class="rune rune-tl">⛧</div>
+<div class="rune rune-tr">☩</div>
+<div class="rune rune-bl">⛧</div>
+<div class="rune rune-br">☩</div>
+
+<!-- Main content -->
+<div class="page-container">
+
+  <!-- Brand -->
+  <div class="brand">
+    <h1>RedVerse</h1>
+    <div class="subtitle">The Canonical Crimson Chronicles</div>
+  </div>
+
+  <!-- Auth Card -->
+  <div class="auth-card">
+
+    <!-- Status messages (JS-controlled) -->
+    <div class="status-msg" id="statusMsg"></div>
+
+    <!-- Tab Switcher -->
+    <div class="auth-tabs">
+      <button class="auth-tab active" data-tab="login">Sign In</button>
+      <button class="auth-tab" data-tab="register">Create Account</button>
+    </div>
+
+    <!-- ═══ LOGIN FORM ═══ -->
+    <div class="form-panel active" id="panel-login">
+      <form id="loginForm" onsubmit="return false;">
+        <div class="field">
+          <label for="loginEmail">Email or Username</label>
+          <input type="text" id="loginEmail" placeholder="crimson@redverse.net" autocomplete="username" required>
+        </div>
+
+        <div class="field">
+          <label for="loginPassword">Password</label>
+          <div class="password-wrap">
+            <input type="password" id="loginPassword" placeholder="••••••••••" autocomplete="current-password" required>
+            <button type="button" class="pw-toggle" onclick="togglePw('loginPassword', this)">show</button>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <label class="remember-me">
+            <input type="checkbox" checked> Remember me
+          </label>
+          <a href="#" class="forgot-link">Forgot password?</a>
+        </div>
+
+        <button type="submit" class="btn-submit" onclick="handleLogin()">Enter the Church</button>
+      </form>
+
+      <div class="divider">or continue with</div>
+      <div class="oauth-buttons">
+        <div id="g_id_signin_login"></div>
+        <button class="btn-oauth" type="button" style="margin-top:0.5rem; width:100%;" onclick="enterAsGuest()">Continue without signing in →</button>
+        <div class="status-msg" id="google-status-login"></div>
+      </div>
+    </div>
+
+    <!-- ═══ REGISTER FORM ═══ -->
+    <div class="form-panel" id="panel-register">
+      <form id="registerForm" onsubmit="return false;">
+        <div class="field">
+          <label for="regUsername">Choose Your Name</label>
+          <input type="text" id="regUsername" placeholder="Your name in the ledger..." autocomplete="username" required>
+        </div>
+
+        <div class="field">
+          <label for="regEmail">Email</label>
+          <input type="email" id="regEmail" placeholder="you@example.com" autocomplete="email" required>
+        </div>
+
+        <div class="field">
+          <label for="regPassword">Password</label>
+          <div class="password-wrap">
+            <input type="password" id="regPassword" placeholder="Min 8 characters" autocomplete="new-password" required minlength="8">
+            <button type="button" class="pw-toggle" onclick="togglePw('regPassword', this)">show</button>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="regConfirm">Confirm Password</label>
+          <div class="password-wrap">
+            <input type="password" id="regConfirm" placeholder="Repeat password" autocomplete="new-password" required>
+            <button type="button" class="pw-toggle" onclick="togglePw('regConfirm', this)">show</button>
+          </div>
+        </div>
+
+        <label class="terms-label">
+          <input type="checkbox" id="termsCheck" required>
+          <span>I accept the <a href="#">Terms of the Church</a> and the <a href="#">Crimson Covenant</a></span>
+        </label>
+
+        <button type="submit" class="btn-submit" onclick="handleRegister()">Inscribe Your Name</button>
+      </form>
+
+      <div class="divider">or continue with</div>
+      <div class="oauth-buttons">
+        <div id="g_id_signin_register"></div>
+        <button class="btn-oauth" type="button" style="margin-top:0.5rem; width:100%;" onclick="enterAsGuest()">Continue without signing in →</button>
+        <div class="status-msg" id="google-status-register"></div>
+      </div>
+    </div>
+
+  </div><!-- /auth-card -->
+
+  <!-- Footer -->
+  <div class="auth-footer">
+    <a href="index_entrance.html">← Return to the Church Entrance</a>
+  </div>
+
+</div><!-- /page-container -->
+
+<!-- ═══════════════════════════════════════════════════════════════
+     JAVASCRIPT
+     ═══════════════════════════════════════════════════════════════ -->
+<script>
+  // ═══ TAB SWITCHING ═══
+  document.querySelectorAll('.auth-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.form-panel').forEach(p => p.classList.remove('active'));
+      tab.classList.add('active');
+      document.getElementById('panel-' + tab.dataset.tab).classList.add('active');
+      clearStatus();
+    });
+  });
+
+  // ═══ PASSWORD TOGGLE ═══
+  function togglePw(inputId, btn) {
+    const input = document.getElementById(inputId);
+    if (input.type === 'password') {
+      input.type = 'text';
+      btn.textContent = 'hide';
+    } else {
+      input.type = 'password';
+      btn.textContent = 'show';
+    }
+  }
+
+  // ═══ STATUS MESSAGES ═══
+  function showStatus(msg, type) {
+    const el = document.getElementById('statusMsg');
+    el.textContent = msg;
+    el.className = 'status-msg ' + type;
+  }
+
+  function clearStatus() {
+    const el = document.getElementById('statusMsg');
+    el.className = 'status-msg';
+    el.textContent = '';
+  }
+
+  // ═══ LOGIN HANDLER (front-end shell — hook up your backend here) ═══
+  function handleLogin() {
+    const email = document.getElementById('loginEmail').value.trim();
+    const password = document.getElementById('loginPassword').value;
+
+    if (!email || !password) {
+      showStatus('All fields are required.', 'error');
+      return;
+    }
+
+    // TODO: Replace with actual auth API call
+    showStatus('Authenticating...', 'success');
+    console.log('[RedVerse Auth] Login attempt:', { email });
+
+    // Simulated redirect after auth
+    // setTimeout(() => { window.location.href = 'profile.html'; }, 1500);
+  }
+
+  // ═══ REGISTER HANDLER (front-end shell) ═══
+  function handleRegister() {
+    const username = document.getElementById('regUsername').value.trim();
+    const email = document.getElementById('regEmail').value.trim();
+    const password = document.getElementById('regPassword').value;
+    const confirm = document.getElementById('regConfirm').value;
+    const terms = document.getElementById('termsCheck').checked;
+
+    if (!username || !email || !password || !confirm) {
+      showStatus('All fields are required.', 'error');
+      return;
+    }
+    if (password !== confirm) {
+      showStatus('Passwords do not match.', 'error');
+      return;
+    }
+    if (password.length < 8) {
+      showStatus('Password must be at least 8 characters.', 'error');
+      return;
+    }
+    if (!terms) {
+      showStatus('You must accept the Terms of the Church.', 'error');
+      return;
+    }
+
+    // TODO: Replace with actual registration API call
+    showStatus('Inscribing your name in the ledger...', 'success');
+    console.log('[RedVerse Auth] Register attempt:', { username, email });
+  }
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<script>
+// ...existing code for tab switching, password toggle, status, login/register handlers...
+
+// ═══ GOOGLE AUTH INTEGRATION ═══
+const GOOGLE_CLIENT_ID = '23326348224-utv5ng3jq4u21ort7of2hgaed6hkql3u.apps.googleusercontent.com';
+const NEXT_PAGE  = 'redverse_first_contact.html';
+
+function setGoogleStatus(msg, type = '', panel = 'login') {
+  const el = document.getElementById(panel === 'register' ? 'google-status-register' : 'google-status-login');
+  if (el) {
+    el.textContent = msg;
+    el.className = 'status-msg ' + type;
+  }
+}
+
+function handleCredentialResponse(response, panel) {
+  if (!response.credential) {
+    setGoogleStatus('Sign-in failed — try again', 'error', panel);
+    return;
+  }
+  const payload = JSON.parse(atob(response.credential.split('.')[1]));
+  sessionStorage.setItem('rv_auth', JSON.stringify({
+    name:    payload.name,
+    email:   payload.email,
+    picture: payload.picture,
+    sub:     payload.sub,
+    auth_method: 'google'
+  }));
+  setGoogleStatus('Authenticated — entering...', 'success', panel);
+  setTimeout(() => {
+    window.location.href = NEXT_PAGE;
+  }, 800);
+}
+
+function enterAsGuest() {
+  sessionStorage.setItem('rv_auth', JSON.stringify({
+    name: 'Guest',
+    auth_method: 'guest'
+  }));
+  window.location.href = NEXT_PAGE;
+}
+
+window.addEventListener('load', () => {
+  if (typeof google === 'undefined') {
+    setGoogleStatus('Could not reach Google — use guest mode', 'error', 'login');
+    setGoogleStatus('Could not reach Google — use guest mode', 'error', 'register');
+    return;
+  }
+  // Login panel
+  google.accounts.id.initialize({
+    client_id:  GOOGLE_CLIENT_ID,
+    callback:   (response) => handleCredentialResponse(response, 'login'),
+    auto_select: false,
+    cancel_on_tap_outside: false
+  });
+  google.accounts.id.renderButton(
+    document.getElementById('g_id_signin_login'),
+    {
+      theme:     'filled_black',
+      size:      'large',
+      width:     320,
+      text:      'signin_with',
+      shape:     'rectangular',
+      logo_alignment: 'center'
+    }
+  );
+  // Register panel
+  google.accounts.id.renderButton(
+    document.getElementById('g_id_signin_register'),
+    {
+      theme:     'filled_black',
+      size:      'large',
+      width:     320,
+      text:      'signin_with',
+      shape:     'rectangular',
+      logo_alignment: 'center'
+    }
+  );
+});
+</script>
+
+</body>
+</html>

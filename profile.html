@@ -1,0 +1,1051 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RedVerse — Your Profile</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Cinzel+Decorative:wght@400;700;900&family=EB+Garamond:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  /* ═══════════════════════════════════════════════════════════════
+     CSS VARIABLES — RedVerse Palette
+     ═══════════════════════════════════════════════════════════════ */
+  :root {
+    --crimson:        #8b0000;
+    --crimson-bright: #cc1100;
+    --crimson-glow:   #ff2200;
+    --gold:           #c9a84c;
+    --gold-bright:    #e8c84c;
+    --gold-dim:       #8a7230;
+    --bone:           #d4c5a9;
+    --ash:            #1a1a1a;
+    --void:           #0a0a0a;
+    --smoke:          #2a2a2a;
+    --silver:         #8a8a8a;
+    --ember:          rgba(139, 0, 0, 0.15);
+    --font-display:   'Cinzel Decorative', serif;
+    --font-heading:   'Cinzel', serif;
+    --font-body:      'EB Garamond', serif;
+    --font-mono:      'JetBrains Mono', monospace;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html {
+    height: 100%;
+    background: var(--void);
+    color: var(--bone);
+    font-family: var(--font-body);
+  }
+
+  body {
+    min-height: 100vh;
+    background:
+      radial-gradient(ellipse 60% 50% at 50% 20%, rgba(139, 0, 0, 0.06) 0%, transparent 70%),
+      radial-gradient(ellipse 40% 60% at 30% 80%, rgba(139, 0, 0, 0.03) 0%, transparent 60%),
+      linear-gradient(180deg, #050505 0%, #0a0808 40%, #0d0808 100%);
+    background-attachment: fixed;
+  }
+
+  /* ═══════════════════════════════════════════════════════════════
+     NOISE TEXTURE OVERLAY
+     ═══════════════════════════════════════════════════════════════ */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='256' height='256' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+    opacity: 0.35;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* ═══════════════════════════════════════════════════════════════
+     TOP NAV BAR
+     ═══════════════════════════════════════════════════════════════ */
+  .topnav {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.8rem 2rem;
+    background: rgba(8, 6, 6, 0.92);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(139, 0, 0, 0.15);
+  }
+
+  .topnav-brand {
+    font-family: var(--font-display);
+    font-size: 1.1rem;
+    color: var(--gold);
+    text-decoration: none;
+    letter-spacing: 0.1em;
+  }
+
+  .topnav-links {
+    display: flex;
+    gap: 1.5rem;
+    align-items: center;
+  }
+
+  .topnav-links a {
+    font-family: var(--font-heading);
+    font-size: 0.65rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--silver);
+    text-decoration: none;
+    transition: color 0.3s;
+    padding: 0.3rem 0;
+  }
+
+  .topnav-links a:hover,
+  .topnav-links a.active {
+    color: var(--gold);
+  }
+
+  .topnav-links a.active {
+    border-bottom: 1px solid var(--gold-dim);
+  }
+
+  .btn-logout {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    color: var(--silver);
+    background: rgba(139, 0, 0, 0.1);
+    border: 1px solid rgba(139, 0, 0, 0.2);
+    padding: 0.35rem 0.8rem;
+    border-radius: 1px;
+    cursor: pointer;
+    transition: all 0.3s;
+  }
+
+  .btn-logout:hover {
+    color: var(--crimson-bright);
+    border-color: var(--crimson);
+  }
+
+  /* ═══════════════════════════════════════════════════════════════
+     PAGE LAYOUT
+     ═══════════════════════════════════════════════════════════════ */
+  .page-wrap {
+    position: relative;
+    z-index: 1;
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 2.5rem 2rem 4rem;
+  }
+
+  .page-title {
+    font-family: var(--font-display);
+    font-size: 1.6rem;
+    color: var(--gold);
+    letter-spacing: 0.12em;
+    margin-bottom: 0.3rem;
+    text-shadow: 0 0 20px rgba(201, 168, 76, 0.15);
+  }
+
+  .page-subtitle {
+    font-family: var(--font-heading);
+    font-size: 0.7rem;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--silver);
+    margin-bottom: 2.5rem;
+  }
+
+  /* ═══════════════════════════════════════════════════════════════
+     SECTION TABS (Profile / Settings)
+     ═══════════════════════════════════════════════════════════════ */
+  .section-tabs {
+    display: flex;
+    gap: 0;
+    margin-bottom: 2.5rem;
+    border-bottom: 1px solid rgba(139, 0, 0, 0.15);
+  }
+
+  .section-tab {
+    background: none;
+    border: none;
+    padding: 0.8rem 1.5rem;
+    font-family: var(--font-heading);
+    font-size: 0.75rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--silver);
+    cursor: pointer;
+    transition: all 0.3s;
+    position: relative;
+  }
+
+  .section-tab:hover { color: var(--bone); }
+
+  .section-tab.active {
+    color: var(--gold);
+  }
+
+  .section-tab.active::after {
+    content: '';
+    position: absolute;
+    bottom: -1px;
+    left: 20%;
+    right: 20%;
+    height: 1px;
+    background: var(--gold);
+    box-shadow: 0 0 8px rgba(201, 168, 76, 0.4);
+  }
+
+  /* ═══════════════════════════════════════════════════════════════
+     SECTION PANELS
+     ═══════════════════════════════════════════════════════════════ */
+  .section-panel {
+    display: none;
+    animation: fadeIn 0.4s ease;
+  }
+
+  .section-panel.active { display: block; }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ═══════════════════════════════════════════════════════════════
+     CARDS
+     ═══════════════════════════════════════════════════════════════ */
+  .card {
+    background: linear-gradient(180deg, rgba(20, 16, 14, 0.9) 0%, rgba(12, 10, 10, 0.95) 100%);
+    border: 1px solid rgba(139, 0, 0, 0.15);
+    border-radius: 2px;
+    padding: 2rem;
+    margin-bottom: 1.5rem;
+    position: relative;
+  }
+
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 8%;
+    right: 8%;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(201, 168, 76, 0.12), transparent);
+  }
+
+  .card-title {
+    font-family: var(--font-heading);
+    font-size: 0.7rem;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--gold-dim);
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid rgba(139, 0, 0, 0.1);
+  }
+
+  /* ═══════════════════════════════════════════════════════════════
+     PROFILE HEADER — Avatar + Name
+     ═══════════════════════════════════════════════════════════════ */
+  .profile-header {
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+    margin-bottom: 2rem;
+  }
+
+  .avatar-wrap {
+    position: relative;
+    width: 100px;
+    height: 100px;
+    flex-shrink: 0;
+  }
+
+  .avatar {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--crimson), #3a0000);
+    border: 2px solid rgba(139, 0, 0, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-display);
+    font-size: 2.2rem;
+    color: var(--gold);
+    text-shadow: 0 0 15px rgba(201, 168, 76, 0.3);
+    overflow: hidden;
+  }
+
+  .avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .avatar-edit {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 28px;
+    height: 28px;
+    background: var(--ash);
+    border: 1px solid rgba(139, 0, 0, 0.3);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 0.65rem;
+    color: var(--silver);
+    transition: all 0.3s;
+  }
+
+  .avatar-edit:hover {
+    border-color: var(--crimson);
+    color: var(--bone);
+  }
+
+  .profile-name h2 {
+    font-family: var(--font-heading);
+    font-size: 1.3rem;
+    color: var(--bone);
+    letter-spacing: 0.05em;
+    margin-bottom: 0.2rem;
+  }
+
+  .profile-name .member-since {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    color: var(--silver);
+  }
+
+  .profile-name .user-title {
+    font-family: var(--font-body);
+    font-style: italic;
+    font-size: 0.9rem;
+    color: var(--gold-dim);
+    margin-top: 0.3rem;
+  }
+
+  /* ═══════════════════════════════════════════════════════════════
+     FORM FIELDS (reused)
+     ═══════════════════════════════════════════════════════════════ */
+  .field-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.2rem;
+  }
+
+  .field-grid .field.full { grid-column: 1 / -1; }
+
+  .field {
+    margin-bottom: 1rem;
+  }
+
+  .field label {
+    display: block;
+    font-family: var(--font-heading);
+    font-size: 0.6rem;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--silver);
+    margin-bottom: 0.4rem;
+  }
+
+  .field input,
+  .field textarea,
+  .field select {
+    width: 100%;
+    background: rgba(10, 10, 10, 0.8);
+    border: 1px solid rgba(139, 0, 0, 0.15);
+    border-radius: 1px;
+    padding: 0.75rem 0.9rem;
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    color: var(--bone);
+    transition: all 0.3s ease;
+    outline: none;
+  }
+
+  .field textarea {
+    font-family: var(--font-body);
+    font-size: 0.9rem;
+    resize: vertical;
+    min-height: 80px;
+  }
+
+  .field select {
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%238a8a8a'%3E%3Cpath d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.8rem center;
+    padding-right: 2.5rem;
+  }
+
+  .field input:focus,
+  .field textarea:focus,
+  .field select:focus {
+    border-color: var(--crimson);
+    box-shadow: 0 0 0 1px rgba(139, 0, 0, 0.1), inset 0 0 15px rgba(139, 0, 0, 0.04);
+  }
+
+  .field input::placeholder,
+  .field textarea::placeholder {
+    color: rgba(138, 138, 138, 0.35);
+    font-style: italic;
+  }
+
+  .field-hint {
+    font-family: var(--font-body);
+    font-size: 0.75rem;
+    font-style: italic;
+    color: rgba(138, 138, 138, 0.5);
+    margin-top: 0.3rem;
+  }
+
+  /* ═══════════════════════════════════════════════════════════════
+     TOGGLE SWITCHES
+     ═══════════════════════════════════════════════════════════════ */
+  .toggle-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.8rem 0;
+    border-bottom: 1px solid rgba(139, 0, 0, 0.06);
+  }
+
+  .toggle-row:last-child { border-bottom: none; }
+
+  .toggle-info {
+    flex: 1;
+  }
+
+  .toggle-label {
+    font-family: var(--font-heading);
+    font-size: 0.75rem;
+    letter-spacing: 0.05em;
+    color: var(--bone);
+    margin-bottom: 0.15rem;
+  }
+
+  .toggle-desc {
+    font-size: 0.8rem;
+    color: var(--silver);
+    font-style: italic;
+  }
+
+  .toggle-switch {
+    position: relative;
+    width: 42px;
+    height: 22px;
+    flex-shrink: 0;
+    margin-left: 1rem;
+  }
+
+  .toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+  }
+
+  .toggle-slider {
+    position: absolute;
+    inset: 0;
+    background: var(--smoke);
+    border: 1px solid rgba(139, 0, 0, 0.2);
+    border-radius: 11px;
+    cursor: pointer;
+    transition: all 0.3s;
+  }
+
+  .toggle-slider::before {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 16px;
+    height: 16px;
+    background: var(--silver);
+    border-radius: 50%;
+    transition: all 0.3s;
+  }
+
+  .toggle-switch input:checked + .toggle-slider {
+    background: var(--crimson);
+    border-color: var(--crimson-bright);
+  }
+
+  .toggle-switch input:checked + .toggle-slider::before {
+    transform: translateX(20px);
+    background: var(--gold);
+  }
+
+  /* ═══════════════════════════════════════════════════════════════
+     BUTTONS
+     ═══════════════════════════════════════════════════════════════ */
+  .btn-row {
+    display: flex;
+    gap: 1rem;
+    margin-top: 1.5rem;
+  }
+
+  .btn-primary {
+    padding: 0.75rem 1.8rem;
+    background: linear-gradient(180deg, var(--crimson) 0%, #5a0000 100%);
+    border: 1px solid rgba(139, 0, 0, 0.4);
+    border-radius: 1px;
+    font-family: var(--font-heading);
+    font-size: 0.7rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--bone);
+    cursor: pointer;
+    transition: all 0.3s;
+  }
+
+  .btn-primary:hover {
+    border-color: var(--crimson-bright);
+    box-shadow: 0 0 15px rgba(139, 0, 0, 0.25);
+    transform: translateY(-1px);
+  }
+
+  .btn-secondary {
+    padding: 0.75rem 1.8rem;
+    background: transparent;
+    border: 1px solid rgba(138, 138, 138, 0.2);
+    border-radius: 1px;
+    font-family: var(--font-heading);
+    font-size: 0.7rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--silver);
+    cursor: pointer;
+    transition: all 0.3s;
+  }
+
+  .btn-secondary:hover {
+    border-color: rgba(138, 138, 138, 0.4);
+    color: var(--bone);
+  }
+
+  .btn-danger {
+    padding: 0.75rem 1.8rem;
+    background: transparent;
+    border: 1px solid rgba(139, 0, 0, 0.25);
+    border-radius: 1px;
+    font-family: var(--font-heading);
+    font-size: 0.7rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--crimson-bright);
+    cursor: pointer;
+    transition: all 0.3s;
+  }
+
+  .btn-danger:hover {
+    background: rgba(139, 0, 0, 0.1);
+    border-color: var(--crimson-bright);
+  }
+
+  /* ═══════════════════════════════════════════════════════════════
+     THEME PREVIEW BOX
+     ═══════════════════════════════════════════════════════════════ */
+  .theme-options {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+
+  .theme-swatch {
+    width: 60px;
+    height: 60px;
+    border-radius: 2px;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: all 0.3s;
+    position: relative;
+  }
+
+  .theme-swatch:hover {
+    transform: scale(1.05);
+  }
+
+  .theme-swatch.selected {
+    border-color: var(--gold);
+    box-shadow: 0 0 12px rgba(201, 168, 76, 0.3);
+  }
+
+  .theme-swatch.selected::after {
+    content: '✓';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: var(--gold);
+    font-size: 1.2rem;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.8);
+  }
+
+  .swatch-crimson   { background: linear-gradient(135deg, #8b0000, #2a0000); }
+  .swatch-void      { background: linear-gradient(135deg, #0a0a0a, #1a1a1a); }
+  .swatch-gold      { background: linear-gradient(135deg, #8a7230, #3a2e10); }
+  .swatch-aether    { background: linear-gradient(135deg, #0a1628, #1a3050); }
+  .swatch-navi      { background: linear-gradient(135deg, #26e8ff22, #0a0a2a); }
+
+  .theme-label {
+    font-family: var(--font-mono);
+    font-size: 0.6rem;
+    text-align: center;
+    color: var(--silver);
+    margin-top: 0.3rem;
+  }
+
+  /* ═══════════════════════════════════════════════════════════════
+     DANGER ZONE
+     ═══════════════════════════════════════════════════════════════ */
+  .danger-zone {
+    border-color: rgba(139, 0, 0, 0.3);
+  }
+
+  .danger-zone .card-title {
+    color: var(--crimson-bright);
+  }
+
+  .danger-text {
+    font-size: 0.85rem;
+    color: var(--silver);
+    margin-bottom: 1rem;
+    line-height: 1.5;
+  }
+
+  /* ═══════════════════════════════════════════════════════════════
+     STATUS MESSAGE
+     ═══════════════════════════════════════════════════════════════ */
+  .toast {
+    position: fixed;
+    bottom: 2rem;
+    right: 2rem;
+    padding: 0.8rem 1.5rem;
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    border-radius: 2px;
+    z-index: 200;
+    transform: translateY(100px);
+    opacity: 0;
+    transition: all 0.4s ease;
+  }
+
+  .toast.show {
+    transform: translateY(0);
+    opacity: 1;
+  }
+
+  .toast.success {
+    background: rgba(12, 10, 10, 0.95);
+    border: 1px solid rgba(201, 168, 76, 0.3);
+    color: var(--gold);
+  }
+
+  /* ═══════════════════════════════════════════════════════════════
+     RESPONSIVE
+     ═══════════════════════════════════════════════════════════════ */
+  @media (max-width: 640px) {
+    .topnav { padding: 0.8rem 1rem; }
+    .topnav-links a { font-size: 0.55rem; }
+    .page-wrap { padding: 1.5rem 1rem 3rem; }
+    .field-grid { grid-template-columns: 1fr; }
+    .profile-header { flex-direction: column; text-align: center; gap: 1rem; }
+    .btn-row { flex-direction: column; }
+    .theme-options { justify-content: center; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     TOP NAVIGATION
+     ═══════════════════════════════════════════════════════════════ -->
+<nav class="topnav">
+  <a href="index_entrance.html" class="topnav-brand">RedVerse</a>
+  <div class="topnav-links">
+    <a href="redverse.html">Church</a>
+    <a href="#" class="active">Profile</a>
+    <button class="btn-logout" onclick="handleLogout()">Sign Out</button>
+  </div>
+</nav>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     MAIN CONTENT
+     ═══════════════════════════════════════════════════════════════ -->
+<div class="page-wrap">
+
+  <h1 class="page-title">Your Sanctum</h1>
+  <p class="page-subtitle">Manage your identity within the Church</p>
+
+  <!-- Section Tabs -->
+  <div class="section-tabs">
+    <button class="section-tab active" data-section="profile">Profile</button>
+    <button class="section-tab" data-section="settings">Settings</button>
+    <button class="section-tab" data-section="security">Security</button>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       PROFILE PANEL
+       ═══════════════════════════════════════════════════════════ -->
+  <div class="section-panel active" id="panel-profile">
+
+    <!-- Profile Header -->
+    <div class="profile-header">
+      <div class="avatar-wrap">
+        <div class="avatar" id="avatarDisplay">C</div>
+        <label class="avatar-edit" title="Change avatar">
+          ✎
+          <input type="file" accept="image/*" style="display:none" onchange="previewAvatar(event)">
+        </label>
+      </div>
+      <div class="profile-name">
+        <h2 id="displayNameShow">Crimson</h2>
+        <div class="user-title" id="userTitleShow">Architect of the RedVerse</div>
+        <div class="member-since">Member since Feb 2026</div>
+      </div>
+    </div>
+
+    <!-- Personal Info Card -->
+    <div class="card">
+      <div class="card-title">Personal Information</div>
+      <div class="field-grid">
+        <div class="field">
+          <label for="displayName">Display Name</label>
+          <input type="text" id="displayName" value="Crimson">
+        </div>
+        <div class="field">
+          <label for="userTitle">Title / Epithet</label>
+          <input type="text" id="userTitle" value="Architect of the RedVerse" placeholder="Your title in the Church...">
+        </div>
+        <div class="field">
+          <label for="profileEmail">Email</label>
+          <input type="email" id="profileEmail" value="crimson@redverse.net">
+        </div>
+        <div class="field">
+          <label for="profileLocation">Location</label>
+          <input type="text" id="profileLocation" placeholder="Where the forge burns..." value="New Zealand">
+        </div>
+        <div class="field full">
+          <label for="profileBio">Bio</label>
+          <textarea id="profileBio" placeholder="Tell the Church who you are..."></textarea>
+          <div class="field-hint">Markdown supported. Max 500 characters.</div>
+        </div>
+        <div class="field full">
+          <label for="profileWebsite">Website / Links</label>
+          <input type="url" id="profileWebsite" placeholder="https://...">
+        </div>
+      </div>
+      <div class="btn-row">
+        <button class="btn-primary" onclick="saveProfile()">Save Changes</button>
+        <button class="btn-secondary" onclick="resetProfile()">Discard</button>
+      </div>
+    </div>
+
+  </div><!-- /profile panel -->
+
+  <!-- ═══════════════════════════════════════════════════════════
+       SETTINGS PANEL
+       ═══════════════════════════════════════════════════════════ -->
+  <div class="section-panel" id="panel-settings">
+
+    <!-- Appearance -->
+    <div class="card">
+      <div class="card-title">Appearance</div>
+
+      <div class="field" style="margin-bottom: 1.5rem;">
+        <label>Church Theme</label>
+        <div class="theme-options">
+          <div>
+            <div class="theme-swatch swatch-crimson selected" onclick="selectTheme(this)" data-theme="crimson"></div>
+            <div class="theme-label">Crimson</div>
+          </div>
+          <div>
+            <div class="theme-swatch swatch-void" onclick="selectTheme(this)" data-theme="void"></div>
+            <div class="theme-label">Void</div>
+          </div>
+          <div>
+            <div class="theme-swatch swatch-gold" onclick="selectTheme(this)" data-theme="gold"></div>
+            <div class="theme-label">Gold</div>
+          </div>
+          <div>
+            <div class="theme-swatch swatch-aether" onclick="selectTheme(this)" data-theme="aether"></div>
+            <div class="theme-label">Aether</div>
+          </div>
+          <div>
+            <div class="theme-swatch swatch-navi" onclick="selectTheme(this)" data-theme="navi"></div>
+            <div class="theme-label">Navi</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="fontScale">Text Size</label>
+        <select id="fontScale">
+          <option value="small">Small</option>
+          <option value="medium" selected>Medium</option>
+          <option value="large">Large</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Notifications -->
+    <div class="card">
+      <div class="card-title">Notifications</div>
+      <div class="toggle-row">
+        <div class="toggle-info">
+          <div class="toggle-label">Email Notifications</div>
+          <div class="toggle-desc">Receive updates about new sagas and Church events</div>
+        </div>
+        <label class="toggle-switch">
+          <input type="checkbox" checked>
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+      <div class="toggle-row">
+        <div class="toggle-info">
+          <div class="toggle-label">Community Mentions</div>
+          <div class="toggle-desc">Get notified when someone mentions you</div>
+        </div>
+        <label class="toggle-switch">
+          <input type="checkbox" checked>
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+      <div class="toggle-row">
+        <div class="toggle-info">
+          <div class="toggle-label">Oracle Whispers</div>
+          <div class="toggle-desc">Occasional wisdom from the Oracle AI</div>
+        </div>
+        <label class="toggle-switch">
+          <input type="checkbox">
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+    </div>
+
+    <!-- Privacy -->
+    <div class="card">
+      <div class="card-title">Privacy</div>
+      <div class="toggle-row">
+        <div class="toggle-info">
+          <div class="toggle-label">Public Profile</div>
+          <div class="toggle-desc">Allow others to see your profile in the Church</div>
+        </div>
+        <label class="toggle-switch">
+          <input type="checkbox" checked>
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+      <div class="toggle-row">
+        <div class="toggle-info">
+          <div class="toggle-label">Show Activity Status</div>
+          <div class="toggle-desc">Display when you're active in the Church</div>
+        </div>
+        <label class="toggle-switch">
+          <input type="checkbox">
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+      <div class="toggle-row">
+        <div class="toggle-info">
+          <div class="toggle-label">Data Collection</div>
+          <div class="toggle-desc">Allow anonymized usage data to improve the experience</div>
+        </div>
+        <label class="toggle-switch">
+          <input type="checkbox">
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn-primary" onclick="saveSettings()">Save Settings</button>
+    </div>
+
+  </div><!-- /settings panel -->
+
+  <!-- ═══════════════════════════════════════════════════════════
+       SECURITY PANEL
+       ═══════════════════════════════════════════════════════════ -->
+  <div class="section-panel" id="panel-security">
+
+    <!-- Change Password -->
+    <div class="card">
+      <div class="card-title">Change Password</div>
+      <div class="field-grid">
+        <div class="field full">
+          <label for="currentPw">Current Password</label>
+          <input type="password" id="currentPw" placeholder="••••••••••">
+        </div>
+        <div class="field">
+          <label for="newPw">New Password</label>
+          <input type="password" id="newPw" placeholder="Min 8 characters">
+        </div>
+        <div class="field">
+          <label for="confirmNewPw">Confirm New Password</label>
+          <input type="password" id="confirmNewPw" placeholder="Repeat new password">
+        </div>
+      </div>
+      <div class="btn-row">
+        <button class="btn-primary" onclick="changePassword()">Update Password</button>
+      </div>
+    </div>
+
+    <!-- Connected Accounts -->
+    <div class="card">
+      <div class="card-title">Connected Accounts</div>
+      <div class="toggle-row">
+        <div class="toggle-info">
+          <div class="toggle-label">Google</div>
+          <div class="toggle-desc" style="color: #4a8;">Connected</div>
+        </div>
+        <button class="btn-secondary" style="padding: 0.4rem 1rem; font-size: 0.6rem;">Disconnect</button>
+      </div>
+      <div class="toggle-row">
+        <div class="toggle-info">
+          <div class="toggle-label">GitHub</div>
+          <div class="toggle-desc">Not connected</div>
+        </div>
+        <button class="btn-secondary" style="padding: 0.4rem 1rem; font-size: 0.6rem;">Connect</button>
+      </div>
+    </div>
+
+    <!-- Sessions -->
+    <div class="card">
+      <div class="card-title">Active Sessions</div>
+      <div class="toggle-row">
+        <div class="toggle-info">
+          <div class="toggle-label">This Device</div>
+          <div class="toggle-desc">Chrome · New Zealand · Active now</div>
+        </div>
+        <span style="font-family: var(--font-mono); font-size: 0.65rem; color: var(--gold-dim);">current</span>
+      </div>
+      <div class="btn-row">
+        <button class="btn-danger" onclick="logoutAll()">Sign Out All Other Sessions</button>
+      </div>
+    </div>
+
+    <!-- Danger Zone -->
+    <div class="card danger-zone">
+      <div class="card-title">⚠ Danger Zone</div>
+      <p class="danger-text">
+        Deleting your account will permanently erase your name from the ledger. 
+        All progress, connections, and contributions will be lost. This action cannot be undone.
+      </p>
+      <button class="btn-danger" onclick="confirmDelete()">Delete Account</button>
+    </div>
+
+  </div><!-- /security panel -->
+
+</div><!-- /page-wrap -->
+
+<!-- Toast notification -->
+<div class="toast" id="toast"></div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     JAVASCRIPT
+     ═══════════════════════════════════════════════════════════════ -->
+<script>
+  // ═══ SECTION TAB SWITCHING ═══
+  document.querySelectorAll('.section-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.section-tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.section-panel').forEach(p => p.classList.remove('active'));
+      tab.classList.add('active');
+      document.getElementById('panel-' + tab.dataset.section).classList.add('active');
+    });
+  });
+
+  // ═══ TOAST NOTIFICATION ═══
+  function showToast(msg) {
+    const toast = document.getElementById('toast');
+    toast.textContent = msg;
+    toast.className = 'toast success show';
+    setTimeout(() => { toast.classList.remove('show'); }, 3000);
+  }
+
+  // ═══ AVATAR PREVIEW ═══
+  function previewAvatar(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(ev) {
+      const avatar = document.getElementById('avatarDisplay');
+      avatar.innerHTML = `<img src="${ev.target.result}" alt="Avatar">`;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  // ═══ THEME SELECT ═══
+  function selectTheme(el) {
+    document.querySelectorAll('.theme-swatch').forEach(s => s.classList.remove('selected'));
+    el.classList.add('selected');
+    showToast('Theme: ' + el.dataset.theme);
+    // TODO: Apply theme CSS variables
+  }
+
+  // ═══ PROFILE ACTIONS ═══
+  function saveProfile() {
+    const name = document.getElementById('displayName').value;
+    const title = document.getElementById('userTitle').value;
+    document.getElementById('displayNameShow').textContent = name;
+    document.getElementById('userTitleShow').textContent = title;
+    document.getElementById('avatarDisplay').textContent = name.charAt(0).toUpperCase();
+    showToast('Profile saved.');
+    // TODO: API call to persist
+  }
+
+  function resetProfile() {
+    showToast('Changes discarded.');
+    // TODO: Reload from saved state
+  }
+
+  // ═══ SETTINGS ACTIONS ═══
+  function saveSettings() {
+    showToast('Settings saved.');
+    // TODO: Persist settings
+  }
+
+  // ═══ SECURITY ACTIONS ═══
+  function changePassword() {
+    const newPw = document.getElementById('newPw').value;
+    const confirm = document.getElementById('confirmNewPw').value;
+    if (newPw !== confirm) {
+      showToast('Passwords do not match.');
+      return;
+    }
+    if (newPw.length < 8) {
+      showToast('Password must be at least 8 characters.');
+      return;
+    }
+    showToast('Password updated.');
+    // TODO: API call
+  }
+
+  function logoutAll() {
+    showToast('All other sessions signed out.');
+    // TODO: API call
+  }
+
+  function confirmDelete() {
+    if (confirm('Are you absolutely sure? This will erase your name from the ledger forever.')) {
+      showToast('Account deletion requested.');
+      // TODO: API call + redirect
+    }
+  }
+
+  function handleLogout() {
+    // TODO: Clear session, redirect to login
+    window.location.href = 'login.html';
+  }
+</script>
+
+</body>
+</html>
