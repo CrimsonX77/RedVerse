@@ -1353,12 +1353,9 @@ document.addEventListener('DOMContentLoaded', () => {
 <div id="music-profile-bar" style="position:fixed;bottom:0;left:0;right:0;z-index:2000;background:rgba(10,10,12,0.98);border-top:1px solid #c41230;padding:1.2rem 2rem;display:flex;align-items:center;gap:2rem;box-shadow:0 -2px 16px 0 rgba(0,0,0,0.25);">
   <div id="user-profile" style="font-family:'Cinzel',serif;font-size:1rem;color:#d4a846;letter-spacing:0.1em;"></div>
   <div style="flex:1;max-width:600px;">
-    <audio id="audio" controls style="width:100%;vertical-align:middle;"></audio>
-    <div style="margin-top:0.5rem;display:flex;gap:0.5rem;align-items:center;">
-      <button onclick="prevTrack()" style="font-size:1.2em;">⏮️</button>
-      <button onclick="playPause()" style="font-size:1.2em;">⏯️</button>
-      <button onclick="nextTrack()" style="font-size:1.2em;">⏭️</button>
-      <span id="track-title" style="margin-left:1.2em;color:#e8e0d8;font-family:'JetBrains Mono',monospace;font-size:0.95em;"></span>
+    <audio id="audio" style="display:none;"></audio>
+    <div style="display:flex;gap:0.5rem;align-items:center;">
+      <span id="track-title" style="color:#e8e0d8;font-family:'JetBrains Mono',monospace;font-size:0.95em;"></span>
     </div>
   </div>
   <ul id="music-list" style="list-style:none;margin:0 0 0 2rem;padding:0;max-height:120px;overflow-y:auto;display:flex;flex-direction:column;gap:0.2em;"></ul>
