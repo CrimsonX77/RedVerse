@@ -1389,7 +1389,7 @@ const trackCounter = document.getElementById('track-counter');
 const playPauseBtn = document.getElementById('play-pause-btn');
 
 function songName(filePath) {
-  const name = filePath.split('/').pop();
+  const name = decodeURIComponent(filePath.split('/').pop());
   return name.replace(/\.[^.]+$/, '');
 }
 
@@ -1413,7 +1413,8 @@ fetch('/api/music/list')
     updateCounter();
     if (musicFiles.length > 0) loadTrack(0);
   })
-  .catch(() => {
+  .catch((err) => {
+    console.error('Music API unavailable, using fallback playlist:', err);
     musicFiles = [
       '/assets/music/RedShift.mp3','/assets/music/RedRoar.mp3',
       '/assets/music/0neLastSprk.mp3','/assets/music/Spayce.mp3',
@@ -1428,7 +1429,8 @@ fetch('/api/music/list')
       '/assets/music/The%20Laughter%20Of%20Thirsting%20Gods.mp3',
       '/assets/music/System%20Eros%20-%20Quit%20Not%20Found.mp3',
       '/assets/music/Bayesian%20Inference%20Yay-Yay.mp3',
-      '/assets/music/Introduction%20to%20recursive%20Bayesian%20filtering.mp3'
+      '/assets/music/Introduction%20to%20recursive%20Bayesian%20filtering.mp3',
+      '/assets/music/Autonomous%20Awakening.wav'
     ];
     renderMusicList();
     updateCounter();
