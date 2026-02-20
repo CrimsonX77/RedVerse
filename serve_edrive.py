@@ -240,10 +240,34 @@ class ProxyHandler(http.server.SimpleHTTPRequestHandler):
             })
         return True
 
+    def _handle_music_list(self):
+        """Return a JSON list of audio files in assets/music."""
+        music_dir = os.path.join(SERVE_DIR, 'assets', 'music')
+        audio_extensions = {'.mp3', '.wav', '.ogg', '.m4a', '.flac'}
+        files = []
+        try:
+            if os.path.exists(music_dir):
+                for filename in sorted(os.listdir(music_dir)):
+                    if os.path.splitext(filename)[1].lower() in audio_extensions:
+                        files.append('/assets/music/' + urllib.parse.quote(filename))
+        except Exception as e:
+            self._json_error(500, f'Failed to list music files: {e}')
+            return
+        body = json.dumps({'files': files, 'count': len(files)}).encode()
+        self.send_response(200)
+        self.send_header('Content-Type', 'application/json')
+        self.send_header('Content-Length', str(len(body)))
+        self.send_header('Access-Control-Allow-Origin', '*')
+        self.end_headers()
+        self.wfile.write(body)
+
     def do_GET(self):
         # ── Health check endpoint ──
         if self.path == "/health":
             return self._handle_health()
+        # ── Music list endpoint ──
+        if self.path == "/api/music/list":
+            return self._handle_music_list()
         if not self._proxy("GET"):
             super().do_GET()
 
