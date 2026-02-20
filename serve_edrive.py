@@ -9,6 +9,7 @@ This eliminates all CORS issues by keeping everything same-origin.
 import http.server
 import urllib.request
 import urllib.error
+import urllib.parse
 import json
 import os
 import sys
