@@ -1406,9 +1406,30 @@ function updatePlayPauseIcon() {
 }
 
 fetch('/api/music/list')
-  .then(res => res.json())
+  .then(res => { if (!res.ok) throw new Error('fetch failed'); return res.json(); })
   .then(data => {
     musicFiles = data.files || [];
+    renderMusicList();
+    updateCounter();
+    if (musicFiles.length > 0) loadTrack(0);
+  })
+  .catch(() => {
+    musicFiles = [
+      '/assets/music/RedShift.mp3','/assets/music/RedRoar.mp3',
+      '/assets/music/0neLastSprk.mp3','/assets/music/Spayce.mp3',
+      '/assets/music/Dissonance.mp3','/assets/music/EXE__EVANGELIST.mp3',
+      '/assets/music/EspirituStack.mp3','/assets/music/Prophetomics.mp3',
+      '/assets/music/Bass-Bat.mp3','/assets/music/Axe%20Me%20Again.mp3',
+      '/assets/music/Chaos%20Unborn.mp3','/assets/music/Hell%20Bouquet.mp3',
+      '/assets/music/Neon%20Naughty.mp3','/assets/music/Nicotine%20.mp3',
+      '/assets/music/Sanctum%20Ascendant.mp3','/assets/music/Already%20In%20The%20File.mp3',
+      '/assets/music/Constructus%20eruptus.mp3','/assets/music/Dancing%20on%20a%20Glowstick%20Graveyard.mp3',
+      '/assets/music/Spiral%20with%20me....mp3','/assets/music/Thousand%20Came%20Screaming.mp3',
+      '/assets/music/The%20Laughter%20Of%20Thirsting%20Gods.mp3',
+      '/assets/music/System%20Eros%20-%20Quit%20Not%20Found.mp3',
+      '/assets/music/Bayesian%20Inference%20Yay-Yay.mp3',
+      '/assets/music/Introduction%20to%20recursive%20Bayesian%20filtering.mp3'
+    ];
     renderMusicList();
     updateCounter();
     if (musicFiles.length > 0) loadTrack(0);
