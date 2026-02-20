@@ -5,7 +5,6 @@ Handles Stripe payment processing for the Support Chapel
 """
 
 import os
-import urllib.parse
 import stripe
 from flask import Flask, request, jsonify
 from flask_cors import CORS
@@ -122,8 +121,8 @@ def list_music():
         
         for filename in sorted(os.listdir(music_dir)):
             if os.path.splitext(filename)[1].lower() in audio_extensions:
-                # Return absolute URL-encoded path that can be served
-                file_path = '/assets/music/' + urllib.parse.quote(filename)
+                # Return relative path that can be served
+                file_path = f'assets/music/{filename}'
                 files.append(file_path)
         
         return jsonify({
