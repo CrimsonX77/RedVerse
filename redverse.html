@@ -1350,15 +1350,21 @@ document.addEventListener('DOMContentLoaded', () => {
 </body>
 
 <!-- ═══ REDVERSE MUSIC PLAYER & USER PROFILE ═══ -->
-<div id="music-profile-bar" style="position:fixed;bottom:0;left:0;right:0;z-index:2000;background:rgba(10,10,12,0.98);border-top:1px solid #c41230;padding:1.2rem 2rem;display:flex;align-items:center;gap:2rem;box-shadow:0 -2px 16px 0 rgba(0,0,0,0.25);">
-  <div id="user-profile" style="font-family:'Cinzel',serif;font-size:1rem;color:#d4a846;letter-spacing:0.1em;"></div>
-  <div style="flex:1;max-width:600px;">
+<div id="music-profile-bar" style="position:fixed;bottom:0;left:0;right:0;z-index:2000;background:rgba(10,10,12,0.98);border-top:1px solid #c41230;padding:0.8rem 2rem;display:flex;align-items:center;gap:1.5rem;box-shadow:0 -2px 16px 0 rgba(0,0,0,0.25);">
+  <div id="user-profile" style="font-family:'Cinzel',serif;font-size:0.85rem;color:#d4a846;letter-spacing:0.1em;white-space:nowrap;"></div>
+  <div style="flex:1;max-width:700px;display:flex;align-items:center;gap:1rem;">
     <audio id="audio" style="display:none;"></audio>
     <div style="display:flex;gap:0.5rem;align-items:center;">
-      <span id="track-title" style="color:#e8e0d8;font-family:'JetBrains Mono',monospace;font-size:0.95em;"></span>
+      <button onclick="prevTrack()" title="Previous" style="background:none;border:1px solid rgba(212,168,70,0.4);color:#d4a846;font-size:1.1rem;cursor:pointer;padding:0.3rem 0.6rem;border-radius:4px;transition:all 0.3s;">⏮</button>
+      <button id="play-pause-btn" onclick="playPause()" title="Play/Pause" style="background:none;border:1px solid rgba(196,18,48,0.6);color:#c41230;font-size:1.3rem;cursor:pointer;padding:0.3rem 0.7rem;border-radius:4px;transition:all 0.3s;">▶</button>
+      <button onclick="nextTrack()" title="Next" style="background:none;border:1px solid rgba(212,168,70,0.4);color:#d4a846;font-size:1.1rem;cursor:pointer;padding:0.3rem 0.6rem;border-radius:4px;transition:all 0.3s;">⏭</button>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:0.15rem;overflow:hidden;min-width:0;">
+      <span id="track-title" style="color:#e8e0d8;font-family:'JetBrains Mono',monospace;font-size:0.9em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">No track loaded</span>
+      <span id="track-counter" style="color:#888;font-family:'JetBrains Mono',monospace;font-size:0.7em;">0 songs loaded</span>
     </div>
   </div>
-  <ul id="music-list" style="list-style:none;margin:0 0 0 2rem;padding:0;max-height:120px;overflow-y:auto;display:flex;flex-direction:column;gap:0.2em;"></ul>
+  <ul id="music-list" style="list-style:none;margin:0;padding:0;max-height:120px;overflow-y:auto;display:flex;flex-direction:column;gap:0.2em;"></ul>
 </div>
 
 <script>
@@ -1379,12 +1385,32 @@ let currentTrack = 0;
 const audio = document.getElementById('audio');
 const musicList = document.getElementById('music-list');
 const trackTitle = document.getElementById('track-title');
+const trackCounter = document.getElementById('track-counter');
+const playPauseBtn = document.getElementById('play-pause-btn');
+
+function songName(filePath) {
+  const name = filePath.split('/').pop();
+  return name.replace(/\.[^.]+$/, '');
+}
+
+function updateCounter() {
+  if (musicFiles.length === 0) {
+    trackCounter.textContent = '0 songs loaded';
+  } else {
+    trackCounter.textContent = `Track ${currentTrack + 1} of ${musicFiles.length}`;
+  }
+}
+
+function updatePlayPauseIcon() {
+  playPauseBtn.textContent = audio.paused ? '▶' : '⏸';
+}
 
 fetch('/api/music/list')
   .then(res => res.json())
   .then(data => {
     musicFiles = data.files || [];
     renderMusicList();
+    updateCounter();
     if (musicFiles.length > 0) loadTrack(0);
   });
 
@@ -1392,9 +1418,14 @@ function renderMusicList() {
   musicList.innerHTML = '';
   musicFiles.forEach((file, i) => {
     const li = document.createElement('li');
-    li.textContent = file.split('/').pop();
+    li.textContent = songName(file);
     li.style.cursor = 'pointer';
+    li.style.fontFamily = "'JetBrains Mono', monospace";
+    li.style.fontSize = '0.8em';
+    li.style.padding = '0.15rem 0.4rem';
+    li.style.borderRadius = '3px';
     li.style.color = i === currentTrack ? '#d4a846' : '#aaa';
+    li.style.background = i === currentTrack ? 'rgba(212,168,70,0.1)' : 'transparent';
     li.onclick = () => { loadTrack(i); playTrack(); };
     musicList.appendChild(li);
   });
@@ -1404,12 +1435,16 @@ function loadTrack(idx) {
   if (!musicFiles[idx]) return;
   currentTrack = idx;
   audio.src = musicFiles[idx];
-  trackTitle.textContent = musicFiles[idx].split('/').pop();
+  trackTitle.textContent = songName(musicFiles[idx]);
+  updateCounter();
   renderMusicList();
 }
 
 function playTrack() { audio.play(); }
-function playPause() { if (audio.paused) audio.play(); else audio.pause(); }
+function playPause() {
+  if (audio.paused) audio.play();
+  else audio.pause();
+}
 function nextTrack() {
   if (musicFiles.length === 0) return;
   currentTrack = (currentTrack + 1) % musicFiles.length;
@@ -1421,5 +1456,7 @@ function prevTrack() {
   loadTrack(currentTrack); playTrack();
 }
 audio.addEventListener('ended', nextTrack);
+audio.addEventListener('play', updatePlayPauseIcon);
+audio.addEventListener('pause', updatePlayPauseIcon);
 </script>
 </html>
