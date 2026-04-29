@@ -609,13 +609,13 @@ body {
   let conversationHistory = [];
   let isGenerating = false;
   let connected = false;
-  // Whether this session has a server-side authenticated user
-  const _storedAuth = (typeof WaifuAuth !== 'undefined') ? WaifuAuth.getStoredAuth() : null;
-  const IS_AUTHED = !!(
-    _storedAuth &&
-    _storedAuth.auth_method &&
-    _storedAuth.auth_method !== 'guest'
-  );
+
+  // Dynamic auth check — re-reads sessionStorage on each call so it stays
+  // accurate if the auth record is updated after the backend verification.
+  function isAuthedUser() {
+    const auth = (typeof WaifuAuth !== 'undefined') ? WaifuAuth.getStoredAuth() : null;
+    return !!(auth && auth.auth_method && auth.auth_method !== 'guest');
+  }
 
   // ═══ ELEMENTS ═══
   const chatArea = document.getElementById('chatArea');
@@ -682,14 +682,14 @@ body {
    * Silently returns [] for unauthenticated users or on network error.
    */
   async function recallMemory(query, k = 4) {
-    if (!IS_AUTHED) return [];
+    if (!isAuthedUser()) return [];
     try {
       const res = await fetch(`${MAIN_API}/api/gdm/recall`, {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ query, k }),
-        signal: AbortSignal.timeout(3000),
+        signal: AbortSignal.timeout(5000),
       });
       if (!res.ok) return [];
       const data = await res.json();
@@ -704,14 +704,14 @@ body {
    * Fire-and-forget — errors are swallowed so they never block chat.
    */
   async function saveMemory(role, content) {
-    if (!IS_AUTHED) return;
+    if (!isAuthedUser()) return;
     try {
       await fetch(`${MAIN_API}/api/gdm/remember`, {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ role, content }),
-        signal: AbortSignal.timeout(4000),
+        signal: AbortSignal.timeout(5000),
       });
     } catch (e) { /* non-fatal */ }
   }
@@ -721,14 +721,14 @@ body {
    * Fire-and-forget.
    */
   async function saveChatMessage(role, content) {
-    if (!IS_AUTHED) return;
+    if (!isAuthedUser()) return;
     try {
       await fetch(`${MAIN_API}/api/user/chat/oracle`, {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ role, content }),
-        signal: AbortSignal.timeout(4000),
+        signal: AbortSignal.timeout(5000),
       });
     } catch (e) { /* non-fatal */ }
   }
@@ -738,21 +738,24 @@ body {
    * Populates conversationHistory and renders past messages in the UI.
    */
   async function loadChatHistory() {
-    if (!IS_AUTHED) return;
+    if (!isAuthedUser()) return;
     try {
       const res = await fetch(`${MAIN_API}/api/user/chat/oracle?limit=30`, {
         credentials: 'include',
-        signal: AbortSignal.timeout(4000),
+        signal: AbortSignal.timeout(5000),
       });
       if (!res.ok) return;
       const messages = await res.json();
       if (!Array.isArray(messages) || messages.length === 0) return;
 
-      // Populate local history
-      conversationHistory = messages.map(m => ({ role: m.role, content: m.content }));
+      const VALID_ROLES = new Set(['user', 'assistant']);
+      // Populate local history — only rows with known role values
+      conversationHistory = messages
+        .filter(m => VALID_ROLES.has(m.role) && typeof m.content === 'string')
+        .map(m => ({ role: m.role, content: m.content }));
 
-      // Render messages in the chat area (mark as history)
-      for (const m of messages) {
+      // Render messages in the chat area
+      for (const m of conversationHistory) {
         const uiRole = m.role === 'user' ? 'visitor' : 'echo';
         addMessage(uiRole, m.content);
       }

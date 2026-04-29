@@ -69,14 +69,14 @@ var WaifuAuth = (function () {
           } else {
             user = Object.assign({}, stored);
           }
-          user.display_name = user.display_name || user.name || user.email || 'Wanderer';
-          user.access_tier  = user.access_tier  || (stored.access_tier || 1);
+          user.display_name = user.display_name ?? user.name ?? user.email ?? 'Wanderer';
+          user.access_tier  = user.access_tier  ?? stored.access_tier ?? 1;
           resolve(user);
         })
         .catch(function () {
           var user = Object.assign({}, stored);
-          user.display_name = user.display_name || user.name || user.email || 'Wanderer';
-          user.access_tier  = user.access_tier  || 1;
+          user.display_name = user.display_name ?? user.name ?? user.email ?? 'Wanderer';
+          user.access_tier  = user.access_tier  ?? 1;
           resolve(user);
         });
     });

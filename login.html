@@ -911,13 +911,18 @@ async function handleCredentialResponse(response, panel) {
     if (res.ok) {
       const data = await res.json();
       if (data.ok && data.user) {
-        // Merge backend user data with the stored auth record
-        const stored = JSON.parse(sessionStorage.getItem('rv_auth') || '{}');
-        sessionStorage.setItem('rv_auth', JSON.stringify(Object.assign(stored, {
+        // Merge backend user data with the already-stored auth record using
+        // the payload object we already have — no need to re-parse sessionStorage.
+        sessionStorage.setItem('rv_auth', JSON.stringify({
+          name:         payload.name,
+          email:        payload.email,
+          picture:      payload.picture,
+          sub:          payload.sub,
+          auth_method:  'google',
           id:           data.user.id,
-          display_name: data.user.name || payload.name,
-          access_tier:  data.user.access_tier || 1,
-        })));
+          display_name: data.user.name ?? payload.name,
+          access_tier:  data.user.access_tier ?? 1,
+        }));
       }
     }
     // Continue even if the backend call fails — the client-side payload is enough
