@@ -872,23 +872,63 @@ function setGoogleStatus(msg, type = '', panel = 'login') {
   }
 }
 
-function handleCredentialResponse(response, panel) {
+async function handleCredentialResponse(response, panel) {
   if (!response.credential) {
     setGoogleStatus('Sign-in failed — try again', 'error', panel);
     return;
   }
-  const payload = JSON.parse(atob(response.credential.split('.')[1]));
+
+  // Decode the JWT payload for immediate client-side display
+  let payload;
+  try {
+    payload = JSON.parse(atob(response.credential.split('.')[1]));
+  } catch (e) {
+    setGoogleStatus('Sign-in failed — could not parse token', 'error', panel);
+    return;
+  }
+
+  // Store basic auth info in sessionStorage right away so pages can read it
   sessionStorage.setItem('rv_auth', JSON.stringify({
-    name:    payload.name,
-    email:   payload.email,
-    picture: payload.picture,
-    sub:     payload.sub,
-    auth_method: 'google'
+    name:        payload.name,
+    email:       payload.email,
+    picture:     payload.picture,
+    sub:         payload.sub,
+    auth_method: 'google',
   }));
+
+  setGoogleStatus('Verifying with server...', 'success', panel);
+
+  // Verify the credential with the backend to establish a server-side session
+  // and receive enriched user data (access_tier, display_name, etc.)
+  try {
+    const res = await fetch('/auth/google/verify', {
+      method:      'POST',
+      credentials: 'include',
+      headers:     { 'Content-Type': 'application/json' },
+      body:        JSON.stringify({ token: response.credential }),
+    });
+
+    if (res.ok) {
+      const data = await res.json();
+      if (data.ok && data.user) {
+        // Merge backend user data with the stored auth record
+        const stored = JSON.parse(sessionStorage.getItem('rv_auth') || '{}');
+        sessionStorage.setItem('rv_auth', JSON.stringify(Object.assign(stored, {
+          id:           data.user.id,
+          display_name: data.user.name || payload.name,
+          access_tier:  data.user.access_tier || 1,
+        })));
+      }
+    }
+    // Continue even if the backend call fails — the client-side payload is enough
+    // for guest-like authenticated access.
+  } catch (e) {
+    // Network or server error — proceed with client-side token only
+    console.warn('[RedVerse Auth] Backend verify unavailable, continuing client-side:', e.message);
+  }
+
   setGoogleStatus('Authenticated — entering...', 'success', panel);
-  setTimeout(() => {
-    window.location.href = NEXT_PAGE;
-  }, 800);
+  setTimeout(() => { window.location.href = NEXT_PAGE; }, 800);
 }
 
 function enterAsGuest() {
