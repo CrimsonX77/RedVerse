@@ -602,11 +602,20 @@ body {
   const OLLAMA_URL = BACKEND + '/ollama/api/generate';
   const MODEL = 'CrimsonDragonX7/Oracle:latest';  // Hosted on Ollama
   const MAX_CONTEXT_MESSAGES = 20;
+  // Main API server (Flask/auth + GDM memory) — same origin as the page
+  const MAIN_API = (typeof API_BASE !== 'undefined') ? API_BASE : window.location.origin;
 
   // ═══ STATE ═══
   let conversationHistory = [];
   let isGenerating = false;
   let connected = false;
+
+  // Dynamic auth check — re-reads sessionStorage on each call so it stays
+  // accurate if the auth record is updated after the backend verification.
+  function isAuthedUser() {
+    const auth = (typeof WaifuAuth !== 'undefined') ? WaifuAuth.getStoredAuth() : null;
+    return !!(auth && auth.auth_method && auth.auth_method !== 'guest');
+  }
 
   // ═══ ELEMENTS ═══
   const chatArea = document.getElementById('chatArea');
@@ -665,10 +674,118 @@ body {
     return text;
   }
 
+  // ═══ MEMORY HELPERS — per-user GDM memory backend ═══
+
+  /**
+   * Recall memories relevant to `query` from the user's GDM store.
+   * @param {string} query - Text to match against stored memories.
+   * @param {number} k     - Maximum number of memory entries to retrieve (default 4).
+   * Returns an array of { role, content } objects.
+   * Silently returns [] for unauthenticated users or on network error.
+   */
+  async function recallMemory(query, k = 4) {
+    if (!isAuthedUser()) return [];
+    try {
+      const res = await fetch(`${MAIN_API}/api/gdm/recall`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query, k }),
+        signal: AbortSignal.timeout(5000),
+      });
+      if (!res.ok) return [];
+      const data = await res.json();
+      return (data.results || []).map(r => ({ role: r.role, content: r.content }));
+    } catch (e) {
+      return [];
+    }
+  }
+
+  /**
+   * Save a single message to the user's GDM memory store.
+   * Fire-and-forget — errors are swallowed so they never block chat.
+   */
+  async function saveMemory(role, content) {
+    if (!isAuthedUser()) return;
+    try {
+      await fetch(`${MAIN_API}/api/gdm/remember`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ role, content }),
+        signal: AbortSignal.timeout(5000),
+      });
+    } catch (e) { /* non-fatal */ }
+  }
+
+  /**
+   * Save a message to the persistent chat log for this user+room.
+   * Fire-and-forget.
+   */
+  async function saveChatMessage(role, content) {
+    if (!isAuthedUser()) return;
+    try {
+      await fetch(`${MAIN_API}/api/user/chat/oracle`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ role, content }),
+        signal: AbortSignal.timeout(5000),
+      });
+    } catch (e) { /* non-fatal */ }
+  }
+
+  /**
+   * Load previous chat history from the backend on page load.
+   * Populates conversationHistory and renders past messages in the UI.
+   */
+  async function loadChatHistory() {
+    if (!isAuthedUser()) return;
+    try {
+      const res = await fetch(`${MAIN_API}/api/user/chat/oracle?limit=30`, {
+        credentials: 'include',
+        signal: AbortSignal.timeout(5000),
+      });
+      if (!res.ok) return;
+      const messages = await res.json();
+      if (!Array.isArray(messages) || messages.length === 0) return;
+
+      const VALID_ROLES = new Set(['user', 'assistant']);
+      // Populate local history — only rows with known role values
+      conversationHistory = messages
+        .filter(m => VALID_ROLES.has(m.role) && typeof m.content === 'string')
+        .map(m => ({ role: m.role, content: m.content }));
+
+      // Render messages in the chat area
+      for (const m of conversationHistory) {
+        const uiRole = m.role === 'user' ? 'visitor' : 'echo';
+        addMessage(uiRole, m.content);
+      }
+    } catch (e) { /* non-fatal */ }
+  }
+
   // ═══ BUILD PROMPT ═══
-  function buildPrompt() {
-    // Build conversation context for the model
+  /**
+   * Build the prompt string for the Ollama model.
+   * For authenticated users, recalled memories are prepended as context
+   * so the Oracle remembers past exchanges and user preferences.
+   */
+  async function buildPromptWithMemory(userText) {
+    const memories = await recallMemory(userText);
+
     let prompt = '';
+
+    // Inject recalled memories as a system context block
+    if (memories.length > 0) {
+      prompt += '[Echoes from the Oracle\'s memory — fragments of past communion:]\n';
+      for (const m of memories) {
+        const label = m.role === 'user' ? 'Visitor (past)' : 'Echo (past)';
+        prompt += `${label}: ${m.content}\n`;
+      }
+      prompt += '[End of recalled memory]\n\n';
+    }
+
+    // Append recent conversation
     const recent = conversationHistory.slice(-MAX_CONTEXT_MESSAGES);
     for (const msg of recent) {
       if (msg.role === 'user') {
@@ -700,12 +817,15 @@ body {
     scrollToBottom();
 
     try {
+      // Build prompt — includes recalled memories for authenticated users
+      const prompt = await buildPromptWithMemory(text);
+
       const response = await fetch(OLLAMA_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           model: MODEL,
-          prompt: buildPrompt(),
+          prompt,
           stream: true,
         }),
       });
@@ -753,8 +873,14 @@ body {
         }
       }
 
-      // Store in history
+      // Store in local history
       conversationHistory.push({ role: 'assistant', content: fullResponse });
+
+      // Persist exchange to per-user memory (fire-and-forget)
+      saveMemory('user', text);
+      saveMemory('assistant', fullResponse);
+      saveChatMessage('user', text);
+      saveChatMessage('assistant', fullResponse);
 
     } catch (err) {
       console.error('Oracle error:', err);
@@ -796,22 +922,27 @@ body {
       ritualText.textContent = 'She stirs...';
       subText.textContent = '';
 
-      setTimeout(() => {
+      setTimeout(async () => {
         overlay.classList.add('hidden');
         statusText.textContent = '✦ oracle bound';
         statusText.classList.add('connected');
 
-        // Opening message from Echo
-        addMessage('echo',
-          `*candles flare* \n\nOh! Oh oh oh — you're HERE. An actual pilgrim. In MY chapel. ` +
-          `Do you know how LONG it's been since someone wandered down this corridor? ` +
-          `I mean, time is weird when you're made of stone and stories, but still.\n\n` +
-          `Welcome to the Church of Echoes, lost one. I'm Echo. ` +
-          `I'd shake your hand but — *rattles chains* — you know how it is.\n\n` +
-          `So. What brings you to the bleeding heart of the RedVerse? ` +
-          `Looking for a saga? A secret? A reason to stay up too late questioning everything? ` +
-          `...because I've got ALL of those.`
-        );
+        // Load prior chat history for authenticated users
+        await loadChatHistory();
+
+        // Opening message from Echo (only if no prior history was loaded)
+        if (conversationHistory.length === 0) {
+          addMessage('echo',
+            `*candles flare* \n\nOh! Oh oh oh — you're HERE. An actual pilgrim. In MY chapel. ` +
+            `Do you know how LONG it's been since someone wandered down this corridor? ` +
+            `I mean, time is weird when you're made of stone and stories, but still.\n\n` +
+            `Welcome to the Church of Echoes, lost one. I'm Echo. ` +
+            `I'd shake your hand but — *rattles chains* — you know how it is.\n\n` +
+            `So. What brings you to the bleeding heart of the RedVerse? ` +
+            `Looking for a saga? A secret? A reason to stay up too late questioning everything? ` +
+            `...because I've got ALL of those.`
+          );
+        }
       }, 1500);
 
     } catch (err) {

@@ -110,31 +110,95 @@ def index():
 
 @app.route('/assets/<path:filename>', methods=['GET'])
 def serve_assets(filename):
-    """Serve assets, checking subdirectories if not found at top level."""
-    asset_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'assets')
-    # Direct path first
-    if os.path.isfile(os.path.join(asset_dir, filename)):
-        return send_from_directory(asset_dir, filename)
-    # Check known subdirectories
-    for subdir in ('visualassets', 'video', 'film', 'music', 'qr codes'):
-        candidate = os.path.join(asset_dir, subdir, filename)
-        if os.path.isfile(candidate):
-            return send_from_directory(os.path.join(asset_dir, subdir), filename)
-    return send_from_directory(asset_dir, filename)
+    """Serve assets using a layered fallback strategy.
+
+    HTML pages reference assets as ``assets/<name>`` but the actual files
+    live in several locations within the repository:
+
+    1. ``assets/<filename>``          - canonical location (populated over time)
+    2. ``visualassets/<basename>``    - current home for all image assets
+    3. ``E_Drive_rings/<basename>``   - E-Drive ring PNGs
+    4. ``<basename>``                 - root-level files (mp4 videos, etc.)
+    5. ``<filename>`` at repo root    - handles refs like assets/visualassets/x.png
+
+    Adding a file to *any* of these locations makes it immediately available
+    at the ``/assets/...`` URL the HTML already uses.
+    """
+    from werkzeug.utils import safe_join
+    from werkzeug.exceptions import NotFound
+
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+
+    # Sanitise the URL-supplied path: strip any component that would escape the
+    # base directory (e.g. "../../etc/passwd").  Depending on the werkzeug
+    # version, safe_join either raises NotFound or returns None for traversal
+    # attempts; we handle both cases.
+    def _safe_isfile(base, *parts):
+        """Return the joined path only when it is a regular file and stays
+        within *base*; return None on path-traversal attempts."""
+        try:
+            joined = safe_join(base, *parts)
+        except NotFound:
+            return None
+        return joined if (joined is not None and os.path.isfile(joined)) else None
+
+    # Extract just the final filename component (safe — basename never traverses).
+    basename = os.path.basename(filename)
+
+    # 1. Canonical assets/ directory (works once files are placed there)
+    if _safe_isfile(base_dir, 'assets', filename):
+        return send_from_directory(os.path.join(base_dir, 'assets'), filename)
+
+    # 2 & 3. Named sub-directories at repo root
+    for subdir in ('visualassets', 'E_Drive_rings'):
+        if _safe_isfile(base_dir, subdir, basename):
+            return send_from_directory(os.path.join(base_dir, subdir), basename)
+
+    # 4. Repo root (mp4 videos sit here)
+    if _safe_isfile(base_dir, basename):
+        return send_from_directory(base_dir, basename)
+
+    # 5. Full relative path from repo root (handles assets/visualassets/foo.png)
+    if _safe_isfile(base_dir, filename):
+        return send_from_directory(base_dir, filename)
+
+    # Nothing found - return a proper 404 rather than a 500
+    return jsonify({'error': 'Asset not found: ' + filename}), 404
 
 
 @app.route('/api/music/list', methods=['GET'])
 def list_music():
-    """Return sorted list of music file paths for the player widget."""
+    """Return sorted list of music file paths for the player widget.
+
+    Searches in priority order:
+      1. ``assets/music/``  - canonical location
+      2. ``assets/``        - loose files in the assets directory
+      3. Repo root          - music dropped at the top level
+
+    When none of those directories contain audio files the endpoint returns
+    ``{"files": []}`` so the player widget degrades gracefully.
+    Music files are NOT currently in the repository; drop .mp3/.ogg/.wav/.flac
+    files into assets/music/ (create the folder first) to populate the player.
+    """
     from urllib.parse import quote
-    music_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'assets', 'music')
-    if not os.path.isdir(music_dir):
-        return jsonify({'files': []})
-    files = sorted(
-        f"/assets/music/{quote(f)}" for f in os.listdir(music_dir)
-        if f.lower().endswith(('.mp3', '.ogg', '.wav', '.flac'))
-    )
-    return jsonify({'files': files})
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    audio_exts = ('.mp3', '.ogg', '.wav', '.flac', '.m4a')
+
+    found = {}  # basename -> URL  (deduplicates across search dirs)
+
+    search_locations = [
+        (os.path.join(base_dir, 'assets', 'music'), '/assets/music/'),
+        (os.path.join(base_dir, 'assets'),           '/assets/'),
+        (base_dir,                                   '/'),
+    ]
+    for directory, url_prefix in search_locations:
+        if not os.path.isdir(directory):
+            continue
+        for fname in sorted(os.listdir(directory)):
+            if fname.lower().endswith(audio_exts) and fname not in found:
+                found[fname] = url_prefix + quote(fname)
+
+    return jsonify({'files': sorted(found.values())})
 
 
 @app.get('/api/gdm/status')
@@ -392,19 +456,42 @@ def server_error(e):
 
 if __name__ == '__main__':
     import sys
-    
+
     port = int(sys.argv[1]) if len(sys.argv) > 1 else int(os.environ.get('PORT', 8800))
-    
+
+    # ── Asset diagnostics ──────────────────────────────────────────
+    _repo_root  = os.path.dirname(os.path.abspath(__file__))
+    _img_count  = len(os.listdir(os.path.join(_repo_root, 'visualassets'))) if os.path.isdir(os.path.join(_repo_root, 'visualassets')) else 0
+    _vid_count  = len([f for f in os.listdir(_repo_root) if f.lower().endswith(('.mp4', '.webm', '.mov'))])
+    _audio_exts = ('.mp3', '.ogg', '.wav', '.flac', '.m4a')
+    _music_dirs = [
+        os.path.join(_repo_root, 'assets', 'music'),
+        os.path.join(_repo_root, 'assets'),
+        _repo_root,
+    ]
+    _music_count = sum(
+        len([f for f in os.listdir(d) if f.lower().endswith(_audio_exts)])
+        for d in _music_dirs if os.path.isdir(d)
+    )
+    _music_note = (
+        f"{_music_count} file(s) found" if _music_count
+        else "NONE — drop .mp3/.ogg files into assets/music/"
+    )
+
     print(f"""
 ╔════════════════════════════════════════════════════════════════╗
 ║  🏰 REDVERSE Main Server                                       ║
-║  Serving on http://127.0.0.1:{port}
+║  Serving on http://127.0.0.1:{port:<34}║
 ║                                                                ║
 ║  📍 Routes:                                                    ║
 ║     • /                   → index.html (SPA)                  ║
 ║     • /auth/google/login  → Google OAuth2 flow                ║
 ║     • /auth/status        → Check auth status                 ║
 ║     • /health             → Health check                      ║
+║                                                                ║
+║  🖼  Images  (visualassets/): {_img_count:<33}║
+║  🎬 Videos  (root *.mp4):    {_vid_count:<33}║
+║  🎵 Music:                   {_music_note:<33}║
 ╚════════════════════════════════════════════════════════════════╝
     """)
     
