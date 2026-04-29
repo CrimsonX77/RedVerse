@@ -124,28 +124,42 @@ def serve_assets(filename):
     Adding a file to *any* of these locations makes it immediately available
     at the ``/assets/...`` URL the HTML already uses.
     """
+    from werkzeug.utils import safe_join
+    from werkzeug.exceptions import NotFound
+
     base_dir = os.path.dirname(os.path.abspath(__file__))
+
+    # Sanitise the URL-supplied path: strip any component that would escape the
+    # base directory (e.g. "../../etc/passwd").  Depending on the werkzeug
+    # version, safe_join either raises NotFound or returns None for traversal
+    # attempts; we handle both cases.
+    def _safe_isfile(base, *parts):
+        """Return the joined path only when it is a regular file and stays
+        within *base*; return None on path-traversal attempts."""
+        try:
+            joined = safe_join(base, *parts)
+        except NotFound:
+            return None
+        return joined if (joined is not None and os.path.isfile(joined)) else None
+
+    # Extract just the final filename component (safe — basename never traverses).
     basename = os.path.basename(filename)
 
     # 1. Canonical assets/ directory (works once files are placed there)
-    candidate = os.path.join(base_dir, 'assets', filename)
-    if os.path.isfile(candidate):
+    if _safe_isfile(base_dir, 'assets', filename):
         return send_from_directory(os.path.join(base_dir, 'assets'), filename)
 
     # 2 & 3. Named sub-directories at repo root
     for subdir in ('visualassets', 'E_Drive_rings'):
-        candidate = os.path.join(base_dir, subdir, basename)
-        if os.path.isfile(candidate):
+        if _safe_isfile(base_dir, subdir, basename):
             return send_from_directory(os.path.join(base_dir, subdir), basename)
 
     # 4. Repo root (mp4 videos sit here)
-    candidate = os.path.join(base_dir, basename)
-    if os.path.isfile(candidate):
+    if _safe_isfile(base_dir, basename):
         return send_from_directory(base_dir, basename)
 
     # 5. Full relative path from repo root (handles assets/visualassets/foo.png)
-    candidate = os.path.join(base_dir, filename)
-    if os.path.isfile(candidate):
+    if _safe_isfile(base_dir, filename):
         return send_from_directory(base_dir, filename)
 
     # Nothing found - return a proper 404 rather than a 500
@@ -446,14 +460,14 @@ if __name__ == '__main__':
     port = int(sys.argv[1]) if len(sys.argv) > 1 else int(os.environ.get('PORT', 8800))
 
     # ── Asset diagnostics ──────────────────────────────────────────
-    _base = os.path.dirname(os.path.abspath(__file__))
-    _img_count  = len(os.listdir(os.path.join(_base, 'visualassets'))) if os.path.isdir(os.path.join(_base, 'visualassets')) else 0
-    _vid_count  = len([f for f in os.listdir(_base) if f.lower().endswith(('.mp4', '.webm', '.mov'))]) if os.path.isdir(_base) else 0
+    _repo_root  = os.path.dirname(os.path.abspath(__file__))
+    _img_count  = len(os.listdir(os.path.join(_repo_root, 'visualassets'))) if os.path.isdir(os.path.join(_repo_root, 'visualassets')) else 0
+    _vid_count  = len([f for f in os.listdir(_repo_root) if f.lower().endswith(('.mp4', '.webm', '.mov'))])
     _audio_exts = ('.mp3', '.ogg', '.wav', '.flac', '.m4a')
     _music_dirs = [
-        os.path.join(_base, 'assets', 'music'),
-        os.path.join(_base, 'assets'),
-        _base,
+        os.path.join(_repo_root, 'assets', 'music'),
+        os.path.join(_repo_root, 'assets'),
+        _repo_root,
     ]
     _music_count = sum(
         len([f for f in os.listdir(d) if f.lower().endswith(_audio_exts)])

@@ -678,7 +678,9 @@ body {
 
   /**
    * Recall memories relevant to `query` from the user's GDM store.
-   * Returns an array of { role, content } objects (up to k results).
+   * @param {string} query - Text to match against stored memories.
+   * @param {number} k     - Maximum number of memory entries to retrieve (default 4).
+   * Returns an array of { role, content } objects.
    * Silently returns [] for unauthenticated users or on network error.
    */
   async function recallMemory(query, k = 4) {
