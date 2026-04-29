@@ -1,0 +1,854 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Base64 → Image // RedVerse Decoder</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700;900&family=Rajdhani:wght@300;400;500;600;700&family=Orbitron:wght@400;500;700;900&family=JetBrains+Mono:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    /*
+     * ═══════════════════════════════════════════════════════════════
+     *  LYRA.CSS — Official RedVerse Cathedral Stylesheet
+     *  "Bass. Heart Line."
+     * ═══════════════════════════════════════════════════════════════
+     */
+
+    :root {
+      --lyra-void:        #06060a;
+      --lyra-abyss:       #0a0b12;
+      --lyra-obsidian:    #0e1018;
+      --lyra-stone:       #141620;
+      --lyra-slate:       #1a1d2a;
+      --lyra-iron:        #222536;
+      --lyra-crimson:     #DC143C;
+      --lyra-blood:       #8B0000;
+      --lyra-ember:       #FF2D40;
+      --lyra-rose:        #FF4466;
+      --lyra-blush:       rgba(220, 20, 60, 0.12);
+      --lyra-gold:        #FFD700;
+      --lyra-amber:       #E8A317;
+      --lyra-brass:       #C49B2A;
+      --lyra-gilt:        rgba(255, 215, 0, 0.08);
+      --lyra-silver:      #C8CDE0;
+      --lyra-ash:         #8892b0;
+      --lyra-ghost:       #5a6080;
+      --lyra-dim:         #3d4260;
+      --lyra-cyan:        #00E5FF;
+      --lyra-purple:      #BC13FE;
+      --lyra-magenta:     #c890ff;
+      --lyra-green:       #00FF88;
+      --lyra-border:      #252840;
+      --lyra-border-glow: rgba(220, 20, 60, 0.25);
+      --lyra-text:        #d8dce8;
+      --lyra-text-bright: #f0f2f8;
+      --lyra-text-dim:    #6b7094;
+      --lyra-success:     #00FF88;
+      --lyra-warning:     #FFD700;
+      --lyra-error:       #FF2D40;
+      --lyra-info:        #00E5FF;
+      --lyra-shadow-sm:   0 1px 3px rgba(0, 0, 0, 0.4);
+      --lyra-shadow-md:   0 4px 12px rgba(0, 0, 0, 0.5);
+      --lyra-shadow-lg:   0 8px 32px rgba(0, 0, 0, 0.6);
+      --lyra-shadow-glow: 0 0 20px rgba(220, 20, 60, 0.15);
+      --lyra-radius-sm:   4px;
+      --lyra-radius-md:   8px;
+      --lyra-radius-lg:   12px;
+      --lyra-radius-xl:   16px;
+      --lyra-radius-pill: 999px;
+      --lyra-ease-smooth:  cubic-bezier(0.4, 0, 0.2, 1);
+      --lyra-ease-snap:    cubic-bezier(0.2, 0, 0, 1);
+      --lyra-ease-bounce:  cubic-bezier(0.34, 1.56, 0.64, 1);
+      --lyra-duration-fast: 0.15s;
+      --lyra-duration-med:  0.3s;
+      --lyra-duration-slow: 0.6s;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html {
+      font-size: 16px;
+      -webkit-font-smoothing: antialiased;
+      scroll-behavior: smooth;
+    }
+
+    body {
+      font-family: 'Rajdhani', 'Segoe UI', sans-serif;
+      background: var(--lyra-abyss);
+      color: var(--lyra-text);
+      line-height: 1.5;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    ::selection { background: rgba(220, 20, 60, 0.35); color: var(--lyra-text-bright); }
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: var(--lyra-void); }
+    ::-webkit-scrollbar-thumb { background: var(--lyra-dim); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--lyra-crimson); }
+
+    /* Cathedral BG */
+    .lyra-cathedral {
+      position: fixed; inset: 0; pointer-events: none; z-index: -1; overflow: hidden;
+    }
+    .lyra-cathedral::before {
+      content: '';
+      position: absolute; inset: 0;
+      background-image:
+        radial-gradient(ellipse 600px 400px at 15% 20%, rgba(220, 20, 60, 0.04), transparent),
+        radial-gradient(ellipse 500px 500px at 85% 80%, rgba(255, 215, 0, 0.02), transparent),
+        radial-gradient(ellipse 800px 300px at 50% 50%, rgba(188, 19, 254, 0.02), transparent);
+    }
+    .lyra-cathedral::after {
+      content: '';
+      position: absolute; inset: 0;
+      background-image:
+        linear-gradient(rgba(220, 20, 60, 0.02) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(220, 20, 60, 0.02) 1px, transparent 1px);
+      background-size: 40px 40px;
+      mask-image: radial-gradient(ellipse 70% 70% at 50% 50%, black 20%, transparent 70%);
+      -webkit-mask-image: radial-gradient(ellipse 70% 70% at 50% 50%, black 20%, transparent 70%);
+    }
+
+    /* Header */
+    .lyra-header {
+      background: linear-gradient(180deg, var(--lyra-stone), var(--lyra-obsidian));
+      border-bottom: 1px solid var(--lyra-border);
+      padding: 0 24px;
+      height: 56px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+      position: relative;
+    }
+    .lyra-header::after {
+      content: '';
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--lyra-crimson) 30%, var(--lyra-gold) 50%, var(--lyra-crimson) 70%, transparent);
+      opacity: 0.4;
+    }
+    .lyra-logo {
+      font-family: 'Cinzel', serif;
+      font-size: 18px;
+      font-weight: 900;
+      color: var(--lyra-text-bright);
+      letter-spacing: 3px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      text-shadow: 0 0 20px rgba(220, 20, 60, 0.3);
+    }
+    .lyra-logo-accent { color: var(--lyra-crimson); text-shadow: 0 0 12px rgba(220, 20, 60, 0.5); }
+    .lyra-logo-diamond {
+      color: var(--lyra-crimson);
+      font-size: 18px;
+      text-shadow: 0 0 8px rgba(220, 20, 60, 0.6);
+      animation: lyra-pulse 3s var(--lyra-ease-smooth) infinite;
+    }
+
+    /* Status pill */
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 3px 12px;
+      border-radius: var(--lyra-radius-pill);
+      border: 1px solid var(--lyra-border);
+      background: rgba(0, 0, 0, 0.3);
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--lyra-ash);
+      font-family: 'Orbitron', sans-serif;
+      letter-spacing: 0.5px;
+    }
+    .dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: var(--lyra-ghost); flex-shrink: 0;
+      transition: all 0.3s;
+    }
+    .dot.ok { background: var(--lyra-green); box-shadow: 0 0 6px var(--lyra-green); }
+    .dot.error { background: var(--lyra-error); box-shadow: 0 0 6px var(--lyra-error); }
+    .dot.pulse { background: var(--lyra-warning); animation: lyra-pulse 1.5s infinite; }
+
+    /* Layout */
+    .app-layout {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      padding: 20px 24px;
+      max-width: 1400px;
+      margin: 0 auto;
+      min-height: calc(100vh - 56px - 36px);
+    }
+
+    /* Panel */
+    .lyra-panel {
+      background: var(--lyra-stone);
+      border: 1px solid var(--lyra-border);
+      border-radius: var(--lyra-radius-md);
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    .lyra-panel::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--lyra-crimson) 20%, var(--lyra-gold) 50%, var(--lyra-crimson) 80%, transparent);
+      opacity: 0.5;
+    }
+    .lyra-panel-depth {
+      background: linear-gradient(180deg, var(--lyra-stone), var(--lyra-obsidian));
+      box-shadow: var(--lyra-shadow-md), var(--lyra-shadow-glow);
+    }
+    .lyra-panel-header {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--lyra-border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: linear-gradient(180deg, rgba(220, 20, 60, 0.04), transparent);
+      flex-shrink: 0;
+    }
+    .lyra-panel-body {
+      padding: 16px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Section title */
+    .section-title {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      color: var(--lyra-crimson);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .section-title::before, .section-title::after {
+      content: '';
+      height: 1px;
+      flex: 1;
+      background: linear-gradient(90deg, var(--lyra-crimson), transparent);
+    }
+    .section-title::after {
+      background: linear-gradient(270deg, var(--lyra-crimson), transparent);
+    }
+
+    /* Inputs */
+    .lyra-input {
+      width: 100%;
+      background: var(--lyra-obsidian);
+      border: 1px solid var(--lyra-border);
+      border-radius: var(--lyra-radius-sm);
+      padding: 10px 14px;
+      color: var(--lyra-text);
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 14px;
+      font-weight: 500;
+      transition: all var(--lyra-duration-med) var(--lyra-ease-smooth);
+      outline: none;
+    }
+    .lyra-input:focus {
+      border-color: var(--lyra-crimson);
+      box-shadow: 0 0 0 3px rgba(220, 20, 60, 0.1), 0 0 12px rgba(220, 20, 60, 0.05);
+    }
+    .lyra-input::placeholder { color: var(--lyra-ghost); font-weight: 400; }
+    .lyra-textarea {
+      resize: vertical;
+      min-height: 160px;
+      line-height: 1.5;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+    }
+
+    /* Buttons */
+    .lyra-btn {
+      font-family: 'Rajdhani', sans-serif;
+      font-weight: 700;
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      padding: 8px 18px;
+      border: 1px solid var(--lyra-border);
+      border-radius: var(--lyra-radius-sm);
+      background: var(--lyra-slate);
+      color: var(--lyra-silver);
+      cursor: pointer;
+      transition: all var(--lyra-duration-med) var(--lyra-ease-smooth);
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      position: relative;
+      overflow: hidden;
+    }
+    .lyra-btn:hover { border-color: var(--lyra-crimson); color: var(--lyra-text-bright); box-shadow: 0 0 12px rgba(220, 20, 60, 0.1); }
+    .lyra-btn:active { transform: scale(0.97); }
+    .lyra-btn:disabled { opacity: 0.35; cursor: not-allowed; transform: none; }
+
+    .lyra-btn-primary {
+      background: linear-gradient(135deg, var(--lyra-blood), var(--lyra-crimson));
+      border-color: var(--lyra-crimson);
+      color: #fff;
+      font-family: 'Orbitron', sans-serif;
+      font-size: 12px;
+      letter-spacing: 1px;
+      box-shadow: 0 2px 8px rgba(220, 20, 60, 0.25);
+    }
+    .lyra-btn-primary:hover {
+      background: linear-gradient(135deg, var(--lyra-crimson), var(--lyra-ember));
+      box-shadow: 0 4px 20px rgba(220, 20, 60, 0.35);
+      transform: translateY(-1px);
+    }
+    .lyra-btn-primary::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: linear-gradient(135deg, transparent 40%, rgba(255,255,255,0.08) 50%, transparent 60%);
+      transform: translateX(-100%);
+      transition: transform 0.5s;
+    }
+    .lyra-btn-primary:hover::before { transform: translateX(100%); }
+
+    .lyra-btn-gold { border-color: var(--lyra-brass); color: var(--lyra-gold); }
+    .lyra-btn-gold:hover { background: rgba(255, 215, 0, 0.08); border-color: var(--lyra-gold); box-shadow: 0 0 12px rgba(255, 215, 0, 0.1); }
+
+    .lyra-btn-ghost { background: transparent; border-color: transparent; color: var(--lyra-ash); }
+    .lyra-btn-ghost:hover { color: var(--lyra-crimson); background: var(--lyra-blush); }
+
+    /* Progress */
+    .lyra-progress-track {
+      width: 100%; height: 4px;
+      background: var(--lyra-iron);
+      border-radius: 2px; overflow: hidden;
+    }
+    .lyra-progress-fill {
+      height: 100%; width: 0%;
+      background: linear-gradient(90deg, var(--lyra-blood), var(--lyra-crimson), var(--lyra-ember));
+      border-radius: 2px;
+      transition: width 0.4s var(--lyra-ease-smooth);
+      position: relative;
+    }
+    .lyra-progress-fill::after {
+      content: '';
+      position: absolute; right: 0; top: -1px;
+      width: 20px; height: 6px;
+      background: var(--lyra-ember);
+      filter: blur(4px);
+      border-radius: 50%;
+    }
+
+    /* Divider */
+    .lyra-divider {
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--lyra-border) 20%, var(--lyra-crimson) 50%, var(--lyra-border) 80%, transparent);
+      margin: 14px 0;
+      opacity: 0.5;
+    }
+
+    /* Output area */
+    .output-area {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 300px;
+      background: var(--lyra-obsidian);
+      border: 1px solid var(--lyra-border);
+      border-radius: var(--lyra-radius-md);
+      overflow: hidden;
+      position: relative;
+    }
+    .output-placeholder {
+      text-align: center;
+      color: var(--lyra-ghost);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      padding: 24px;
+      animation: lyra-pulse 3s infinite;
+    }
+    .output-placeholder .icon {
+      font-size: 36px;
+      display: block;
+      margin-bottom: 12px;
+      opacity: 0.4;
+    }
+    #decoded-img {
+      max-width: 100%;
+      max-height: 500px;
+      object-fit: contain;
+      border-radius: var(--lyra-radius-sm);
+      display: none;
+      animation: lyra-fadeIn 0.4s var(--lyra-ease-smooth);
+    }
+
+    /* Meta grid */
+    .meta-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-top: 12px;
+    }
+    .meta-card {
+      background: var(--lyra-obsidian);
+      border: 1px solid var(--lyra-border);
+      border-radius: var(--lyra-radius-sm);
+      padding: 8px 12px;
+    }
+    .meta-label {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 9px;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: var(--lyra-text-dim);
+      margin-bottom: 3px;
+    }
+    .meta-value {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      color: var(--lyra-cyan);
+      font-weight: 500;
+    }
+
+    /* Format pills */
+    .format-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 12px;
+    }
+    .format-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 14px;
+      border-radius: var(--lyra-radius-pill);
+      border: 1px solid var(--lyra-border);
+      background: var(--lyra-obsidian);
+      color: var(--lyra-ash);
+      font-family: 'Rajdhani', sans-serif;
+      font-weight: 600;
+      font-size: 12px;
+      cursor: pointer;
+      transition: all var(--lyra-duration-med) var(--lyra-ease-smooth);
+      user-select: none;
+    }
+    .format-pill:hover { border-color: var(--lyra-crimson); color: var(--lyra-silver); background: var(--lyra-blush); }
+    .format-pill.active {
+      border-color: var(--lyra-crimson);
+      background: linear-gradient(135deg, rgba(220, 20, 60, 0.15), rgba(139, 0, 0, 0.15));
+      color: var(--lyra-text-bright);
+      box-shadow: 0 0 10px rgba(220, 20, 60, 0.15);
+    }
+
+    /* Error / toast */
+    .toast {
+      position: fixed;
+      bottom: 60px;
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: linear-gradient(135deg, #4a0000, var(--lyra-blood));
+      border: 1px solid var(--lyra-crimson);
+      color: var(--lyra-ember);
+      border-radius: var(--lyra-radius-md);
+      padding: 10px 20px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      opacity: 0;
+      transition: all 0.3s var(--lyra-ease-snap);
+      pointer-events: none;
+      z-index: 100;
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    /* Footer */
+    .lyra-footer {
+      background: var(--lyra-obsidian);
+      border-top: 1px solid var(--lyra-border);
+      padding: 6px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 11px;
+      color: var(--lyra-ghost);
+      flex-shrink: 0;
+    }
+    .lyra-footer-brand {
+      font-family: 'Cinzel', serif;
+      font-size: 10px;
+      letter-spacing: 2px;
+      color: var(--lyra-dim);
+    }
+
+    /* Utils */
+    .lyra-label {
+      font-family: 'Rajdhani', sans-serif;
+      font-weight: 600;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--lyra-text-dim);
+      margin-bottom: 6px;
+      display: block;
+    }
+    .lyra-mono {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      color: var(--lyra-ash);
+    }
+    .gap-8 { gap: 8px; }
+    .gap-12 { gap: 12px; }
+    .flex { display: flex; }
+    .flex-col { display: flex; flex-direction: column; }
+    .mb-12 { margin-bottom: 12px; }
+    .mb-16 { margin-bottom: 16px; }
+    .mt-auto { margin-top: auto; }
+
+    @keyframes lyra-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+    @keyframes lyra-fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes lyra-fadeSlideIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+    @media (max-width: 900px) {
+      .app-layout { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="lyra-cathedral"></div>
+
+<!-- HEADER -->
+<header class="lyra-header">
+  <div class="lyra-logo">
+    <span class="lyra-logo-diamond">♦</span>
+    <span>LYRA<span class="lyra-logo-accent"> // </span>B64 DECODER</span>
+  </div>
+  <div class="status-pill">
+    <span class="dot" id="status-dot"></span>
+    <span id="status-text">READY</span>
+  </div>
+</header>
+
+<!-- MAIN LAYOUT -->
+<div class="app-layout">
+
+  <!-- LEFT: INPUT PANEL -->
+  <div class="lyra-panel lyra-panel-depth">
+    <div class="lyra-panel-header">
+      <span class="section-title" style="flex:1;">Input</span>
+    </div>
+    <div class="lyra-panel-body flex-col gap-12">
+
+      <!-- Format selector -->
+      <div>
+        <label class="lyra-label">Output Format Override</label>
+        <div class="format-row">
+          <span class="format-pill active" data-fmt="auto">Auto-Detect</span>
+          <span class="format-pill" data-fmt="image/png">PNG</span>
+          <span class="format-pill" data-fmt="image/jpeg">JPEG</span>
+          <span class="format-pill" data-fmt="image/gif">GIF</span>
+          <span class="format-pill" data-fmt="image/webp">WEBP</span>
+          <span class="format-pill" data-fmt="image/bmp">BMP</span>
+        </div>
+      </div>
+
+      <!-- Textarea -->
+      <div class="flex-col mb-12" style="flex:1;">
+        <label class="lyra-label">Base64 String</label>
+        <textarea
+          id="b64-input"
+          class="lyra-input lyra-textarea"
+          style="flex:1; min-height:200px;"
+          placeholder="Paste base64 string here...&#10;&#10;Accepts both raw base64 and data URI format:&#10;data:image/png;base64,iVBORw0KGgo..."></textarea>
+      </div>
+
+      <!-- Progress -->
+      <div id="progress-wrap" style="display:none; margin-bottom:8px;">
+        <div class="lyra-progress-track">
+          <div class="lyra-progress-fill" id="progress-fill"></div>
+        </div>
+      </div>
+
+      <!-- Button row -->
+      <div class="flex gap-8 mt-auto">
+        <button class="lyra-btn lyra-btn-primary" id="decode-btn" style="flex:1;">
+          ♦ Decode Image
+        </button>
+        <button class="lyra-btn lyra-btn-ghost" id="clear-btn">Clear</button>
+        <button class="lyra-btn lyra-btn-ghost" id="paste-btn" title="Paste from clipboard">Paste</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT: OUTPUT PANEL -->
+  <div class="lyra-panel lyra-panel-depth">
+    <div class="lyra-panel-header">
+      <span class="section-title" style="flex:1;">Output</span>
+      <button class="lyra-btn lyra-btn-gold" id="download-btn" style="display:none; margin-left:12px;">
+        ↓ Save Image
+      </button>
+    </div>
+    <div class="lyra-panel-body flex-col gap-12">
+
+      <!-- Image display -->
+      <div class="output-area" id="output-area">
+        <div class="output-placeholder" id="placeholder">
+          <span class="icon">◈</span>
+          Awaiting decode signal...
+        </div>
+        <img id="decoded-img" alt="Decoded image" />
+      </div>
+
+      <!-- Metadata -->
+      <div id="meta-section" style="display:none;">
+        <div class="lyra-divider"></div>
+        <div class="section-title mb-12" style="margin-top:4px;">Image Data</div>
+        <div class="meta-grid">
+          <div class="meta-card">
+            <div class="meta-label">Format</div>
+            <div class="meta-value" id="meta-format">—</div>
+          </div>
+          <div class="meta-card">
+            <div class="meta-label">File Size</div>
+            <div class="meta-value" id="meta-size">—</div>
+          </div>
+          <div class="meta-card">
+            <div class="meta-label">Dimensions</div>
+            <div class="meta-value" id="meta-dims">—</div>
+          </div>
+          <div class="meta-card">
+            <div class="meta-label">Aspect Ratio</div>
+            <div class="meta-value" id="meta-ratio">—</div>
+          </div>
+        </div>
+
+        <!-- Raw data URI preview -->
+        <div class="lyra-divider"></div>
+        <label class="lyra-label">Decoded Data URI</label>
+        <div class="lyra-input lyra-mono" id="meta-uri-preview"
+          style="padding:8px 12px; border-radius:4px; word-break:break-all; font-size:11px; max-height:60px; overflow:auto; cursor:text; color:var(--lyra-ghost);">
+          —
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+<!-- FOOTER -->
+<footer class="lyra-footer">
+  <span class="lyra-footer-brand">REDVERSE ♦ CATHEDRAL TOOLS</span>
+  <span class="lyra-mono" style="font-size:10px;">B64 → IMAGE DECODER v1.0</span>
+  <span class="lyra-mono" style="font-size:10px;" id="char-count">0 chars</span>
+</footer>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+  const b64Input = document.getElementById('b64-input');
+  const decodeBtn = document.getElementById('decode-btn');
+  const clearBtn = document.getElementById('clear-btn');
+  const pasteBtn = document.getElementById('paste-btn');
+  const downloadBtn = document.getElementById('download-btn');
+  const decodedImg = document.getElementById('decoded-img');
+  const placeholder = document.getElementById('placeholder');
+  const outputArea = document.getElementById('output-area');
+  const metaSection = document.getElementById('meta-section');
+  const progressWrap = document.getElementById('progress-wrap');
+  const progressFill = document.getElementById('progress-fill');
+  const statusDot = document.getElementById('status-dot');
+  const statusText = document.getElementById('status-text');
+  const charCount = document.getElementById('char-count');
+  const toast = document.getElementById('toast');
+
+  let selectedFormat = 'auto';
+  let currentDataURL = null;
+  let toastTimer = null;
+
+  // Format pill selection
+  document.querySelectorAll('.format-pill').forEach(pill => {
+    pill.addEventListener('click', () => {
+      document.querySelectorAll('.format-pill').forEach(p => p.classList.remove('active'));
+      pill.classList.add('active');
+      selectedFormat = pill.dataset.fmt;
+    });
+  });
+
+  // Char counter
+  b64Input.addEventListener('input', () => {
+    const len = b64Input.value.length;
+    charCount.textContent = len.toLocaleString() + ' chars';
+  });
+
+  // Paste
+  pasteBtn.addEventListener('click', async () => {
+    try {
+      const text = await navigator.clipboard.readText();
+      b64Input.value = text;
+      charCount.textContent = text.length.toLocaleString() + ' chars';
+      showToast('Pasted from clipboard', 'ok');
+    } catch {
+      showToast('Clipboard access denied', 'error');
+    }
+  });
+
+  // Clear
+  clearBtn.addEventListener('click', () => {
+    b64Input.value = '';
+    charCount.textContent = '0 chars';
+    resetOutput();
+  });
+
+  // Decode
+  decodeBtn.addEventListener('click', decode);
+  b64Input.addEventListener('keydown', e => {
+    if (e.ctrlKey && e.key === 'Enter') decode();
+  });
+
+  function decode() {
+    const raw = b64Input.value.trim();
+    if (!raw) { showToast('No input to decode', 'error'); return; }
+
+    setStatus('pulse', 'DECODING');
+    showProgress(30);
+
+    let mimeType = selectedFormat;
+    let b64data = raw;
+
+    // Try to strip data URI prefix
+    const dataUriMatch = raw.match(/^data:(image\/[a-zA-Z0-9+.-]+);base64,(.+)$/s);
+    if (dataUriMatch) {
+      if (mimeType === 'auto') mimeType = dataUriMatch[1];
+      b64data = dataUriMatch[2];
+    } else {
+      // Raw base64 — detect format from magic bytes
+      if (mimeType === 'auto') mimeType = detectFormat(b64data);
+    }
+
+    showProgress(60);
+
+    // Clean base64 (strip whitespace/newlines)
+    b64data = b64data.replace(/\s/g, '');
+
+    // Validate base64
+    if (!/^[A-Za-z0-9+/]*={0,2}$/.test(b64data)) {
+      showProgress(0);
+      setStatus('error', 'INVALID');
+      showToast('Invalid base64 string', 'error');
+      return;
+    }
+
+    const dataURL = `data:${mimeType};base64,${b64data}`;
+
+    showProgress(85);
+
+    const img = new Image();
+    img.onload = () => {
+      currentDataURL = dataURL;
+      decodedImg.src = dataURL;
+      decodedImg.style.display = 'block';
+      placeholder.style.display = 'none';
+      downloadBtn.style.display = 'inline-flex';
+      metaSection.style.display = 'block';
+
+      showProgress(100);
+      setStatus('ok', 'DECODED');
+
+      // Metadata
+      const byteLen = Math.round((b64data.length * 3) / 4);
+      document.getElementById('meta-format').textContent = mimeType.replace('image/', '').toUpperCase();
+      document.getElementById('meta-size').textContent = formatBytes(byteLen);
+      document.getElementById('meta-dims').textContent = `${img.naturalWidth} × ${img.naturalHeight}`;
+      const gcd = getGcd(img.naturalWidth, img.naturalHeight);
+      document.getElementById('meta-ratio').textContent =
+        `${img.naturalWidth / gcd}:${img.naturalHeight / gcd}`;
+      document.getElementById('meta-uri-preview').textContent =
+        dataURL.substring(0, 120) + (dataURL.length > 120 ? '…' : '');
+
+      setTimeout(() => { progressWrap.style.display = 'none'; }, 600);
+    };
+    img.onerror = () => {
+      showProgress(0);
+      setStatus('error', 'FAILED');
+      showToast('Could not render image — check format or data integrity', 'error');
+      setTimeout(() => { progressWrap.style.display = 'none'; }, 600);
+    };
+    img.src = dataURL;
+  }
+
+  // Download
+  downloadBtn.addEventListener('click', () => {
+    if (!currentDataURL) return;
+    const ext = currentDataURL.match(/^data:image\/([a-z]+);/)?.[1] || 'png';
+    const a = document.createElement('a');
+    a.href = currentDataURL;
+    a.download = `decoded_image.${ext}`;
+    a.click();
+  });
+
+  // Helpers
+  function detectFormat(b64) {
+    try {
+      const bytes = atob(b64.substring(0, 16));
+      const codes = Array.from(bytes).map(c => c.charCodeAt(0));
+      if (codes[0] === 0xFF && codes[1] === 0xD8) return 'image/jpeg';
+      if (codes[0] === 0x89 && codes[1] === 0x50) return 'image/png';
+      if (codes[0] === 0x47 && codes[1] === 0x49) return 'image/gif';
+      if (codes[0] === 0x52 && codes[1] === 0x49) return 'image/webp';
+      if (codes[0] === 0x42 && codes[1] === 0x4D) return 'image/bmp';
+    } catch {}
+    return 'image/png';
+  }
+
+  function formatBytes(bytes) {
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / 1048576).toFixed(2) + ' MB';
+  }
+
+  function getGcd(a, b) { return b === 0 ? a : getGcd(b, a % b); }
+
+  function resetOutput() {
+    decodedImg.src = '';
+    decodedImg.style.display = 'none';
+    placeholder.style.display = 'block';
+    downloadBtn.style.display = 'none';
+    metaSection.style.display = 'none';
+    currentDataURL = null;
+    progressWrap.style.display = 'none';
+    setStatus('', 'READY');
+  }
+
+  function showProgress(pct) {
+    progressWrap.style.display = 'block';
+    progressFill.style.width = pct + '%';
+  }
+
+  function setStatus(type, text) {
+    statusDot.className = 'dot' + (type ? ' ' + type : '');
+    statusText.textContent = text;
+  }
+
+  function showToast(msg, type = 'error') {
+    toast.textContent = msg;
+    toast.style.borderColor = type === 'ok' ? 'var(--lyra-green)' : 'var(--lyra-crimson)';
+    toast.style.color = type === 'ok' ? 'var(--lyra-green)' : 'var(--lyra-ember)';
+    toast.style.background = type === 'ok' ? 'rgba(0, 40, 20, 0.95)' : 'linear-gradient(135deg, #4a0000, #8B0000)';
+    toast.classList.add('show');
+    if (toastTimer) clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => toast.classList.remove('show'), 3000);
+  }
+</script>
+
+</body>
+</html>

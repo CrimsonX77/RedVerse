@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>w-AI-fu! × RedVerse — Portal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Orbitron:wght@400;600;700&family=JetBrains+Mono:wght@300;400&display=swap" rel="stylesheet">
+<style>
+:root {
+  --crimson: #c41230;
+  --crimson-dark: #8b0a20;
+  --crimson-glow: #ff1a3d;
+  --gold: #d4a846;
+  --gold-dim: #a8843a;
+  --cyan: #00e5ff;
+  --cyan-dim: #007f8e;
+  --silver: #b8c0cc;
+  --black: #0a0a0c;
+  --black-warm: #120c0e;
+  --black-card: rgba(20, 16, 18, 0.85);
+  --text-primary: #e8e0d8;
+  --text-secondary: #9b8e82;
+  --font-display: 'Cinzel', serif;
+  --font-body: 'Crimson Pro', serif;
+  --font-cyber: 'Orbitron', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html {
+  scroll-behavior: smooth;
+  scrollbar-width: thin;
+  scrollbar-color: var(--crimson-dark) var(--black);
+}
+
+body {
+  background: var(--black);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  font-weight: 300;
+  overflow-x: hidden;
+  min-height: 100vh;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background:
+    radial-gradient(ellipse at 20% 0%, rgba(139, 10, 32, 0.15) 0%, transparent 60%),
+    radial-gradient(ellipse at 80% 100%, rgba(0, 229, 255, 0.08) 0%, transparent 60%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ═══ AUTH INDICATOR ═══ */
+.auth-indicator {
+  position: fixed;
+  top: 16px;
+  right: 20px;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  letter-spacing: 0.15em;
+  color: var(--text-secondary);
+}
+.auth-indicator .auth-name {
+  color: var(--gold);
+  white-space: nowrap;
+}
+.auth-indicator a {
+  color: var(--text-secondary);
+  text-decoration: none;
+  text-transform: uppercase;
+  font-size: 0.7rem;
+  letter-spacing: 0.15em;
+  transition: color 0.3s;
+  border-bottom: 1px solid transparent;
+}
+.auth-indicator a:hover {
+  color: var(--crimson);
+  border-bottom-color: var(--crimson);
+}
+
+/* ═══ HEADER ═══ */
+.portal-header {
+  text-align: center;
+  padding: 60px 20px 20px;
+  position: relative;
+  z-index: 1;
+}
+
+.portal-header h1 {
+  font-family: var(--font-display);
+  font-size: clamp(1.8rem, 5vw, 3.2rem);
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  background: linear-gradient(135deg, var(--gold) 0%, var(--crimson) 50%, var(--cyan) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-shadow: none;
+}
+
+.portal-header .subtitle {
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  letter-spacing: 0.3em;
+  margin-top: 8px;
+  font-style: italic;
+}
+
+/* ═══ ENTRANCE BANNERS ═══ */
+.entrances {
+  display: flex;
+  justify-content: center;
+  gap: 24px;
+  padding: 30px 20px 10px;
+  flex-wrap: wrap;
+  position: relative;
+  z-index: 1;
+}
+
+.entrance-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 280px;
+  height: 160px;
+  border-radius: 12px;
+  text-decoration: none;
+  color: var(--text-primary);
+  transition: all 0.4s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.entrance-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 12px;
+  opacity: 0.6;
+  transition: opacity 0.4s ease;
+}
+
+.entrance-card:hover::before { opacity: 0.9; }
+
+.entrance-card.redverse {
+  border: 1px solid var(--crimson-dark);
+}
+.entrance-card.redverse::before {
+  background: linear-gradient(180deg, rgba(139, 10, 32, 0.6) 0%, rgba(10, 10, 12, 0.95) 100%);
+}
+.entrance-card.redverse:hover {
+  border-color: var(--crimson-glow);
+  box-shadow: 0 0 30px rgba(196, 18, 48, 0.3), inset 0 0 30px rgba(196, 18, 48, 0.1);
+}
+
+.entrance-card.waifu {
+  border: 1px solid var(--cyan-dim);
+}
+.entrance-card.waifu::before {
+  background: linear-gradient(180deg, rgba(0, 127, 142, 0.5) 0%, rgba(10, 10, 12, 0.95) 100%);
+}
+.entrance-card.waifu:hover {
+  border-color: var(--cyan);
+  box-shadow: 0 0 30px rgba(0, 229, 255, 0.25), inset 0 0 30px rgba(0, 229, 255, 0.08);
+}
+
+.entrance-card .e-icon { font-size: 2rem; margin-bottom: 8px; position: relative; z-index: 1; }
+.entrance-card .e-title {
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  font-weight: 600;
+  letter-spacing: 0.15em;
+  position: relative;
+  z-index: 1;
+}
+.entrance-card .e-sub {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  letter-spacing: 0.2em;
+  margin-top: 4px;
+  position: relative;
+  z-index: 1;
+}
+
+/* ═══ SECTIONS ═══ */
+.section {
+  padding: 30px 20px 10px;
+  max-width: 1200px;
+  margin: 0 auto;
+  position: relative;
+  z-index: 1;
+}
+
+.section-title {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  color: var(--gold-dim);
+  border-bottom: 1px solid rgba(212, 168, 70, 0.15);
+  padding-bottom: 10px;
+  margin-bottom: 20px;
+}
+
+.section-title.cyber { color: var(--cyan-dim); border-color: rgba(0, 229, 255, 0.15); }
+
+/* ═══ CARD GRID ═══ */
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 16px;
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 24px 16px;
+  background: var(--black-card);
+  border: 1px solid rgba(139, 10, 32, 0.2);
+  border-radius: 10px;
+  text-decoration: none;
+  color: var(--text-primary);
+  transition: all 0.35s ease;
+  min-height: 140px;
+  position: relative;
+  overflow: hidden;
+  background-size: cover;
+  background-position: center;
+}
+
+/* Thumbnail overlay — darkens the background image so text stays readable */
+.card[data-thumb]::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(10,10,12,0.55) 0%, rgba(10,10,12,0.88) 100%);
+  border-radius: 10px;
+  z-index: 0;
+  transition: opacity 0.35s;
+}
+.card[data-thumb]:hover::before { opacity: 0.7; }
+.card .c-icon, .card .c-title, .card .c-desc { position: relative; z-index: 1; }
+
+.card:hover {
+  border-color: var(--crimson);
+  background: rgba(139, 10, 32, 0.12);
+  box-shadow: 0 4px 24px rgba(139, 10, 32, 0.15);
+  transform: translateY(-3px);
+}
+
+.card.cyber-card {
+  border-color: rgba(0, 229, 255, 0.15);
+}
+.card.cyber-card:hover {
+  border-color: var(--cyan);
+  background: rgba(0, 229, 255, 0.08);
+  box-shadow: 0 4px 24px rgba(0, 229, 255, 0.12);
+}
+
+.card .c-icon { font-size: 1.6rem; margin-bottom: 8px; }
+.card .c-title {
+  font-family: var(--font-display);
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+}
+.card .c-desc {
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+  margin-top: 4px;
+  line-height: 1.4;
+}
+
+/* ═══ FOOTER ═══ */
+.portal-footer {
+  text-align: center;
+  padding: 40px 20px 30px;
+  color: var(--text-secondary);
+  font-size: 0.7rem;
+  letter-spacing: 0.2em;
+  position: relative;
+  z-index: 1;
+}
+
+/* ═══ RESPONSIVE ═══ */
+@media (max-width: 640px) {
+  .entrances { flex-direction: column; align-items: center; }
+  .entrance-card { width: 100%; max-width: 320px; }
+  .card-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+}
+/* REDWORLD FULL-SCREEN BACKGROUND VIDEO */
+.bg-video-wrapper {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  z-index: -2;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.bg-video-wrapper video {
+  position: absolute;
+  top: 50%; left: 50%;
+  min-width: 100%; min-height: 100%;
+  width: auto; height: auto;
+  transform: translate(-50%, -50%);
+  object-fit: cover;
+  filter: brightness(0.65) contrast(1.15);
+}
+
+/* Optional subtle dark overlay so text stays crisp */
+.bg-video-wrapper::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(10,10,12,0.68);
+  z-index: 1;
+  pointer-events: none;
+}
+</style>
+</head>
+<body>
+<!-- REDWORLD BACKGROUND VIDEO -->
+<div class="bg-video-wrapper">
+  <video autoplay loop muted playsinline>
+    <source src="assets/redworld_bgimage.mp4" type="video/mp4">
+    Your browser does not support the video tag.
+  </video>
+</div>
+
+<div class="auth-indicator" id="authIndicator"></div>
+
+<header class="portal-header">
+  <h1>w-AI-fu! × RedVerse</h1>
+  <div class="subtitle">the canonical gateway</div>
+</header>
+
+<!-- ═══ ENTRANCE PORTALS ═══ -->
+<nav class="entrances">
+  <a href="index_entrance.html" class="entrance-card redverse" data-thumb="assets/Redgates.jpg">
+    <span class="e-icon">⛪</span>
+    <span class="e-title">Enter The RedVerse</span>
+    <span class="e-sub">church doors · crimson cathedral</span>
+  </a>
+  <a href="index_waifu.html" class="entrance-card waifu" data-thumb="assets/waifu_club.jpg">
+    <span class="e-icon">🎸</span>
+    <span class="e-title">Enter w-AI-fu!</span>
+    <span class="e-sub">the stage · cyberpunk band</span>
+  </a>
+</nav>
+
+<!-- ═══ REDVERSE CORE ═══ -->
+<section class="section">
+  <h2 class="section-title">RedVerse — The Cathedral</h2>
+  <div class="card-grid">
+    <a href="oracle.html" class="card" data-thumb="assets/ORACLE.jpg">
+      <span class="c-icon">🔮</span>
+      <span class="c-title">The Oracle</span>
+      <span class="c-desc">Chapel of whispered truths</span>
+    </a>
+    <a href="EDrive.html" class="card" data-thumb="assets/edriveheart.jpg">
+      <span class="c-icon">💎</span>
+      <span class="c-title">E-Drive Heart</span>
+      <span class="c-desc">Emotion resonance tracker</span>
+    </a>
+    <a href="RedGen.html" class="card" data-thumb="assets/redgen.jpg">
+      <span class="c-icon">🎨</span>
+      <span class="c-title">RedGen</span>
+      <span class="c-desc">Art generation engine</span>
+    </a>
+    <a href="cinema.html" class="card" data-thumb="assets/mediahud.jpg">
+      <span class="c-icon">🎵</span>
+      <span class="c-title">Redverse Cinema</span>
+      <span class="c-desc">Ambient audio & video player</span>
+    </a>
+    <a href="crimson-control-hall.html" class="card" id="adminCard" style="display:none" data-thumb="assets/controlhall.jpg">
+      <span class="c-icon">🏛️</span>
+      <span class="c-title">Control Hall</span>
+      <span class="c-desc">Cathedral admin dashboard</span>
+  </div>
+</section>
+
+<!-- ═══ UTILITIES ═══ -->
+<section class="section">
+  <h2 class="section-title">Utilities</h2>
+  <div class="card-grid">
+    <a href="speaker.html" class="card" data-thumb="assets/lunafirstbreathe.jpg">
+      <span class="c-icon">🌙</span>
+      <span class="c-title">The Speaker</span>
+      <span class="c-desc">Text-To-Speech</span>
+    </a>
+    <a href="quickcam.html" class="card" data-thumb="assets/lunafui.jpg">
+      <span class="c-icon">🖥️</span>
+      <span class="c-title">AI-Vision</span>
+      <span class="c-desc">Fantasy UI interface</span>
+    </a>
+    <a href="lunas-room.html" class="card" data-thumb="assets/lunafui.jpg">
+      <span class="c-icon">🛋️</span>
+      <span class="c-title">Luna's Room</span>
+      <span class="c-desc">Personal space & chat</span>
+    </a>
+    <a href="lyra_forge_ui.html" class="card" data-thumb="assets/dgm_catgirl.jpg">
+      <span class="c-icon">💬</span>
+      <span class="c-title">Agent Lyra</span>
+      <span class="c-desc">Real-time conversation + Pictorial Tracking</span>
+    </a>
+  </div>
+</section>
+
+<!-- ═══ W-AI-FU! BAND ═══ -->
+<section class="section">
+  <h2 class="section-title cyber">w-AI-fu! — The Band</h2>
+  <div class="card-grid">
+    <a href="waifu_club.html" class="card cyber-card" data-thumb="assets/waifu_club.jpg">
+      <span class="c-icon">🌤</span>
+      <span class="c-title">w-AI-fu! Club</span>
+      <span class="c-desc">Welcome & downloads</span>
+    </a>
+    <a href="waifu_support.html" class="card cyber-card" data-thumb="assets/backstage_pass.jpg">
+      <span class="c-icon">🎫</span>
+      <span class="c-title">Backstage Pass</span>
+      <span class="c-desc">Support bundles & merch</span>
+    </a>
+  </div>
+</section>
+
+<!-- ═══ ACCOUNT & ACCESS ═══ -->
+<section class="section">
+  <h2 class="section-title">Account & Access</h2>
+  <div class="card-grid">
+    <a href="login.html" class="card" data-thumb="assets/crimsonframe.jpg">
+      <span class="c-icon">🔐</span>
+      <span class="c-title">Login</span>
+      <span class="c-desc">Sign in to the cathedral</span>
+    </a>
+    <a href="redverse-shop.html" class="card" data-thumb="assets/forge-ui-preview.jpg">
+      <span class="c-icon">🔑</span>
+      <span class="c-title">Red-Store</span>
+      <span class="c-desc">The Shop Of The Redverse</span>
+    </a>
+    <a href="profile.html" class="card" data-thumb="assets/single_shard.jpg">
+      <span class="c-icon">👤</span>
+      <span class="c-title">Profile</span>
+      <span class="c-desc">Identity & preferences</span>
+    </a>
+    <a href="setup.html" class="card" data-thumb="assets/single_shard.jpg">
+      <span class="c-icon">⚙️</span>
+      <span class="c-title">Setup Ritual</span>
+      <span class="c-desc">First-time onboarding</span>
+    </a>
+  </div>
+</section>
+
+<!-- ═══ UTILITIES ═══ -->
+<section class="section">
+  <h2 class="section-title">Utilities</h2>
+  <div class="card-grid">
+    <a href="support.html" class="card" data-thumb="assets/visualassets/lunasroom.png">
+      <span class="c-icon">❤️</span>
+      <span class="c-title">Support</span>
+      <span class="c-desc">Stripe donations</span>
+    </a>
+    <a href="clock.html" class="card" data-thumb="assets/visualassets/world.jpg">
+      <span class="c-icon">🕐</span>
+      <span class="c-title">World Clock</span>
+      <span class="c-desc">Timezone display</span>
+    </a>
+  </div>
+</section>
+
+<footer class="portal-footer">
+  w-AI-fu! × RedVerse &middot; canonical gateway &middot; 2025
+</footer>
+
+<script src="js/config.js"></script>
+<script src="js/auth.js"></script>
+<script>
+(function() {
+  var el = document.getElementById('authIndicator');
+  if (!el || typeof WaifuAuth === 'undefined') return;
+  if (WaifuAuth.isAuthenticated()) {
+    WaifuAuth.getUser().then(function(u) {
+      if (u) {
+        el.innerHTML = '<span class="auth-name">' + (u.display_name || u.email) + '</span>' +
+          '<a href="#" onclick="WaifuAuth.logout();return false;">logout</a>';
+        // Show admin card for access_tier >= 4
+        if (u.access_tier >= 4) {
+          var ac = document.getElementById('adminCard');
+          if (ac) ac.style.display = '';
+        }
+      }
+    });
+  } else {
+    el.innerHTML = '<a href="login.html">sign in</a>';
+  }
+})();
+</script>
+
+<!-- ═══ MUSIC PLAYER WIDGET ═══ -->
+<div id="music-player-bar" style="position:fixed;bottom:0;left:0;right:0;z-index:2000;background:rgba(10,10,12,0.97);border-top:1px solid #c41230;padding:0.8rem 1.5rem;display:flex;align-items:center;gap:1.5rem;box-shadow:0 -2px 16px rgba(0,0,0,0.3);">
+  <div style="flex:1;display:flex;align-items:center;gap:0.5rem;">
+    <audio id="portal-audio" preload="auto"></audio>
+    <button id="btn-prev" style="background:none;border:none;font-size:1.3em;cursor:pointer;color:#e8e0d8;padding:4px;">⏮</button>
+    <button id="btn-play" style="background:none;border:none;font-size:1.3em;cursor:pointer;color:#e8e0d8;padding:4px;">▶</button>
+    <button id="btn-next" style="background:none;border:none;font-size:1.3em;cursor:pointer;color:#e8e0d8;padding:4px;">⏭</button>
+    <span id="portal-track-title" style="margin-left:1em;color:#e8e0d8;font-family:'JetBrains Mono',monospace;font-size:0.82em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:360px;"></span>
+  </div>
+  <input id="portal-volume" type="range" min="0" max="1" step="0.05" value="0.5" style="width:80px;accent-color:#c41230;">
+</div>
+
+<script>
+(function() {
+  // Apply data-thumb backgrounds to all cards
+  document.querySelectorAll('[data-thumb]').forEach(function(el) {
+    el.style.backgroundImage = 'url(' + el.getAttribute('data-thumb') + ')';
+  });
+
+  // If the BGM side widget is already present, hide this player and bail
+  if (document.querySelector('.bgm-player')) {
+    var bar = document.getElementById('music-player-bar');
+    if (bar) bar.style.display = 'none';
+    return;
+  }
+
+  var audio = document.getElementById('portal-audio');
+  var titleEl = document.getElementById('portal-track-title');
+  var btnPlay = document.getElementById('btn-play');
+  var volSlider = document.getElementById('portal-volume');
+  var files = [], idx = 0, playing = false;
+
+  audio.volume = 0.5;
+  volSlider.addEventListener('input', function() { audio.volume = this.value; });
+
+  // Fetch track list
+  fetch((typeof API_BASE !== 'undefined' ? API_BASE : '') + '/api/music/list')
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      files = d.files || [];
+      // Shuffle playlist
+      for (var i = files.length - 1; i > 0; i--) {
+        var j = Math.floor(Math.random() * (i + 1));
+        var t = files[i]; files[i] = files[j]; files[j] = t;
+      }
+      if (files.length) loadTrack(0);
+    })
+    .catch(function(e) { console.warn('Music list fetch failed:', e); });
+
+  function loadTrack(i) {
+    if (!files[i]) return;
+    idx = i;
+    audio.src = files[i];
+    var name = decodeURIComponent(files[i].split('/').pop()).replace(/\.\w+$/, '');
+    titleEl.textContent = name;
+  }
+
+  function playTrack() {
+    audio.play().then(function() {
+      playing = true;
+      btnPlay.textContent = '⏸';
+    }).catch(function(e) {
+      console.warn('Autoplay blocked:', e.message);
+    });
+  }
+
+  function pauseTrack() {
+    audio.pause();
+    playing = false;
+    btnPlay.textContent = '▶';
+  }
+
+  btnPlay.addEventListener('click', function() {
+    if (audio.paused) playTrack(); else pauseTrack();
+  });
+
+  document.getElementById('btn-next').addEventListener('click', function() {
+    if (!files.length) return;
+    idx = (idx + 1) % files.length;
+    loadTrack(idx);
+    playTrack();
+  });
+
+  document.getElementById('btn-prev').addEventListener('click', function() {
+    if (!files.length) return;
+    idx = (idx - 1 + files.length) % files.length;
+    loadTrack(idx);
+    playTrack();
+  });
+
+  audio.addEventListener('ended', function() {
+    idx = (idx + 1) % files.length;
+    loadTrack(idx);
+    playTrack();
+  });
+
+  audio.addEventListener('play', function() { playing = true; btnPlay.textContent = '⏸'; });
+  audio.addEventListener('pause', function() { playing = false; btnPlay.textContent = '▶'; });
+  audio.addEventListener('error', function() {
+    console.error('Audio error:', audio.error ? audio.error.message : 'unknown', 'src:', audio.src);
+    titleEl.textContent = '⚠ load error — skipping…';
+    setTimeout(function() { idx = (idx + 1) % files.length; loadTrack(idx); }, 1500);
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RedVerse — Discord Auth</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --crimson: #c41230;
+    --crimson-dark: #8b0a20;
+    --crimson-glow: #ff1a3d;
+    --navi: #cc99ff;
+    --text: #e8e0d8;
+    --text-dim: #6b6460;
+    --discord: #5865F2;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: #000;
+    color: var(--text);
+    font-family: 'Share Tech Mono', monospace;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+
+  /* Scanlines */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(
+      0deg, transparent, transparent 2px,
+      rgba(0,0,0,0.12) 2px, rgba(0,0,0,0.12) 4px
+    );
+    pointer-events: none;
+    z-index: 10;
+  }
+
+  /* Vignette */
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.85) 100%);
+    pointer-events: none;
+    z-index: 9;
+  }
+
+  /* Ambient glow */
+  .ambient {
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse at 50% 50%, rgba(88,101,242,0.06) 0%, transparent 60%);
+    pointer-events: none;
+    z-index: 1;
+    animation: breathe 6s ease-in-out infinite;
+  }
+
+  @keyframes breathe {
+    0%, 100% { opacity: 0.6; }
+    50% { opacity: 1; }
+  }
+
+  /* Main card */
+  .auth-card {
+    position: relative;
+    z-index: 20;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2.5rem;
+    padding: 3.5rem 3rem;
+    background: rgba(10, 0, 5, 0.85);
+    border: 1px solid rgba(88,101,242,0.25);
+    max-width: 420px;
+    width: 90%;
+    animation: fade-in 1.5s ease forwards;
+  }
+
+  @keyframes fade-in {
+    from { opacity: 0; transform: translateY(20px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .sigil {
+    font-family: 'Cinzel', serif;
+    font-size: 0.65rem;
+    letter-spacing: 0.5em;
+    text-transform: uppercase;
+    color: var(--discord);
+    text-align: center;
+    opacity: 0.7;
+  }
+
+  .title {
+    font-family: 'Cinzel', serif;
+    font-size: clamp(1.6rem, 4vw, 2.2rem);
+    font-weight: 900;
+    letter-spacing: 0.15em;
+    color: var(--discord);
+    text-align: center;
+    text-shadow: 0 0 40px rgba(88,101,242,0.4);
+    line-height: 1.1;
+  }
+
+  .subtitle {
+    font-size: 0.75rem;
+    letter-spacing: 0.2em;
+    color: var(--text-dim);
+    text-align: center;
+    line-height: 1.8;
+  }
+
+  .divider {
+    width: 100%;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(88,101,242,0.3), transparent);
+  }
+
+  /* Spinner */
+  .spinner {
+    width: 36px;
+    height: 36px;
+    border: 2px solid rgba(88,101,242,0.15);
+    border-top-color: var(--discord);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+  }
+
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+
+  /* Status */
+  .status {
+    font-size: 0.75rem;
+    letter-spacing: 0.15em;
+    color: var(--text-dim);
+    text-align: center;
+    min-height: 1em;
+    transition: color 0.3s;
+  }
+
+  .status.error { color: var(--crimson); }
+  .status.success { color: var(--discord); }
+
+  /* Retry link */
+  .retry-link {
+    display: none;
+    font-size: 0.7rem;
+    letter-spacing: 0.2em;
+    color: var(--text-dim);
+    text-decoration: none;
+    text-transform: uppercase;
+    cursor: pointer;
+    background: none;
+    border: none;
+    border-bottom: 1px solid transparent;
+    font-family: inherit;
+    transition: all 0.3s;
+  }
+  .retry-link:hover {
+    color: var(--navi);
+    border-bottom-color: var(--navi);
+  }
+</style>
+</head>
+<body>
+
+<div class="ambient"></div>
+
+<div class="auth-card">
+  <div class="sigil">⟐ DISCORD GATEWAY ⟐</div>
+  <div class="title">AUTHENTICATING</div>
+  <div class="subtitle">Exchanging tokens with the Discord realm...</div>
+  <div class="divider"></div>
+  <div class="spinner" id="spinner"></div>
+  <div class="status" id="status">Verifying...</div>
+  <a class="retry-link" id="retry" href="login.html">← Return to login</a>
+</div>
+
+<script src="js/config.js"></script>
+<script src="js/auth.js"></script>
+<script>
+(function() {
+  'use strict';
+
+  const statusEl = document.getElementById('status');
+  const spinnerEl = document.getElementById('spinner');
+  const retryEl = document.getElementById('retry');
+
+  function showError(msg) {
+    statusEl.textContent = msg;
+    statusEl.className = 'status error';
+    spinnerEl.style.display = 'none';
+    retryEl.style.display = '';
+  }
+
+  function showSuccess(msg) {
+    statusEl.textContent = msg;
+    statusEl.className = 'status success';
+    spinnerEl.style.display = 'none';
+  }
+
+  // If already authenticated, redirect
+  if (typeof WaifuAuth !== 'undefined' && WaifuAuth.isAuthenticated()) {
+    const next = new URLSearchParams(location.search).get('next') || 'index.html';
+    location.href = next;
+    return;
+  }
+
+  // Extract authorization code from URL
+  const params = new URLSearchParams(location.search);
+  const code = params.get('code');
+  const error = params.get('error');
+
+  if (error) {
+    showError('Discord authorization was denied.');
+    return;
+  }
+
+  if (!code) {
+    showError('No authorization code received.');
+    return;
+  }
+
+  // Exchange code with our backend
+  const API = (typeof API_BASE !== 'undefined' ? API_BASE : '');
+
+  fetch(API + '/auth/discord', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ code: code })
+  })
+  .then(resp => resp.json().then(data => ({ ok: resp.ok, data })))
+  .then(({ ok, data }) => {
+    if (!ok) {
+      showError(data.detail || 'Discord authentication failed.');
+      return;
+    }
+
+    WaifuAuth.setToken(data.token);
+    showSuccess('Welcome, ' + (data.user.display_name || 'Traveller') + '.');
+
+    // Redirect after brief pause
+    const next = params.get('state') || 'index.html';
+    setTimeout(() => { location.href = next; }, 1200);
+  })
+  .catch(() => {
+    showError('Connection to the Obelisk failed.');
+  });
+})();
+</script>
+</body>
+</html>

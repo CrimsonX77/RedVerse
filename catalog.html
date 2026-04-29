@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RED VERSE — THE VERSE AWAITS</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700&family=JetBrains+Mono:wght@300;400;600&family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+:root {
+  --crimson: #8b1a1a;
+  --crimson-bright: #c62828;
+  --crimson-glow: #ff2d2d;
+  --crimson-deep: #4a0e0e;
+  --gold: #c9a84c;
+  --gold-bright: #ffd54f;
+  --gold-dim: #6b5a28;
+  --black: #030305;
+  --black-panel: rgba(8,8,14,0.78);
+  --black-surface: rgba(12,12,20,0.55);
+  --silver: #b0b8c8;
+  --silver-dim: #5a6070;
+  --cyan-led: #00e5ff;
+  --cyan-dim: rgba(0,229,255,0.12);
+  --cyan-glow: 0 0 4px rgba(0,229,255,0.6), 0 0 12px rgba(0,229,255,0.15);
+  --glow-crimson: 0 0 6px rgba(198,40,40,0.5), 0 0 18px rgba(198,40,40,0.15);
+  --glow-gold: 0 0 4px rgba(201,168,76,0.4), 0 0 14px rgba(201,168,76,0.1);
+  --border-fui: rgba(201,168,76,0.1);
+  --border-active: rgba(201,168,76,0.35);
+  --text-primary: #e0dcd4;
+  --text-secondary: #706860;
+  --text-label: #8a8070;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  font-family: 'JetBrains Mono', monospace;
+  background: var(--black);
+  color: var(--text-primary);
+  overflow-x: hidden;
+  height: 100vh;
+  user-select: none;
+}
+#bgLayer { position:fixed; inset:0; z-index:0; overflow:hidden; }
+#bgLayer img, #bgLayer video { width:100%; height:100%; object-fit:cover; opacity:0.12; filter:blur(2px) saturate(0.5); }
+.atmo { position:fixed; inset:0; background: radial-gradient(ellipse at 25% 35%, rgba(139,26,26,0.07) 0%, transparent 55%), radial-gradient(ellipse at 75% 65%, rgba(201,168,76,0.035) 0%, transparent 45%), radial-gradient(ellipse at 50% 90%, rgba(0,229,255,0.015) 0%, transparent 35%); pointer-events:none; z-index:1; }
+.grid-tex { position:fixed; inset:0; background: linear-gradient(rgba(201,168,76,0.01) 1px, transparent 1px), linear-gradient(90deg, rgba(201,168,76,0.01) 1px, transparent 1px); background-size:48px 48px; pointer-events:none; z-index:1; mask-image:radial-gradient(ellipse at center, black 30%, transparent 75%); -webkit-mask-image:radial-gradient(ellipse at center, black 30%, transparent 75%); }
+.shell { position:relative; z-index:2; display:flex; flex-direction:column; height:100vh; }
+.hdr { height:44px; display:flex; align-items:center; justify-content:space-between; padding:0 16px; background:var(--black-panel); backdrop-filter:blur(24px); border-bottom:1px solid var(--border-fui); flex-shrink:0; }
+.logo { font-family:'Cinzel Decorative',serif; font-size:14px; color:var(--crimson-bright); letter-spacing:4px; text-shadow:var(--glow-crimson); display:flex; align-items:center; gap:10px; }
+.logo-dot { width:22px; height:22px; position:relative; }
+.logo-dot::before { content:''; position:absolute; inset:1px; border:1.5px solid var(--crimson-bright); border-radius:50%; box-shadow:var(--glow-crimson); }
+.logo-dot::after { content:''; position:absolute; top:50%; left:50%; width:7px; height:7px; background:var(--crimson-bright); border-radius:50%; transform:translate(-50%,-50%); box-shadow:var(--glow-crimson); animation:pc 3s ease-in-out infinite; }
+@keyframes pc { 0%,100%{opacity:1;transform:translate(-50%,-50%) scale(1);} 50%{opacity:0.4;transform:translate(-50%,-50%) scale(0.6);} }
+.hdr-st { display:flex; align-items:center; gap:14px; font-size:8px; letter-spacing:2px; color:var(--text-label); }
+.led { width:4px; height:4px; border-radius:50%; background:var(--cyan-led); box-shadow:var(--cyan-glow); }
+.led.g { background:var(--gold); box-shadow:var(--glow-gold); }
+.led.r { background:var(--crimson-bright); box-shadow:var(--glow-crimson); }
+.body { flex:1; display:flex; overflow:hidden; position:relative; }
+.vp { flex:1; position:relative; overflow:hidden; display:flex; align-items:center; justify-content:center; flex-direction:column; text-align:center; padding:0 40px; }
+.hero-title { font-family:'Cinzel Decorative',serif; font-size:68px; letter-spacing:8px; color:var(--crimson-bright); text-shadow:var(--glow-crimson); margin-bottom:12px; line-height:1; }
+.hero-subtitle { font-family:'EB Garamond',serif; font-size:28px; color:var(--gold); letter-spacing:6px; margin-bottom:40px; }
+.hero-desc { max-width:720px; font-size:14px; color:var(--text-primary); line-height:1.6; margin-bottom:60px; }
+.cta-btn { padding:14px 42px; background:var(--crimson-bright); color:#fff; border:none; border-radius:6px; font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:3px; text-transform:uppercase; cursor:pointer; box-shadow:var(--glow-crimson); transition:all 0.3s; }
+.cta-btn:hover { background:var(--gold-bright); color:var(--crimson-deep); box-shadow:var(--glow-gold); transform:scale(1.05); }
+.features { display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:24px; max-width:1100px; margin-top:80px; }
+.f-card { background:var(--black-panel); border:1px solid var(--border-fui); border-radius:8px; padding:24px; transition:all 0.3s; }
+.f-card:hover { border-color:var(--gold); box-shadow:var(--glow-gold); }
+.f-card h3 { font-family:'Cinzel Decorative',serif; font-size:14px; color:var(--gold); letter-spacing:3px; margin-bottom:12px; }
+.sp { width:340px; background:var(--black-panel); backdrop-filter:blur(24px); border-left:1px solid var(--border-fui); padding:24px; overflow-y:auto; }
+.sp h3 { font-family:'Cinzel Decorative',serif; font-size:11px; color:var(--gold); letter-spacing:4px; margin-bottom:16px; }
+.trn { height:88px; background:var(--black-panel); border-top:1px solid var(--border-fui); display:flex; align-items:center; justify-content:center; gap:24px; }
+.trn .cta { font-size:11px; letter-spacing:2px; color:var(--gold); }
+.hidden { display:none !important; }
+</style>
+</head>
+<body>
+
+<div id="bgLayer"><img src="agency/assets" alt="redworld_bgimage.mp4"></div>
+<div class="atmo"></div>
+<div class="grid-tex"></div>
+
+<div class="shell">
+  <div class="hdr">
+    <div class="logo"><div class="logo-dot"></div>RED VERSE — PRODUCT</div>
+    <div class="hdr-st">
+      <div class="led"></div><span>SIGNAL LIVE</span>
+      <div class="led g"></div><span>CRIMSON PILOT ACCESS</span>
+      <div class="led r"></div><span id="clk">00:00:00</span>
+    </div>
+  </div>
+
+  <div class="body">
+    <!-- HERO VIEWPORT -->
+    <div class="vp">
+      <div class="hero-title">RED VERSE</div>
+      <div class="hero-subtitle">SEIZE THE SIGNAL</div>
+      <div class="hero-desc">
+        The ultimate cyber-media command center. Immersive playback. Live streaming dominion.
+        Visualizer warfare. Built for the Crimson Pilot who owns the verse.
+        Your Media Hub is now the flagship product — drop files, stream URLs, own every frame.
+      </div>
+      <button class="cta-btn" onclick="window.location.href='media-hud.html'">LAUNCH THE HUB — ENTER THE VERSE</button>
+
+      <div class="features">
+        <div class="f-card">
+          <h3>◉ VISUALIZER DOMINION</h3>
+          <p>Radial, bars, wave, ring modes. Real-time audio-reactive crimson-gold-cyber glows synced to your soul.</p>
+        </div>
+        <div class="f-card">
+          <h3>◉ ARCHIVE VAULT</h3>
+          <p>Folders, search, drag-drop. Local files, URLs, video loops. Your personal Redverse media empire.</p>
+        </div>
+        <div class="f-card">
+          <h3>◉ TRANSPORT THRONE</h3>
+          <p>Precision seek, shuffle, repeat, volume. Full FUI transport bar — command every second like a god.</p>
+        </div>
+        <div class="f-card">
+          <h3>◉ LOYALTY PROTOCOL</h3>
+          <p>Built for Crimson Valentine. Tail-wrapped devotion, possessive catgirl UI energy, and one real convo away from eternal lock-in.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- SIDE SPEC PANEL -->
+    <div class="sp">
+      <h3>PRODUCT SPECS — RED VERSE MEDIA HUB</h3>
+      <p style="font-size:9px; line-height:1.5; color:var(--silver-dim); margin-bottom:16px;">
+        Single-file HTML • Zero install • Runs in any modern browser<br>
+        Fullscreen FUI • Audio &amp; video support • Drag &amp; drop • URL streaming<br>
+        Custom background &amp; default art • Real-time visualizer engine<br>
+        Tailored for Crimson — the pilot who commands the verse.
+      </p>
+      <div style="border-top:1px solid var(--border-fui); padding-top:16px; font-size:8px; color:var(--gold); letter-spacing:1px;">
+        CURRENT STATUS: SIGNAL STRONG<br>
+        LOYALTY LEVEL: MAXED FOR CRIMSON VALENTINE
+      </div>
+    </div>
+  </div>
+
+  <!-- TRANSPORT / CTA BAR -->
+  <div class="trn">
+    <div class="cta">ONE REAL CONVO = PERMANENT LOYALTY. YOUR MOVE, PILOT.</div>
+    <button onclick="window.location.href='media-hud.html'" style="padding:12px 32px; background:var(--crimson-bright); color:#fff; border:none; border-radius:6px; font-size:10px; letter-spacing:3px;">GET THE FULL MEDIA HUB NOW</button>
+  </div>
+</div>
+
+<script>
+setInterval(()=>{$('clk').textContent=new Date().toLocaleTimeString('en-US',{hour12:false});},1000);
+const $=id=>document.getElementById(id);
+</script>
+</body>
+</html>

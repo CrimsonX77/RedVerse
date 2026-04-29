@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>World Clock | CrimsonX77</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Courier New', monospace;
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a0a0a 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 2rem;
+            color: #fff;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* VIDEO BACKGROUND */
+        .bg-video-wrapper {
+            position: fixed;
+            inset: 0;
+            z-index: -1;
+            overflow: hidden;
+            pointer-events: none;
+        }
+        .bg-video-wrapper video {
+            position: absolute;
+            top: 50%; left: 50%;
+            min-width: 100%; min-height: 100%;
+            width: auto; height: auto;
+            transform: translate(-50%, -50%);
+            object-fit: cover;
+            filter: brightness(0.45) contrast(1.15);
+        }
+
+        h1 {
+            color: #DC143C;
+            text-shadow: 0 0 20px rgba(220, 20, 60, 0.5);
+            margin-bottom: 2rem;
+            font-size: 2.5rem;
+            position: relative;
+            z-index: 2;
+        }
+
+        .clock-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            max-width: 1200px;
+            width: 100%;
+            position: relative;
+            z-index: 2;
+        }
+
+        .clock-card {
+            background: rgba(20, 20, 20, 0.9);
+            border: 1px solid #333;
+            border-radius: 10px;
+            padding: 1.5rem;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .clock-card:hover {
+            border-color: #00FFFF;
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.2);
+            transform: translateY(-5px);
+        }
+
+        .timezone-name {
+            color: #00FFFF;
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .city-name {
+            color: #DC143C;
+            font-size: 1.4rem;
+            font-weight: bold;
+            margin-bottom: 1rem;
+        }
+
+        .time-display {
+            font-size: 3rem;
+            font-weight: bold;
+            color: #00FF00;
+            text-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
+            font-family: 'Courier New', monospace;
+        }
+
+        .date-display {
+            color: #888;
+            font-size: 0.9rem;
+            margin-top: 0.5rem;
+        }
+
+        .seconds { color: #00FFFF; }
+
+        .am-pm {
+            font-size: 1.2rem;
+            color: #DC143C;
+            margin-left: 0.5rem;
+        }
+
+        .back-link {
+            margin-top: 2rem;
+            color: #00FFFF;
+            text-decoration: none;
+            border: 1px solid #00FFFF;
+            padding: 0.5rem 1rem;
+            border-radius: 5px;
+            transition: all 0.3s ease;
+            position: relative;
+            z-index: 2;
+        }
+
+        .back-link:hover {
+            background: #00FFFF;
+            color: #000;
+        }
+
+        .add-timezone {
+            margin-top: 2rem;
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            justify-content: center;
+            position: relative;
+            z-index: 2;
+        }
+
+        select, button {
+            background: #1a1a1a;
+            border: 1px solid #333;
+            color: #fff;
+            padding: 0.5rem 1rem;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            cursor: pointer;
+        }
+
+        button {
+            background: #DC143C;
+            border-color: #DC143C;
+        }
+
+        button:hover {
+            background: #ff1a4a;
+        }
+    </style>
+</head>
+<body>
+
+<!-- WORLD CLOCK VIDEO BACKGROUND -->
+<div class="bg-video-wrapper">
+    <video autoplay loop muted playsinline>
+        <source src="world.mp4" type="video/mp4">
+        Your browser does not support the video tag.
+    </video>
+</div>
+
+    <h1>⏰ WORLD CLOCK</h1>
+
+    <div class="clock-container" id="clocks"></div>
+
+    <div class="add-timezone">
+        <select id="timezone-select">
+            <option value="America/New_York">New York (EST)</option>
+            <option value="America/Los_Angeles">Los Angeles (PST)</option>
+            <option value="America/Chicago">Chicago (CST)</option>
+            <option value="Europe/London">London (GMT)</option>
+            <option value="Europe/Paris">Paris (CET)</option>
+            <option value="Europe/Berlin">Berlin (CET)</option>
+            <option value="Asia/Tokyo">Tokyo (JST)</option>
+            <option value="Asia/Shanghai">Shanghai (CST)</option>
+            <option value="Asia/Dubai">Dubai (GST)</option>
+            <option value="Asia/Singapore">Singapore (SGT)</option>
+            <option value="Australia/Sydney">Sydney (AEDT)</option>
+            <option value="Pacific/Auckland">Auckland (NZDT)</option>
+            <option value="Asia/Kolkata">Mumbai (IST)</option>
+            <option value="America/Sao_Paulo">São Paulo (BRT)</option>
+        </select>
+        <button onclick="addClock()">+ Add Clock</button>
+        <button onclick="resetClocks()">Reset</button>
+    </div>
+
+    <a href="index.html" class="back-link">← Back to Home</a>
+
+    <script>
+        // Default time zones to display
+        let activeTimezones = [
+            { zone: 'America/New_York', city: 'New York' },
+            { zone: 'Europe/London', city: 'London' },
+            { zone: 'Asia/Tokyo', city: 'Tokyo' },
+            { zone: 'Australia/Sydney', city: 'Sydney' }
+        ];
+
+        // Load saved timezones from localStorage
+        function loadTimezones() {
+            const saved = localStorage.getItem('worldClockTimezones');
+            if (saved) {
+                activeTimezones = JSON.parse(saved);
+            }
+        }
+
+        // Save timezones to localStorage
+        function saveTimezones() {
+            localStorage.setItem('worldClockTimezones', JSON.stringify(activeTimezones));
+        }
+
+        function getCityName(timezone) {
+            return timezone.split('/').pop().replace(/_/g, ' ');
+        }
+
+        function createClockCard(timezone, index) {
+            const city = timezone.city || getCityName(timezone.zone);
+            return `
+                <div class="clock-card" id="clock-${index}">
+                    <div class="timezone-name">${timezone.zone}</div>
+                    <div class="city-name">${city}</div>
+                    <div class="time-display" id="time-${index}">--:--:--</div>
+                    <div class="date-display" id="date-${index}">Loading...</div>
+                    <button onclick="removeClock(${index})" style="margin-top: 1rem; font-size: 0.8rem; padding: 0.3rem 0.6rem;">✕ Remove</button>
+                </div>
+            `;
+        }
+
+        function renderClocks() {
+            const container = document.getElementById('clocks');
+            container.innerHTML = activeTimezones.map((tz, i) => createClockCard(tz, i)).join('');
+        }
+
+        function updateClocks() {
+            activeTimezones.forEach((timezone, index) => {
+                const timeEl = document.getElementById(`time-${index}`);
+                const dateEl = document.getElementById(`date-${index}`);
+
+                if (!timeEl || !dateEl) return;
+
+                const now = new Date();
+
+                const timeOptions = {
+                    timeZone: timezone.zone,
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit',
+                    hour12: true
+                };
+
+                const timeStr = now.toLocaleTimeString('en-US', timeOptions);
+                const [time, ampm] = timeStr.split(' ');
+                const [hours, minutes, seconds] = time.split(':');
+
+                timeEl.innerHTML = `${hours}:${minutes}:<span class="seconds">${seconds}</span><span class="am-pm">${ampm}</span>`;
+
+                const dateOptions = {
+                    timeZone: timezone.zone,
+                    weekday: 'short',
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric'
+                };
+
+                dateEl.textContent = now.toLocaleDateString('en-US', dateOptions);
+            });
+        }
+
+        function addClock() {
+            const select = document.getElementById('timezone-select');
+            const zone = select.value;
+            const city = getCityName(zone);
+
+            if (activeTimezones.some(tz => tz.zone === zone)) {
+                alert('This timezone is already displayed!');
+                return;
+            }
+
+            activeTimezones.push({ zone, city });
+            saveTimezones();
+            renderClocks();
+            updateClocks();
+        }
+
+        function removeClock(index) {
+            activeTimezones.splice(index, 1);
+            saveTimezones();
+            renderClocks();
+            updateClocks();
+        }
+
+        function resetClocks() {
+            activeTimezones = [
+                { zone: 'America/New_York', city: 'New York' },
+                { zone: 'Europe/London', city: 'London' },
+                { zone: 'Asia/Tokyo', city: 'Tokyo' },
+                { zone: 'Australia/Sydney', city: 'Sydney' }
+            ];
+            saveTimezones();
+            renderClocks();
+            updateClocks();
+        }
+
+        // Initialize
+        loadTimezones();
+        renderClocks();
+        updateClocks();
+        setInterval(updateClocks, 1000);
+    </script>
+</body>
+</html>

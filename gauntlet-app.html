@@ -1,0 +1,864 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gauntlet Protocol — RedForest Labs</title>
+<link rel="stylesheet" href="lyra.css">
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+<style>
+html, body { min-height: 100vh; }
+body { display: flex; flex-direction: column; }
+
+/* ─── Page bg slot ───────────────────────────────────────── */
+.page-bg {
+  position: fixed; inset: 0; z-index: -2;
+  background: radial-gradient(ellipse at 30% 30%, rgba(220,20,60,0.1), transparent 60%),
+              radial-gradient(ellipse at 70% 70%, rgba(139,0,0,0.06), transparent 60%),
+              var(--lyra-void);
+}
+.page-bg .bg-media {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  object-fit: cover;
+  opacity: 0.2;
+  filter: brightness(0.4);
+}
+.page-bg::after {
+  content: ''; position: absolute; inset: 0;
+  background: linear-gradient(180deg, rgba(6,6,10,0.55) 0%, rgba(6,6,10,0.92) 100%);
+}
+
+.gauntlet-layout {
+  flex: 1;
+  max-width: 1180px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* ─── Hero ────────────────────────────────────────────────── */
+.gauntlet-hero {
+  position: relative;
+  background: var(--lyra-stone);
+  border: 1px solid var(--lyra-border);
+  border-radius: var(--lyra-radius-lg);
+  padding: 22px 24px;
+  overflow: hidden;
+  isolation: isolate;
+}
+.gauntlet-hero::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+  background: linear-gradient(90deg, transparent, var(--lyra-crimson) 25%, var(--lyra-ember) 50%, var(--lyra-crimson) 75%, transparent);
+  opacity: 0.65;
+}
+.gauntlet-hero .hero-media {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  object-fit: cover; opacity: 0.15; filter: brightness(0.4); z-index: -1;
+}
+.hero-row { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
+.hero-sigil {
+  width: 54px; height: 54px;
+  border-radius: var(--lyra-radius-md);
+  background: linear-gradient(135deg, var(--lyra-blood), var(--lyra-ember));
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 0 22px rgba(220,20,60,0.4), inset 0 1px 0 rgba(255,215,0,0.2);
+  flex-shrink: 0;
+}
+.hero-sigil .material-icons { color: var(--lyra-gold); font-size: 30px; }
+.hero-text h1 {
+  font-family: 'Cinzel', serif; font-size: 22px; font-weight: 900;
+  letter-spacing: 3px; color: var(--lyra-text-bright); margin: 0;
+}
+.hero-text p {
+  font-family: 'Crimson Pro', serif; font-style: italic;
+  font-size: 14px; color: var(--lyra-ash); margin: 2px 0 0;
+}
+.hero-meta { margin-left: auto; display: flex; gap: 8px; flex-wrap: wrap; }
+.meta-pill {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase;
+  padding: 4px 10px; border-radius: var(--lyra-radius-pill);
+  border: 1px solid;
+}
+.meta-pill.on { color: var(--lyra-success); border-color: rgba(0,255,136,0.3); background: rgba(0,255,136,0.06); }
+.meta-pill.off { color: var(--lyra-warning); border-color: rgba(255,215,0,0.3); background: rgba(255,215,0,0.06); }
+.meta-pill.err { color: var(--lyra-error); border-color: rgba(255,45,64,0.3); background: rgba(255,45,64,0.06); }
+
+/* ─── Panels ──────────────────────────────────────────────── */
+.panel {
+  background: var(--lyra-stone);
+  border: 1px solid var(--lyra-border);
+  border-radius: var(--lyra-radius-lg);
+  padding: 20px;
+  position: relative;
+  overflow: hidden;
+}
+.panel::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg, transparent, var(--lyra-crimson), transparent);
+  opacity: 0.3;
+}
+.panel-title {
+  font-family: 'Orbitron', sans-serif; font-size: 10px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 2.5px;
+  color: var(--lyra-crimson); margin-bottom: 14px;
+  display: flex; align-items: center; gap: 10px;
+}
+.panel-title::after {
+  content: ''; flex: 1; height: 1px;
+  background: linear-gradient(90deg, var(--lyra-border), transparent);
+}
+
+/* ─── Two-col split ───────────────────────────────────────── */
+.split {
+  display: grid;
+  grid-template-columns: 1.1fr 1fr;
+  gap: 16px;
+}
+@media (max-width: 860px) { .split { grid-template-columns: 1fr; } }
+
+/* ─── Memory dashboard ────────────────────────────────────── */
+.mem-readout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin-bottom: 16px;
+}
+.mem-card {
+  background: var(--lyra-obsidian);
+  border: 1px solid var(--lyra-border);
+  border-radius: var(--lyra-radius-md);
+  padding: 14px 16px;
+}
+.mem-card-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px; letter-spacing: 2px; text-transform: uppercase;
+  color: var(--lyra-text-dim); margin-bottom: 6px;
+}
+.mem-card-value {
+  font-family: 'Cinzel', serif;
+  font-size: 26px; font-weight: 900;
+  color: var(--lyra-gold);
+  line-height: 1;
+}
+.mem-card-sub {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px; color: var(--lyra-ash);
+  margin-top: 6px;
+}
+
+/* Pressure bar */
+.pressure-bar {
+  height: 22px;
+  background: var(--lyra-obsidian);
+  border: 1px solid var(--lyra-border);
+  border-radius: 11px;
+  overflow: hidden;
+  position: relative;
+  margin-top: 10px;
+}
+.pressure-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--lyra-success) 0%, var(--lyra-gold) 60%, var(--lyra-crimson) 85%, var(--lyra-ember) 100%);
+  transition: width 0.6s var(--lyra-ease-smooth);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.08);
+}
+.pressure-label {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px; letter-spacing: 1px;
+  color: var(--lyra-text-bright);
+  text-shadow: 0 1px 4px rgba(0,0,0,0.8);
+  pointer-events: none;
+}
+
+/* Secondary stats */
+.stats-mini {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-top: 12px;
+}
+.stat-mini {
+  background: var(--lyra-obsidian);
+  border: 1px solid var(--lyra-border);
+  border-radius: var(--lyra-radius-sm);
+  padding: 8px 10px;
+  text-align: center;
+}
+.stat-mini-val { font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--lyra-silver); font-weight: 700; }
+.stat-mini-lbl { font-family: 'JetBrains Mono', monospace; font-size: 9px; color: var(--lyra-text-dim); letter-spacing: 1px; margin-top: 2px; text-transform: uppercase; }
+
+/* ─── Process list ────────────────────────────────────────── */
+.proc-list {
+  max-height: 320px;
+  overflow-y: auto;
+  border: 1px solid var(--lyra-border);
+  border-radius: var(--lyra-radius-md);
+  background: var(--lyra-obsidian);
+}
+.proc-row {
+  display: grid;
+  grid-template-columns: 52px 1fr 80px 56px;
+  gap: 10px;
+  align-items: center;
+  padding: 7px 12px;
+  border-bottom: 1px solid var(--lyra-border);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+}
+.proc-row:last-child { border-bottom: none; }
+.proc-pid { color: var(--lyra-text-dim); font-size: 10px; }
+.proc-name { color: var(--lyra-silver); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.proc-size { color: var(--lyra-gold); text-align: right; }
+.proc-tag {
+  font-size: 9px; letter-spacing: 1px;
+  padding: 1px 6px;
+  border-radius: var(--lyra-radius-pill);
+  border: 1px solid;
+  text-align: center;
+}
+.tag-safe { color: var(--lyra-ash); border-color: var(--lyra-border); }
+.tag-suspect { color: var(--lyra-warning); border-color: rgba(255,215,0,0.3); background: rgba(255,215,0,0.06); }
+.tag-nuclear { color: var(--lyra-ember); border-color: rgba(255,45,64,0.35); background: rgba(255,45,64,0.08); }
+
+/* ─── Control deck ────────────────────────────────────────── */
+.control-deck {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.control-tier {
+  background: var(--lyra-obsidian);
+  border: 1px solid var(--lyra-border);
+  border-radius: var(--lyra-radius-md);
+  padding: 14px 16px;
+  position: relative;
+}
+.control-tier.tier-safe    { border-left: 3px solid var(--lyra-success); }
+.control-tier.tier-hard    { border-left: 3px solid var(--lyra-warning); }
+.control-tier.tier-nuclear { border-left: 3px solid var(--lyra-ember); }
+
+.tier-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 6px;
+}
+.tier-name {
+  font-family: 'Cinzel', serif; font-size: 13px; font-weight: 700;
+  letter-spacing: 2px; color: var(--lyra-text-bright);
+}
+.tier-tag {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px; letter-spacing: 1.5px; text-transform: uppercase;
+  color: var(--lyra-text-dim);
+}
+.tier-safe    .tier-tag { color: var(--lyra-success); }
+.tier-hard    .tier-tag { color: var(--lyra-warning); }
+.tier-nuclear .tier-tag { color: var(--lyra-ember); }
+
+.tier-desc {
+  font-family: 'Crimson Pro', serif; font-style: italic;
+  font-size: 12px; color: var(--lyra-ash); margin-bottom: 10px;
+  line-height: 1.5;
+}
+
+.tier-actions {
+  display: flex; gap: 8px; flex-wrap: wrap;
+}
+.tier-actions .lyra-btn { flex: 1; min-width: 120px; justify-content: center; }
+
+.nuclear-options {
+  margin-top: 10px;
+  padding: 10px 12px;
+  background: rgba(255,45,64,0.04);
+  border: 1px dashed rgba(255,45,64,0.3);
+  border-radius: var(--lyra-radius-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.nuclear-options label {
+  display: flex; align-items: center; gap: 8px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px; color: var(--lyra-silver);
+  cursor: pointer;
+}
+.nuclear-options input[type=checkbox] {
+  accent-color: var(--lyra-ember);
+  width: 14px; height: 14px;
+}
+
+/* ─── Ops log ─────────────────────────────────────────────── */
+.log-panel {
+  max-height: 240px;
+  overflow-y: auto;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  background: var(--lyra-void);
+  border: 1px solid var(--lyra-border);
+  border-radius: var(--lyra-radius-md);
+  padding: 10px 14px;
+}
+.log-entry {
+  display: grid;
+  grid-template-columns: 80px 130px 1fr;
+  gap: 10px;
+  padding: 3px 0;
+  border-bottom: 1px dotted rgba(220,20,60,0.08);
+}
+.log-entry:last-child { border-bottom: none; }
+.log-ts { color: var(--lyra-text-dim); font-size: 10px; }
+.log-ev { color: var(--lyra-crimson); font-weight: 700; letter-spacing: 0.5px; }
+.log-detail { color: var(--lyra-ash); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.empty-panel {
+  padding: 24px 16px;
+  text-align: center;
+  font-family: 'Crimson Pro', serif; font-style: italic;
+  font-size: 13px; color: var(--lyra-text-dim);
+}
+
+/* ─── Connection tracker ──────────────────────────────────── */
+.conn-panel {
+  max-height: 280px;
+  overflow-y: auto;
+  border: 1px solid var(--lyra-border);
+  border-radius: var(--lyra-radius-md);
+  background: var(--lyra-obsidian);
+}
+.conn-row {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--lyra-border);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+}
+.conn-row:last-child { border-bottom: none; }
+.conn-head { display: flex; justify-content: space-between; align-items: baseline; }
+.conn-ip { color: var(--lyra-silver); font-weight: 700; }
+.conn-purpose {
+  font-size: 9px; letter-spacing: 1px;
+  padding: 2px 7px;
+  border-radius: var(--lyra-radius-pill);
+  border: 1px solid var(--lyra-border);
+  color: var(--lyra-text-dim);
+}
+.conn-purpose.threat { color: var(--lyra-ember); border-color: rgba(255,45,64,0.3); background: rgba(255,45,64,0.06); }
+.conn-meta { color: var(--lyra-text-dim); font-size: 10px; margin-top: 3px; }
+
+/* ─── Confirm modal ──────────────────────────────────────── */
+.modal-scrim {
+  position: fixed; inset: 0;
+  background: rgba(6,6,10,0.88);
+  backdrop-filter: blur(10px);
+  display: none;
+  align-items: center; justify-content: center;
+  z-index: 1000;
+  animation: scrim-in 0.15s ease;
+}
+.modal-scrim.active { display: flex; }
+@keyframes scrim-in { from { opacity: 0; } to { opacity: 1; } }
+
+.modal {
+  background: var(--lyra-stone);
+  border: 1px solid rgba(255,45,64,0.5);
+  border-radius: var(--lyra-radius-lg);
+  max-width: 520px; width: 92%;
+  padding: 26px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.7), 0 0 50px rgba(255,45,64,0.2);
+  animation: modal-in 0.2s var(--lyra-ease-bounce);
+}
+@keyframes modal-in { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+.modal h3 {
+  font-family: 'Cinzel', serif; font-size: 18px;
+  letter-spacing: 2.5px; margin-bottom: 10px; text-align: center;
+  color: var(--lyra-ember);
+}
+.modal-body {
+  font-family: 'Crimson Pro', serif; font-size: 14px;
+  color: var(--lyra-silver); line-height: 1.6;
+  margin-bottom: 16px;
+}
+.modal-detail {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px; color: var(--lyra-gold);
+  text-align: center;
+  padding: 10px;
+  border: 1px solid var(--lyra-border);
+  border-radius: var(--lyra-radius-md);
+  background: var(--lyra-obsidian);
+  margin-bottom: 16px;
+}
+.modal-actions {
+  display: flex; gap: 10px; justify-content: flex-end;
+}
+
+/* Result toast */
+.toast {
+  position: fixed; bottom: 24px; right: 24px;
+  background: var(--lyra-stone);
+  border: 1px solid var(--lyra-success);
+  border-left: 3px solid var(--lyra-success);
+  border-radius: var(--lyra-radius-md);
+  padding: 12px 18px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: var(--lyra-text-bright);
+  z-index: 2000;
+  box-shadow: var(--lyra-shadow-lg);
+  display: none;
+  max-width: 340px;
+}
+.toast.error { border-color: var(--lyra-error); border-left-color: var(--lyra-error); }
+.toast.warn  { border-color: var(--lyra-warning); border-left-color: var(--lyra-warning); }
+.toast.active { display: block; animation: toast-in 0.25s var(--lyra-ease-snap); }
+@keyframes toast-in { from { transform: translateY(10px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+</style>
+</head>
+<body>
+
+<div class="page-bg">
+  <!-- SLOT: page background media -->
+  <!-- <video class="bg-media" autoplay loop muted playsinline><source src="assets/gauntlet-bg.mp4" type="video/mp4"></video> -->
+</div>
+
+<header class="lyra-header">
+  <a href="tools.html" style="display:flex;align-items:center;gap:10px;text-decoration:none;color:inherit">
+    <div style="width:32px;height:32px;border-radius:6px;background:linear-gradient(135deg,var(--lyra-blood),var(--lyra-ember));display:flex;align-items:center;justify-content:center;box-shadow:0 0 10px rgba(220,20,60,0.35)">
+      <span style="color:var(--lyra-gold);font-size:16px">🧤</span>
+    </div>
+    <span class="lyra-logo">GAUNTLET <span class="lyra-logo-accent">PROTOCOL</span></span>
+  </a>
+  <div class="lyra-status-pill"><div class="lyra-dot lyra-dot-pulse" id="dotStatus"></div><span id="lblStatus">…</span></div>
+</header>
+
+<main class="gauntlet-layout">
+
+  <!-- Hero -->
+  <section class="gauntlet-hero">
+    <!-- SLOT: hero background media -->
+    <!-- <video class="hero-media" autoplay loop muted playsinline><source src="assets/gauntlet-hero.mp4" type="video/mp4"></video> -->
+    <div class="hero-row">
+      <div class="hero-sigil"><i class="material-icons">memory</i></div>
+      <div class="hero-text">
+        <h1>GAUNTLET</h1>
+        <p>RAM cleansing, process enforcement, quiet observation. No mercy, only patterns.</p>
+      </div>
+      <div class="hero-meta">
+        <span class="meta-pill off" id="sudoPill">⚙ sudo: unknown</span>
+        <span class="meta-pill off" id="observePill">◌ observing: off</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- Telemetry + control deck -->
+  <div class="split">
+
+    <!-- LEFT: Memory dashboard + processes -->
+    <section class="panel">
+      <div class="panel-title">System Telemetry</div>
+
+      <div class="mem-readout">
+        <div class="mem-card">
+          <div class="mem-card-label">RAM Used</div>
+          <div class="mem-card-value" id="ramPct">—</div>
+          <div class="mem-card-sub" id="ramDetail">—</div>
+        </div>
+        <div class="mem-card">
+          <div class="mem-card-label">Swap Used</div>
+          <div class="mem-card-value" id="swapPct">—</div>
+          <div class="mem-card-sub" id="swapDetail">—</div>
+        </div>
+      </div>
+
+      <div class="pressure-bar">
+        <div class="pressure-fill" id="pressureFill" style="width:0%"></div>
+        <div class="pressure-label" id="pressureLabel">Memory pressure: —</div>
+      </div>
+
+      <div class="stats-mini">
+        <div class="stat-mini"><div class="stat-mini-val" id="miniCpu">—</div><div class="stat-mini-lbl">CPU</div></div>
+        <div class="stat-mini"><div class="stat-mini-val" id="miniCached">—</div><div class="stat-mini-lbl">Cached</div></div>
+        <div class="stat-mini"><div class="stat-mini-val" id="miniLoad">—</div><div class="stat-mini-lbl">Load Avg</div></div>
+      </div>
+
+      <div style="margin-top:18px">
+        <div class="panel-title" style="margin-bottom:8px">Top Processes by RAM</div>
+        <div class="proc-list" id="procList">
+          <div class="empty-panel">Awaiting telemetry…</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- RIGHT: Control deck -->
+    <section class="panel">
+      <div class="panel-title">Control Deck</div>
+
+      <div class="control-deck">
+
+        <!-- Tier 1: soft -->
+        <div class="control-tier tier-safe">
+          <div class="tier-header">
+            <span class="tier-name">Clear RAM</span>
+            <span class="tier-tag">SOFT · RECOVERABLE</span>
+          </div>
+          <div class="tier-desc">Drops the page cache. Kernel regenerates on next I/O. No process impact.</div>
+          <div class="tier-actions">
+            <button class="lyra-btn" id="btnClear">
+              <i class="material-icons" style="font-size:16px">refresh</i> Clear Cache
+            </button>
+          </div>
+        </div>
+
+        <!-- Tier 2: hard -->
+        <div class="control-tier tier-hard">
+          <div class="tier-header">
+            <span class="tier-name">Hard Ops</span>
+            <span class="tier-tag">DISRUPTIVE · REQUIRES CONFIRM</span>
+          </div>
+          <div class="tier-desc">Cycles swap, kills suspect remote-access processes (ssh, vnc, nc, anydesk, teamviewer). Leaves browsers alone.</div>
+          <div class="tier-actions">
+            <button class="lyra-btn" id="btnSwap">
+              <i class="material-icons" style="font-size:16px">swap_vert</i> Cycle Swap
+            </button>
+            <button class="lyra-btn" id="btnKill">
+              <i class="material-icons" style="font-size:16px">block</i> Kill Suspects
+            </button>
+          </div>
+        </div>
+
+        <!-- Tier 3: nuclear -->
+        <div class="control-tier tier-nuclear">
+          <div class="tier-header">
+            <span class="tier-name">Full Purge</span>
+            <span class="tier-tag">NUCLEAR · DDT</span>
+          </div>
+          <div class="tier-desc">The DDT. Clear → kill → swap cycle → optional network bounce. Everything in sequence. Unrecoverable.</div>
+          <div class="nuclear-options">
+            <label><input type="checkbox" id="optNuclear"> Include browsers (Chrome, Firefox, Tor, Brave)</label>
+            <label><input type="checkbox" id="optNet"> Cycle network interface (drops all connections)</label>
+          </div>
+          <div class="tier-actions" style="margin-top:10px">
+            <button class="lyra-btn lyra-btn-danger" id="btnPurge" style="flex:1">
+              <i class="material-icons" style="font-size:16px">whatshot</i> DEPLOY PURGE
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </section>
+  </div>
+
+  <!-- Observer + log row -->
+  <div class="split">
+
+    <!-- Observer + connections -->
+    <section class="panel">
+      <div class="panel-title">Observer · Reconnection Tracker</div>
+      <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">
+        <button class="lyra-btn" id="btnObserveStart">
+          <i class="material-icons" style="font-size:16px">visibility</i> Start Observing
+        </button>
+        <button class="lyra-btn lyra-btn-ghost" id="btnObserveStop" disabled>
+          <i class="material-icons" style="font-size:16px">visibility_off</i> Stop
+        </button>
+        <button class="lyra-btn lyra-btn-ghost" id="btnRefreshConn">
+          <i class="material-icons" style="font-size:16px">refresh</i> Refresh
+        </button>
+      </div>
+      <div class="conn-panel" id="connPanel">
+        <div class="empty-panel">Tracker idle. Start observing to log connection patterns.</div>
+      </div>
+    </section>
+
+    <!-- Ops log -->
+    <section class="panel">
+      <div class="panel-title">Operations Log</div>
+      <div class="log-panel" id="logPanel">
+        <div class="empty-panel">No ops recorded yet.</div>
+      </div>
+    </section>
+  </div>
+
+</main>
+
+<!-- Confirm modal -->
+<div class="modal-scrim" id="confirmModal">
+  <div class="modal">
+    <h3 id="modalTitle">⚠ CONFIRM</h3>
+    <div class="modal-body" id="modalBody">—</div>
+    <div class="modal-detail" id="modalDetail">—</div>
+    <div class="modal-actions">
+      <button class="lyra-btn lyra-btn-ghost" id="modalCancel">Cancel</button>
+      <button class="lyra-btn lyra-btn-danger" id="modalConfirm">
+        <i class="material-icons" style="font-size:16px">whatshot</i> Deploy
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<footer class="lyra-footer">
+  <span class="lyra-footer-brand">Gauntlet · No Mercy, Only Patterns</span>
+  <span class="lyra-mono" id="footerInfo">Port 8918</span>
+</footer>
+
+<script>
+const API = 'http://127.0.0.1:8918';
+const $ = id => document.getElementById(id);
+
+// ─── Utilities ────────────────────────────────────────────
+function humanSize(b) {
+  if (!b && b !== 0) return '—';
+  const u = ['B','KB','MB','GB','TB'];
+  let i = 0;
+  while (b >= 1024 && i < u.length - 1) { b /= 1024; i++; }
+  return b.toFixed(1) + ' ' + u[i];
+}
+function fmtPct(p) { return (p || 0).toFixed(1) + '%'; }
+
+// ─── Toast ────────────────────────────────────────────────
+let toastTimer = null;
+function toast(msg, type = 'ok') {
+  const el = $('toast');
+  el.className = 'toast active ' + (type === 'error' ? 'error' : type === 'warn' ? 'warn' : '');
+  el.textContent = msg;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('active'), 4000);
+}
+
+// ─── Status poll ──────────────────────────────────────────
+async function pollStatus() {
+  try {
+    const r = await fetch(`${API}/api/status`);
+    const d = await r.json();
+    $('dotStatus').className = 'lyra-dot lyra-dot-ok';
+    $('lblStatus').textContent = 'Online';
+    $('observePill').className = 'meta-pill ' + (d.observing ? 'on' : 'off');
+    $('observePill').innerHTML = d.observing ? '◆ observing' : '◌ observing: off';
+    $('btnObserveStart').disabled = d.observing;
+    $('btnObserveStop').disabled = !d.observing;
+  } catch (e) {
+    $('dotStatus').className = 'lyra-dot lyra-dot-error';
+    $('lblStatus').textContent = 'Offline';
+  }
+}
+
+// ─── Memory poll ──────────────────────────────────────────
+async function pollMemory() {
+  try {
+    const r = await fetch(`${API}/api/memory`);
+    const d = await r.json();
+    if (d.error) return;
+    const vm = d.virtual, sm = d.swap;
+    $('ramPct').textContent = fmtPct(vm.percent);
+    $('ramDetail').textContent = `${humanSize(vm.used)} / ${humanSize(vm.total)} · ${humanSize(vm.available)} free`;
+    $('swapPct').textContent = fmtPct(sm.percent);
+    $('swapDetail').textContent = `${humanSize(sm.used)} / ${humanSize(sm.total)}`;
+    $('pressureFill').style.width = vm.percent + '%';
+    const pressLabel = vm.percent < 60 ? 'Memory pressure: low'
+                    : vm.percent < 80 ? 'Memory pressure: moderate'
+                    : vm.percent < 92 ? 'Memory pressure: HIGH'
+                    :                   'Memory pressure: CRITICAL';
+    $('pressureLabel').textContent = pressLabel;
+    $('miniCpu').textContent = fmtPct(d.cpu_percent);
+    $('miniCached').textContent = humanSize(vm.cached || 0);
+    $('miniLoad').textContent = d.load_average ? d.load_average.map(n => n.toFixed(2)).join(' ') : '—';
+  } catch (e) {}
+}
+
+async function pollProcesses() {
+  try {
+    const r = await fetch(`${API}/api/processes?limit=12`);
+    const d = await r.json();
+    const list = $('procList');
+    if (!d.processes || !d.processes.length) {
+      list.innerHTML = '<div class="empty-panel">No process data.</div>';
+      return;
+    }
+    list.innerHTML = d.processes.map(p => {
+      const tag = p.is_nuclear ? '<span class="proc-tag tag-nuclear">NUKE</span>'
+                : p.is_suspect ? '<span class="proc-tag tag-suspect">SUSPECT</span>'
+                : p.is_safe    ? '<span class="proc-tag tag-safe">SAFE</span>'
+                :                '<span class="proc-tag tag-safe">—</span>';
+      return `<div class="proc-row">
+        <span class="proc-pid">${p.pid}</span>
+        <span class="proc-name" title="${p.name} (${p.user})">${p.name}</span>
+        <span class="proc-size">${humanSize(p.rss)}</span>
+        ${tag}
+      </div>`;
+    }).join('');
+  } catch (e) {}
+}
+
+async function pollLog() {
+  try {
+    const r = await fetch(`${API}/api/ops_log?n=30`);
+    const d = await r.json();
+    const el = $('logPanel');
+    if (!d.log || !d.log.length) {
+      el.innerHTML = '<div class="empty-panel">No ops recorded.</div>';
+      return;
+    }
+    el.innerHTML = d.log.slice().reverse().map(e => `
+      <div class="log-entry">
+        <span class="log-ts">${e.ts.split('T')[1] || e.ts}</span>
+        <span class="log-ev">${e.event}</span>
+        <span class="log-detail" title="${(e.detail||'').replace(/"/g,'&quot;')}">${e.detail || ''}</span>
+      </div>`).join('');
+  } catch (e) {}
+}
+
+async function pollConnections() {
+  try {
+    const r = await fetch(`${API}/api/tracker`);
+    const d = await r.json();
+    const el = $('connPanel');
+    if (!d.connections || !d.connections.length) {
+      el.innerHTML = '<div class="empty-panel">No connections tracked yet.</div>';
+      return;
+    }
+    const threats = ['REVERSE_SHELL','PERSISTENT_RECONNECT','SSH_REMOTE_ACCESS','VNC_SESSION','RDP_ACCESS'];
+    el.innerHTML = d.connections.slice(0, 40).map(c => {
+      const isThreat = threats.includes(c.purpose);
+      return `<div class="conn-row">
+        <div class="conn-head">
+          <span class="conn-ip">${c.ip}</span>
+          <span class="conn-purpose ${isThreat ? 'threat' : ''}">${c.purpose}</span>
+        </div>
+        <div class="conn-meta">${c.attempts} attempts · ports: ${(c.ports||[]).slice(0,5).join(', ') || '—'} · procs: ${(c.processes||[]).slice(0,3).join(', ') || '—'}</div>
+        <div class="conn-meta">first: ${c.first_seen || '—'} · last: ${c.last_seen || '—'}</div>
+      </div>`;
+    }).join('');
+  } catch (e) {}
+}
+
+// ─── Soft ops (no confirm) ───────────────────────────────
+$('btnClear').addEventListener('click', async () => {
+  $('btnClear').disabled = true;
+  try {
+    const r = await fetch(`${API}/api/clear`, { method: 'POST' });
+    const d = await r.json();
+    if (d.ok) toast(`Cache cleared · ${humanSize(d.freed_bytes)} freed`);
+    else toast('Clear failed — sudo likely needed', 'warn');
+  } catch (e) { toast('Error: ' + e.message, 'error'); }
+  $('btnClear').disabled = false;
+  pollMemory(); pollLog();
+});
+
+// ─── Confirm-gated ops ──────────────────────────────────
+let pendingOp = null;
+function askConfirm(title, body, detail, op) {
+  $('modalTitle').innerHTML = title;
+  $('modalBody').textContent = body;
+  $('modalDetail').textContent = detail;
+  pendingOp = op;
+  $('confirmModal').classList.add('active');
+}
+$('modalCancel').addEventListener('click', () => { $('confirmModal').classList.remove('active'); pendingOp = null; });
+$('modalConfirm').addEventListener('click', async () => {
+  $('confirmModal').classList.remove('active');
+  if (pendingOp) await pendingOp();
+  pendingOp = null;
+});
+
+$('btnSwap').addEventListener('click', () => {
+  askConfirm('⚠ CYCLE SWAP',
+    'Disables swap, waits 500ms, re-enables. Forces paged-out memory to be reclaimed. Brief system pause expected.',
+    'swapoff -a → swapon -a',
+    async () => {
+      try {
+        const r = await fetch(`${API}/api/swap_cycle`, {
+          method: 'POST', headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({ confirm: true })
+        });
+        const d = await r.json();
+        if (d.ok) toast('Swap cycled');
+        else toast('Swap cycle failed — check sudo', 'warn');
+      } catch (e) { toast('Error: ' + e.message, 'error'); }
+      pollMemory(); pollLog();
+    });
+});
+
+$('btnKill').addEventListener('click', () => {
+  askConfirm('⚠ KILL SUSPECTS',
+    'Force-kills remote-access processes: ssh, vnc, netcat, socat, anydesk, teamviewer, remmina. Active remote sessions WILL drop.',
+    'sudo pkill -9 <suspect list>',
+    async () => {
+      try {
+        const r = await fetch(`${API}/api/kill`, {
+          method: 'POST', headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({ confirm: true, include_nuclear: false })
+        });
+        const d = await r.json();
+        if (d.killed && d.killed.length) toast(`Killed: ${d.killed.join(', ')}`);
+        else toast('No suspects matched', 'warn');
+      } catch (e) { toast('Error: ' + e.message, 'error'); }
+      pollProcesses(); pollLog();
+    });
+});
+
+$('btnPurge').addEventListener('click', () => {
+  const nuclear = $('optNuclear').checked;
+  const net = $('optNet').checked;
+  const flags = [];
+  if (nuclear) flags.push('includes browsers');
+  if (net) flags.push('will bounce network');
+  const flagStr = flags.length ? '(' + flags.join(' + ') + ')' : '(standard purge)';
+  askConfirm('⚠ DEPLOY FULL PURGE',
+    `Executes the full sequence: cache clear → targeted kill → swap cycle${net ? ' → network bounce' : ''}. This is the DDT. Unrecoverable.`,
+    `Full purge ${flagStr}`,
+    async () => {
+      try {
+        const r = await fetch(`${API}/api/purge`, {
+          method: 'POST', headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({ confirm: true, include_nuclear: nuclear, bounce_net: net })
+        });
+        const d = await r.json();
+        if (d.ok) {
+          const freed = d.phases?.clear_ram?.freed_bytes || 0;
+          const killed = d.phases?.kill?.killed?.length || 0;
+          toast(`Purge complete · ${humanSize(freed)} freed · ${killed} processes killed`);
+        } else {
+          toast('Purge incomplete — check ops log', 'warn');
+        }
+      } catch (e) { toast('Error: ' + e.message, 'error'); }
+      pollMemory(); pollProcesses(); pollLog();
+    });
+});
+
+// ─── Observer ────────────────────────────────────────────
+$('btnObserveStart').addEventListener('click', async () => {
+  try {
+    await fetch(`${API}/api/observe/start`, { method: 'POST' });
+    toast('Observer active');
+    pollStatus();
+  } catch (e) { toast('Error: ' + e.message, 'error'); }
+});
+$('btnObserveStop').addEventListener('click', async () => {
+  try {
+    await fetch(`${API}/api/observe/stop`, { method: 'POST' });
+    toast('Observer stopped');
+    pollStatus();
+  } catch (e) { toast('Error: ' + e.message, 'error'); }
+});
+$('btnRefreshConn').addEventListener('click', pollConnections);
+
+// ─── Poll loops ──────────────────────────────────────────
+pollStatus(); setInterval(pollStatus, 5000);
+pollMemory(); setInterval(pollMemory, 2000);
+pollProcesses(); setInterval(pollProcesses, 4000);
+pollLog(); setInterval(pollLog, 5000);
+pollConnections(); setInterval(pollConnections, 6000);
+</script>
+
+</body>
+</html>

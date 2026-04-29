@@ -1,0 +1,332 @@
+# ═══════════════════════════════════════════════════════════════
+# Embodiment Semantic Mapping — Character Command Dictionary
+# Maps human-readable commands to procedural bone animation system
+# Used by: MCP server, Flask backend, navigator_buddy, Agentfile
+# ═══════════════════════════════════════════════════════════════
+
+version: "2.0"
+character: "Catgirl"
+author: "Anime Catgirl"
+rig:
+  bones: 116
+  animations: 0       # no baked clips — all procedural
+  morphTargets: 0     # no blendshapes — bone-only
+  engine: "procedural.js"
+
+# ─── Emotions ─────────────────────────────────────────────────
+# Adjusts idle subsystems: tail speed/excitement, breathing rate,
+# ear twitch frequency, sway intensity
+emotions:
+  neutral:
+    description: "Default calm state"
+    tail_excitement: 0.5
+    breathing_speed: 1.0
+
+  happy:
+    description: "Happy, content — faster tail wag"
+    tail_excitement: 0.9
+    breathing_speed: 1.0
+
+  excited:
+    description: "Very excited — fast tail, perked ears, bouncing"
+    tail_excitement: 1.0
+    breathing_speed: 1.2
+
+  sad:
+    description: "Sad, droopy — slow tail, lowered head"
+    tail_excitement: 0.1
+    breathing_speed: 0.7
+
+  angry:
+    description: "Angry — aggressive tail swish, fast breathing"
+    tail_excitement: 0.9
+    breathing_speed: 1.5
+
+  curious:
+    description: "Curious — frequent ear twitches, head tilt"
+    tail_excitement: 0.6
+    breathing_speed: 1.0
+
+  sleepy:
+    description: "Drowsy — very slow movement, frequent blinks"
+    tail_excitement: 0.1
+    breathing_speed: 0.5
+
+# ─── Gestures (Procedural Bone Animations) ────────────────────
+# Each gesture plays a timed bone animation via the procedural engine.
+# No animation clips needed — bones are driven by code.
+gestures:
+  wave:
+    engine: "procedural"
+    duration: 2.0
+    description: "Right hand wave greeting"
+    bones_involved: [shoulderR, upperArmR, forearmR, handR, earL1, earR1]
+
+  nod:
+    engine: "procedural"
+    duration: 1.5
+    description: "Head nod (agreement)"
+    bones_involved: [spine7, spine6]
+
+  shake:
+    engine: "procedural"
+    duration: 1.5
+    description: "Head shake (disagreement)"
+    bones_involved: [spine7, spine6]
+
+  tilt:
+    engine: "procedural"
+    duration: 1.5
+    description: "Curious head tilt with ear perk"
+    bones_involved: [spine7, earR1, earR2]
+
+  shrug:
+    engine: "procedural"
+    duration: 1.5
+    description: "Shoulder shrug with palms-up"
+    bones_involved: [shoulderL, shoulderR, spine7, forearmL, forearmR]
+
+  bow:
+    engine: "procedural"
+    duration: 2.0
+    description: "Respectful bow"
+    bones_involved: [spine4, spine5, spine6, spine7, earL1, earR1]
+
+  bounce:
+    engine: "procedural"
+    duration: 2.0
+    description: "Excited bouncing movement"
+    bones_involved: [spine1, earL1, earR1, upperArmL, upperArmR]
+
+  think:
+    engine: "procedural"
+    duration: 2.5
+    description: "Thinking pose (hand near chin)"
+    bones_involved: [upperArmR, forearmR, spine7, earL1]
+
+  perk:
+    engine: "procedural"
+    duration: 1.0
+    description: "Alert — both ears perk up"
+    bones_involved: [earL1, earL2, earL3, earR1, earR2, earR3, spine7]
+
+  droop:
+    engine: "procedural"
+    duration: 1.5
+    description: "Sad — ears droop down, head lowers"
+    bones_involved: [earL1, earL2, earL3, earR1, earR2, earR3, spine7, spine6]
+
+  tailSwish:
+    engine: "procedural"
+    duration: 1.5
+    description: "Aggressive/annoyed fast tail swish"
+    bones_involved: [tail0-tail8]
+
+  lookAround:
+    engine: "procedural"
+    duration: 3.0
+    description: "Look around curiously, head sweeping side to side"
+    bones_involved: [spine7, eyeL, eyeR, earL1, earR1]
+
+# ─── Talk / Lip-Sync ─────────────────────────────────────────
+# Controls jaw/tongue bones for speech. Call start before TTS,
+# stop when TTS ends. Intensity 0–1.
+talk:
+  start:
+    description: "Begin mouth movement for TTS"
+    command: { "type": "talk", "action": "start", "intensity": 0.8 }
+
+  stop:
+    description: "Stop mouth movement"
+    command: { "type": "talk", "action": "stop" }
+
+# ─── Effects → Visual Effect Commands ────────────────────────
+effects:
+  pulse:
+    type: "pulse"
+    default_color: "#ff22aa"
+    description: "Crimson energy pulse"
+
+  glow:
+    type: "glow"
+    default_action: "toggle"
+    description: "Emissive material glow"
+
+  blink:
+    type: "blink"
+    description: "Eye blink (triggered via procedural)"
+
+  particles:
+    type: "particles"
+    default_action: "toggle"
+    description: "Ambient floating particles"
+
+# ─── Camera Presets ──────────────────────────────────────────
+camera_presets:
+  default:
+    position: [0, 1.2, 3.2]
+    target: [0, 0.5, 0]
+    description: "Default full-body view"
+
+  face:
+    position: [0, 1.6, 1.2]
+    target: [0, 1.5, 0]
+    description: "Close-up on face"
+
+  upper:
+    position: [0.5, 1.3, 2.0]
+    target: [0, 1.0, 0]
+    description: "Upper body portrait"
+
+  dramatic:
+    position: [-1, 0.5, 2.5]
+    target: [0, 0.8, 0]
+    description: "Low dramatic angle"
+
+  bird:
+    position: [0, 3.0, 2.0]
+    target: [0, 0.5, 0]
+    description: "Bird's eye view"
+
+# ─── Composite Actions ──────────────────────────────────────
+# Pre-built sequences the AI can trigger with one command
+composites:
+  greet:
+    description: "Friendly greeting — wave + happy emotion"
+    commands:
+      - type: "emotion"
+        emotion: "happy"
+        intensity: 0.9
+      - type: "gesture"
+        gesture: "wave"
+        duration: 2.0
+      - type: "camera"
+        action: "focus"
+        target: [0, 1.3, 0]
+    delay: 0.5
+
+  think:
+    description: "Thinking pose — tilt + curious emotion"
+    commands:
+      - type: "emotion"
+        emotion: "curious"
+        intensity: 0.7
+      - type: "gesture"
+        gesture: "think"
+        duration: 2.5
+      - type: "camera"
+        action: "focus"
+        target: [0, 1.5, 0]
+    delay: 0.3
+
+  celebrate:
+    description: "Celebration — bounce + excited emotion + pulse"
+    commands:
+      - type: "emotion"
+        emotion: "excited"
+        intensity: 1.0
+      - type: "gesture"
+        gesture: "bounce"
+        duration: 2.0
+      - type: "effect"
+        effect: "pulse"
+        params:
+          color: "#d4a846"
+    delay: 0.3
+
+  farewell:
+    description: "Goodbye — wave + nod + sad emotion"
+    commands:
+      - type: "emotion"
+        emotion: "sad"
+        intensity: 0.5
+      - type: "gesture"
+        gesture: "wave"
+        duration: 1.5
+      - type: "gesture"
+        gesture: "nod"
+        duration: 1.0
+    delay: 0.5
+
+  dramatic_entrance:
+    description: "Dramatic reveal of character"
+    commands:
+      - type: "camera"
+        action: "zoom"
+        position: [0, 0.3, 4.0]
+      - type: "effect"
+        effect: "pulse"
+        params:
+          color: "#ff22aa"
+      - type: "camera"
+        action: "zoom"
+        position: [0, 1.2, 3.2]
+      - type: "effect"
+        effect: "glow"
+        action: "enable"
+    delay: 0.8
+
+  speak:
+    description: "Speaking pose — start talking + nod occasionally"
+    commands:
+      - type: "talk"
+        action: "start"
+        intensity: 0.8
+      - type: "emotion"
+        emotion: "neutral"
+    delay: 0
+
+# ─── Bone Reference ─────────────────────────────────────────
+# Complete bone map for AI context and direct bone control
+bone_map:
+  spine:    [spine_01, spine.001_00, spine.002_02, spine.003_03, spine.004_04, spine.005_05, spine.006_06]
+  ears_L:   [ear1.L_07, ear2.L_08, ear3.L_09]
+  ears_R:   [ear1.R_010, ear2.R_011, ear3.R_012]
+  tail:     [tail_0106, tail.001_0107, tail.002_0108, tail.003_0109, tail.004_0110, tail.005_0111, tail.006_0112, tail.007_0113, tail.008_0114]
+  arm_L:    [shoulder.L_048, upper_arm.L_049, forearm.L_050, hand.L_054]
+  arm_R:    [shoulder.R_070, upper_arm.R_071, forearm.R_072, hand.R_076]
+  leg_L:    [thigh.L_096, shin.L_097, foot.L_098]
+  leg_R:    [thigh.R_0101, shin.R_0102, foot.R_0103]
+  eyes:     [eye.L_027, eye.R_028, eye1.L_013, eye1.R_017]
+  jaw:      [teeth_down_046, teeth_up_047]
+  tongue:   [tongue1_041, tongue2_042, tongue3_043, tongue4_044, tongue5_045]
+
+# ─── AI Prompt Context ──────────────────────────────────────
+# Injected into AI system prompts so the LLM knows what commands to emit
+ai_context: |
+  You control a 3D catgirl character via procedural bone animation.
+  The character has NO baked animation clips — all movement is bone-driven.
+
+  COMMAND TYPES (output as JSON):
+
+  GESTURE — play a timed bone animation:
+    {"type": "gesture", "gesture": "<name>", "duration": 1.5}
+    Available: wave, nod, shake, tilt, shrug, bow, bounce, think, perk, droop, tailSwish, lookAround
+
+  EMOTION — set mood (adjusts idle behavior: tail, ears, breathing):
+    {"type": "emotion", "emotion": "<name>", "intensity": 0.8}
+    Available: neutral, happy, excited, sad, angry, curious, sleepy
+
+  TALK — start/stop mouth movement (sync with TTS):
+    {"type": "talk", "action": "start", "intensity": 0.8}
+    {"type": "talk", "action": "stop"}
+
+  EFFECT — trigger visual effects:
+    {"type": "effect", "effect": "pulse", "params": {"color": "#ff22aa"}}
+    {"type": "effect", "effect": "glow", "action": "toggle"}
+    {"type": "effect", "effect": "blink"}
+
+  CAMERA — change camera angle:
+    {"type": "camera", "action": "focus", "target": [0, 1.5, 0]}
+    {"type": "camera", "action": "reset"}
+
+  COMPOSITE — trigger pre-built sequences:
+    {"type": "composite", "name": "greet"}
+    Available: greet, think, celebrate, farewell, dramatic_entrance, speak
+
+  SEQUENCE — chain multiple commands:
+    {"type": "sequence", "commands": [...], "delay": 0.5}
+
+  The character has: 9-segment tail, 3-segment cat ears (L/R), 28 eye bones,
+  7-segment spine, full arm/hand chains, jaw + tongue for speech.
+  Always running: idle breathing, subtle sway, periodic ear twitches, auto-blinks, gentle tail wag.

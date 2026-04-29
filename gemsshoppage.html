@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Soul Gems — Redverse</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700&family=Cinzel:wght@400;600&family=Jost:wght@300;400;500;600&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://js.stripe.com/v3/"></script>
+<style>
+:root {
+  --sakura:        #f0a0b8;
+  --sakura-deep:   #c0546e;
+  --sakura-glow:   rgba(240,160,184,0.18);
+  --gold:          #d4a843;
+  --gold-dim:      rgba(212,168,67,0.14);
+  --gem:           #a855f7;
+  --gem-glow:      rgba(168,85,247,0.25);
+  --dark:          #08060e;
+  --panel:         rgba(10,8,20,0.88);
+  --panel-hi:      rgba(16,12,28,0.92);
+  --border:        rgba(240,160,184,0.14);
+  --border-hi:     rgba(240,160,184,0.32);
+  --fg:            #f5eef0;
+  --fg-dim:        rgba(245,238,240,0.7);
+  --muted:         #7a6878;
+  --radius:        12px;
+  --header-h:      60px;
+}
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;font-family:'Jost',sans-serif;color:var(--fg);background:var(--dark);overflow-x:hidden}
+button{cursor:pointer;font-family:'Jost',sans-serif}
+input{font-family:'Jost',sans-serif}
+a{text-decoration:none;color:inherit}
+::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:rgba(240,160,184,0.2);border-radius:2px}
+
+/* BG */
+#bg-layer{position:fixed;inset:0;z-index:0;
+  background:radial-gradient(ellipse 80% 60% at 50% -10%,rgba(168,85,247,0.12) 0%,transparent 60%),
+             linear-gradient(180deg,#08060e 0%,#0c0810 100%);}
+#bg-layer::after{content:'';position:absolute;inset:0;
+  background:radial-gradient(ellipse 70% 50% at 50% 0%,rgba(240,160,184,0.04) 0%,transparent 70%);}
+.grain{position:fixed;inset:0;z-index:1;opacity:0.035;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size:200px;pointer-events:none}
+
+/* Header */
+header{position:fixed;top:0;left:0;right:0;z-index:100;height:var(--header-h);
+  background:rgba(8,6,14,0.9);backdrop-filter:blur(16px) saturate(160%);
+  border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;padding:0 24px;}
+.logo-area{display:flex;align-items:center;gap:10px;cursor:pointer}
+.logo-gem{width:30px;height:30px;background:linear-gradient(135deg,var(--sakura-deep),var(--sakura));
+  clip-path:polygon(50% 0%,100% 25%,100% 75%,50% 100%,0% 75%,0% 25%);flex-shrink:0;}
+.logo-title{font-family:'Cinzel Decorative',serif;font-size:0.9rem;letter-spacing:0.08em;
+  background:linear-gradient(90deg,var(--fg),var(--sakura));
+  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;}
+.logo-sub{font-family:'DM Mono',monospace;font-size:0.58rem;letter-spacing:0.15em;color:var(--muted);margin-top:-2px;}
+.header-right{display:flex;align-items:center;gap:10px}
+.gem-badge{display:flex;align-items:center;gap:5px;
+  background:rgba(168,85,247,0.12);border:1px solid rgba(168,85,247,0.25);
+  border-radius:20px;padding:4px 12px;
+  font-family:'DM Mono',monospace;font-size:0.78rem;}
+.gem-icon{width:13px;height:13px;fill:var(--gem)}
+.gem-count{color:var(--gem);font-weight:500}
+.back-btn{background:none;border:1px solid var(--border);border-radius:6px;
+  color:var(--muted);font-size:0.78rem;letter-spacing:0.06em;padding:6px 14px;
+  transition:all 0.2s;display:flex;align-items:center;gap:6px;}
+.back-btn:hover{border-color:var(--sakura);color:var(--sakura)}
+
+/* Page */
+.site-body{position:relative;z-index:10;padding-top:var(--header-h);min-height:100vh;
+  display:flex;flex-direction:column;align-items:center;}
+.shop-wrap{width:100%;max-width:780px;padding:48px 20px 80px;}
+
+/* Hero */
+.shop-hero{text-align:center;margin-bottom:48px}
+.hero-gem-icon{width:64px;height:64px;margin:0 auto 20px;
+  background:linear-gradient(135deg,rgba(168,85,247,0.3),rgba(168,85,247,0.1));
+  border:2px solid rgba(168,85,247,0.4);border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 0 40px rgba(168,85,247,0.25);}
+.hero-title{font-family:'Cinzel Decorative',serif;font-size:2rem;letter-spacing:0.06em;
+  background:linear-gradient(135deg,var(--gem),var(--sakura));
+  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
+  margin-bottom:10px;}
+.hero-sub{font-size:0.9rem;color:var(--fg-dim);max-width:480px;margin:0 auto;line-height:1.6;}
+.balance-pill{display:inline-flex;align-items:center;gap:8px;margin-top:16px;
+  background:rgba(168,85,247,0.08);border:1px solid rgba(168,85,247,0.2);
+  border-radius:20px;padding:6px 18px;
+  font-family:'DM Mono',monospace;font-size:0.82rem;}
+.balance-pill .bal-val{color:var(--gem);font-weight:500}
+
+/* Insufficiency notice */
+.needed-notice{display:none;margin:0 auto 32px;max-width:480px;
+  background:rgba(168,85,247,0.08);border:1px solid rgba(168,85,247,0.25);
+  border-radius:10px;padding:14px 18px;
+  font-size:0.84rem;color:var(--fg-dim);text-align:center;}
+.needed-notice strong{color:var(--gem)}
+
+/* Pack grid */
+.section-title{font-family:'Cinzel',serif;font-size:0.78rem;letter-spacing:0.15em;
+  text-transform:uppercase;color:var(--sakura);margin-bottom:18px;
+  display:flex;align-items:center;gap:8px;}
+.pack-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:40px;}
+@media(max-width:640px){.pack-grid{grid-template-columns:repeat(2,1fr);}}
+.pack-card{background:rgba(168,85,247,0.06);border:1px solid rgba(168,85,247,0.2);
+  border-radius:14px;padding:22px 16px;text-align:center;cursor:pointer;
+  transition:all 0.2s;position:relative;}
+.pack-card:hover{background:rgba(168,85,247,0.12);border-color:rgba(168,85,247,0.4);
+  transform:translateY(-2px);}
+.pack-card.selected{background:rgba(168,85,247,0.18);border-color:rgba(168,85,247,0.65);
+  box-shadow:0 0 24px rgba(168,85,247,0.2);}
+.pack-card.recommended::before{content:'Best Value';position:absolute;top:-12px;left:50%;
+  transform:translateX(-50%);
+  background:linear-gradient(90deg,var(--sakura-deep),var(--sakura));
+  color:#fff;font-size:0.6rem;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;
+  padding:3px 10px;border-radius:20px;white-space:nowrap;}
+.pack-card.min-needed::before{content:'Recommended';position:absolute;top:-12px;left:50%;
+  transform:translateX(-50%);
+  background:linear-gradient(90deg,var(--gem),rgba(168,85,247,0.7));
+  color:#fff;font-size:0.6rem;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;
+  padding:3px 10px;border-radius:20px;white-space:nowrap;}
+.pack-gems-icon{margin:0 auto 8px;
+  width:36px;height:36px;background:rgba(168,85,247,0.15);border-radius:50%;
+  display:flex;align-items:center;justify-content:center;}
+.pack-gems{font-family:'DM Mono',monospace;font-size:1.6rem;color:var(--gem);font-weight:500;line-height:1}
+.pack-gems-lbl{font-size:0.62rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);margin:4px 0 10px;}
+.pack-price{font-size:0.9rem;color:var(--fg-dim)}
+
+/* Payment section */
+.payment-box{background:var(--panel);border:1px solid var(--border);
+  border-radius:var(--radius);padding:28px 32px;margin-bottom:20px;}
+.payment-box::before{content:'';display:block;height:2px;margin:-28px -32px 24px;
+  background:linear-gradient(90deg,transparent,var(--gem),transparent);border-radius:var(--radius) var(--radius) 0 0;}
+.pay-label{font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;
+  color:var(--muted);margin-bottom:8px;display:block;}
+.stripe-card-wrap{background:rgba(255,255,255,0.04);border:1px solid var(--border);
+  border-radius:8px;padding:12px 14px;margin-bottom:20px;
+  transition:border-color 0.2s;}
+.stripe-card-wrap.focused{border-color:var(--sakura)}
+#card-errors{color:#e74c3c;font-size:0.78rem;margin-top:6px;min-height:18px;}
+.purchase-summary{display:flex;justify-content:space-between;align-items:center;
+  background:rgba(168,85,247,0.06);border:1px solid rgba(168,85,247,0.15);
+  border-radius:8px;padding:12px 16px;margin-bottom:20px;font-size:0.84rem;}
+.summary-gems{font-family:'DM Mono',monospace;color:var(--gem);font-weight:500}
+.summary-price{color:var(--fg-dim)}
+.btn-purchase{width:100%;
+  background:linear-gradient(135deg,var(--sakura-deep),var(--sakura));
+  border:none;border-radius:10px;color:#fff;font-weight:700;
+  font-size:0.95rem;letter-spacing:0.06em;padding:14px;
+  transition:opacity 0.2s;display:flex;align-items:center;justify-content:center;gap:10px;}
+.btn-purchase:hover{opacity:0.88}
+.btn-purchase:disabled{opacity:0.45;cursor:not-allowed}
+.demo-notice{text-align:center;font-size:0.72rem;color:var(--muted);margin-top:10px;}
+.demo-badge{display:inline-block;background:rgba(212,168,67,0.1);border:1px solid rgba(212,168,67,0.2);
+  border-radius:20px;padding:2px 8px;color:var(--gold);font-size:0.62rem;letter-spacing:0.1em;text-transform:uppercase;margin-left:6px;}
+
+/* Toast */
+.toast{position:fixed;bottom:24px;right:24px;z-index:300;
+  background:var(--panel-hi);border:1px solid var(--border-hi);
+  border-radius:10px;padding:12px 18px;
+  display:flex;align-items:center;gap:10px;font-size:0.85rem;
+  transform:translateY(120%);opacity:0;
+  transition:transform 0.3s ease,opacity 0.3s ease;pointer-events:none;}
+.toast.show{transform:translateY(0);opacity:1}
+.toast-dot{width:7px;height:7px;border-radius:50%;background:var(--gem);flex-shrink:0}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+.fade-in{animation:fadeUp 0.4s ease both}
+</style>
+</head>
+<body>
+<div id="bg-layer"></div>
+<div class="grain"></div>
+
+<!-- Header -->
+<header>
+  <div class="logo-area" onclick="goBack()">
+    <div class="logo-gem"></div>
+    <div>
+      <div class="logo-title">Redverse</div>
+      <div class="logo-sub">Soul Gems</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <div class="gem-badge">
+      <svg class="gem-icon" viewBox="0 0 24 24"><path d="M6 3h12l4 6-10 12L2 9l4-6z"/></svg>
+      <span class="gem-count" id="gemCount">0</span>
+    </div>
+    <button class="back-btn" onclick="goBack()">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+      Back to Cinema
+    </button>
+  </div>
+</header>
+
+<div class="site-body">
+  <div class="shop-wrap fade-in">
+
+    <!-- Hero -->
+    <div class="shop-hero">
+      <div class="hero-gem-icon">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="var(--gem)"><path d="M6 3h12l4 6-10 12L2 9l4-6z"/></svg>
+      </div>
+      <div class="hero-title">Soul Gems</div>
+      <div class="hero-sub">Gems unlock premium films and music, and let you show your support for the work that moves you. They never expire.</div>
+      <div class="balance-pill">
+        Your balance:&nbsp;<span class="bal-val" id="balancePill">0 ◆</span>
+      </div>
+    </div>
+
+    <!-- Insufficiency notice (shown when ?needed=X is in URL) -->
+    <div class="needed-notice" id="neededNotice">
+      You need <strong id="neededAmt">0 ◆</strong> more gems to unlock your selected content.
+      The highlighted pack below covers it.
+    </div>
+
+    <!-- Pack grid -->
+    <div class="section-title">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="var(--sakura)"><path d="M6 3h12l4 6-10 12L2 9l4-6z"/></svg>
+      Choose a Pack
+    </div>
+    <div class="pack-grid" id="packGrid"></div>
+
+    <!-- Payment box -->
+    <div class="payment-box" id="paymentBox">
+      <div class="purchase-summary" id="purchaseSummary">
+        <div>
+          <div style="font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);margin-bottom:3px">Selected Pack</div>
+          <div class="summary-gems" id="summaryGems">— select a pack above —</div>
+        </div>
+        <div class="summary-price" id="summaryPrice"></div>
+      </div>
+
+      <!-- Stripe card element (hidden in demo mode) -->
+      <div id="stripeSection" style="display:none">
+        <label class="pay-label">Card Details</label>
+        <div class="stripe-card-wrap" id="cardWrap">
+          <div id="card-element"></div>
+        </div>
+        <div id="card-errors"></div>
+      </div>
+
+      <button class="btn-purchase" id="purchaseBtn" disabled>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+        <span id="purchaseBtnText">Select a pack to continue</span>
+      </button>
+      <div class="demo-notice">
+        Secure payment via Stripe.
+        <span class="demo-badge" id="demoBadge">Demo Mode</span>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"><div class="toast-dot"></div><span id="toastMsg"></span></div>
+
+<script>
+/* ═══════════════════════════════
+   CONFIG
+═══════════════════════════════ */
+// Replace with your actual Stripe publishable key
+const STRIPE_PK = 'pk_test_REPLACE_WITH_YOUR_STRIPE_PUBLISHABLE_KEY';
+
+const PACKS = [
+  { gems: 100,  price_cents: 100,  label: '$1.00',  display: '$1.00' },
+  { gems: 500,  price_cents: 450,  label: '$4.50',  display: '$4.50' },
+  { gems: 1200, price_cents: 999,  label: '$9.99',  display: '$9.99', recommended: true },
+  { gems: 3000, price_cents: 1999, label: '$19.99', display: '$19.99' },
+];
+
+/* ═══════════════════════════════
+   STATE
+═══════════════════════════════ */
+const params = new URLSearchParams(location.search);
+const neededGems = parseInt(params.get('needed') || '0');
+const redirectTarget = params.get('redirect') || 'cinema';
+const purchaseResult = params.get('purchase');
+
+let selectedPack = null;
+let stripeReady = false;
+let stripe, cardElement;
+const isDemo = !STRIPE_PK || STRIPE_PK.startsWith('pk_test_REPLACE');
+
+/* ═══════════════════════════════
+   USER / GEMS
+═══════════════════════════════ */
+function loadUser() {
+  try { return JSON.parse(localStorage.getItem('rv_user') || 'null'); } catch { return null; }
+}
+function saveUser(u) { localStorage.setItem('rv_user', JSON.stringify(u)); }
+function getBalance() {
+  const u = loadUser();
+  return u ? (u.gems || 0) : 0;
+}
+function addGems(n) {
+  let u = loadUser();
+  if (!u) { u = { id: 'guest_' + Date.now(), name: 'Guest', gems: 0, purchases: [] }; }
+  u.gems = (u.gems || 0) + n;
+  saveUser(u);
+  return u.gems;
+}
+function updateGemDisplay() {
+  const bal = getBalance();
+  document.getElementById('gemCount').textContent = bal;
+  document.getElementById('balancePill').textContent = bal + ' ◆';
+}
+
+/* ═══════════════════════════════
+   TOAST
+═══════════════════════════════ */
+let toastTimer;
+function toast(msg) {
+  const el = document.getElementById('toast');
+  document.getElementById('toastMsg').textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 3000);
+}
+
+/* ═══════════════════════════════
+   PACKS
+═══════════════════════════════ */
+function buildPacks() {
+  const grid = document.getElementById('packGrid');
+  grid.innerHTML = '';
+
+  // Find minimum pack to cover the needed shortfall
+  const balance = getBalance();
+  const deficit = Math.max(0, neededGems - balance);
+  let minPackIdx = -1;
+  if (deficit > 0) {
+    for (let i = 0; i < PACKS.length; i++) {
+      if (PACKS[i].gems >= deficit) { minPackIdx = i; break; }
+    }
+    if (minPackIdx === -1) minPackIdx = PACKS.length - 1;
+  }
+
+  PACKS.forEach((p, i) => {
+    const card = document.createElement('div');
+    card.className = 'pack-card';
+    if (p.recommended && deficit === 0) card.classList.add('recommended');
+    if (i === minPackIdx && deficit > 0)  card.classList.add('min-needed');
+
+    card.innerHTML = `
+      <div class="pack-gems-icon">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="var(--gem)"><path d="M6 3h12l4 6-10 12L2 9l4-6z"/></svg>
+      </div>
+      <div class="pack-gems">${p.gems}</div>
+      <div class="pack-gems-lbl">Soul Gems</div>
+      <div class="pack-price">${p.display}</div>
+    `;
+
+    card.addEventListener('click', () => selectPack(p, card));
+    grid.appendChild(card);
+
+    // Auto-select recommended minimal pack when redirected from paywall
+    if (i === minPackIdx && deficit > 0) {
+      requestAnimationFrame(() => card.click());
+    } else if (p.recommended && deficit === 0 && i === 2) {
+      requestAnimationFrame(() => card.click());
+    }
+  });
+}
+
+function selectPack(pack, cardEl) {
+  selectedPack = pack;
+  document.querySelectorAll('.pack-card').forEach(c => c.classList.remove('selected'));
+  cardEl.classList.add('selected');
+
+  document.getElementById('summaryGems').textContent = `◆ ${pack.gems} Soul Gems`;
+  document.getElementById('summaryPrice').textContent = pack.display;
+
+  const btn = document.getElementById('purchaseBtn');
+  btn.disabled = false;
+  if (isDemo) {
+    document.getElementById('purchaseBtnText').textContent = `Get ${pack.gems} Gems (Demo — Free)`;
+  } else {
+    document.getElementById('purchaseBtnText').textContent = `Pay ${pack.display} · ${pack.gems} Gems`;
+  }
+}
+
+/* ═══════════════════════════════
+   STRIPE INIT
+═══════════════════════════════ */
+function initStripe() {
+  if (isDemo) {
+    document.getElementById('stripeSection').style.display = 'none';
+    document.getElementById('demoBadge').style.display = 'inline-block';
+    return;
+  }
+  document.getElementById('demoBadge').style.display = 'none';
+  document.getElementById('stripeSection').style.display = 'block';
+  stripe = Stripe(STRIPE_PK);
+  const elements = stripe.elements();
+  cardElement = elements.create('card', {
+    style: {
+      base: {
+        color: '#f5eef0',
+        fontFamily: "'Jost', sans-serif",
+        fontSize: '15px',
+        '::placeholder': { color: '#7a6878' },
+      },
+      invalid: { color: '#e74c3c' },
+    },
+  });
+  cardElement.mount('#card-element');
+  cardElement.on('focus', () => document.getElementById('cardWrap').classList.add('focused'));
+  cardElement.on('blur', () => document.getElementById('cardWrap').classList.remove('focused'));
+  cardElement.on('change', e => {
+    document.getElementById('card-errors').textContent = e.error ? e.error.message : '';
+  });
+  stripeReady = true;
+}
+
+/* ═══════════════════════════════
+   PURCHASE
+═══════════════════════════════ */
+async function handlePurchase() {
+  if (!selectedPack) return;
+  const btn = document.getElementById('purchaseBtn');
+  btn.disabled = true;
+
+  if (isDemo) {
+    // Demo: just add gems locally
+    const newBal = addGems(selectedPack.gems);
+    updateGemDisplay();
+    toast(`◆ ${selectedPack.gems} Soul Gems added! Balance: ${newBal}`);
+    setTimeout(() => goBack(), 1800);
+    return;
+  }
+
+  // Real Stripe flow
+  try {
+    document.getElementById('purchaseBtnText').textContent = 'Processing…';
+    const resp = await fetch('/api/gems/checkout', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ pack: selectedPack }),
+    });
+    const data = await resp.json();
+
+    if (data.demo || resp.status === 402) {
+      // Server running without Stripe key configured — fallback to demo
+      const newBal = addGems(selectedPack.gems);
+      updateGemDisplay();
+      toast(`◆ ${selectedPack.gems} Gems added (server demo mode)`);
+      setTimeout(() => goBack(), 1800);
+      return;
+    }
+
+    if (data.url) {
+      window.location.href = data.url;
+      return;
+    }
+    throw new Error(data.error || 'Checkout failed');
+  } catch (err) {
+    document.getElementById('card-errors').textContent = err.message;
+    btn.disabled = false;
+    document.getElementById('purchaseBtnText').textContent = `Pay ${selectedPack.display} · ${selectedPack.gems} Gems`;
+  }
+}
+
+/* ═══════════════════════════════
+   NAVIGATION
+═══════════════════════════════ */
+function goBack() {
+  if (redirectTarget === 'cinema') {
+    window.location.href = 'cinema.html';
+  } else {
+    history.back();
+  }
+}
+
+/* ═══════════════════════════════
+   HANDLE STRIPE RETURN
+═══════════════════════════════ */
+function handleStripeReturn() {
+  if (purchaseResult === 'success') {
+    const gemsParam = parseInt(params.get('gems') || '0');
+    if (gemsParam > 0) {
+      addGems(gemsParam);
+      updateGemDisplay();
+      toast(`◆ ${gemsParam} Soul Gems added to your account!`);
+    }
+    // Clean URL
+    history.replaceState({}, '', location.pathname);
+    // Redirect back after a moment
+    setTimeout(() => goBack(), 2000);
+  } else if (purchaseResult === 'cancel') {
+    toast('Purchase cancelled.');
+    history.replaceState({}, '', location.pathname);
+  }
+}
+
+/* ═══════════════════════════════
+   INIT
+═══════════════════════════════ */
+(function init() {
+  updateGemDisplay();
+
+  // Show needed notice if redirected from paywall with deficit
+  if (neededGems > 0) {
+    const balance = getBalance();
+    const deficit = neededGems - balance;
+    if (deficit > 0) {
+      const notice = document.getElementById('neededNotice');
+      notice.style.display = 'block';
+      document.getElementById('neededAmt').textContent = deficit + ' ◆';
+    }
+  }
+
+  buildPacks();
+  initStripe();
+
+  document.getElementById('purchaseBtn').addEventListener('click', handlePurchase);
+
+  handleStripeReturn();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,863 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dragon Cleaner — RedForest Labs</title>
+<link rel="stylesheet" href="lyra.css">
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+<style>
+html, body { min-height: 100vh; }
+body { display: flex; flex-direction: column; }
+
+/* ─── Page bg slot ─────────────────────────────────────────── */
+.page-bg {
+  position: fixed; inset: 0; z-index: -2;
+  background: radial-gradient(ellipse at 30% 20%, rgba(220,20,60,0.08), transparent 60%),
+              radial-gradient(ellipse at 70% 80%, rgba(188,19,254,0.04), transparent 60%),
+              var(--lyra-void);
+  overflow: hidden;
+}
+.page-bg .bg-media {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  object-fit: cover;
+  opacity: 0.22;
+  filter: brightness(0.4);
+}
+.page-bg::after {
+  content: ''; position: absolute; inset: 0;
+  background: linear-gradient(180deg, rgba(6,6,10,0.5) 0%, rgba(6,6,10,0.9) 100%);
+}
+
+/* ─── Layout ────────────────────────────────────────────────── */
+.cleaner-layout {
+  flex: 1;
+  max-width: 1100px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+/* Title strip with media slot */
+.cleaner-hero {
+  position: relative;
+  background: var(--lyra-stone);
+  border: 1px solid var(--lyra-border);
+  border-radius: var(--lyra-radius-lg);
+  padding: 22px 24px;
+  overflow: hidden;
+  isolation: isolate;
+}
+.cleaner-hero::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+  background: linear-gradient(90deg, transparent, var(--lyra-crimson), var(--lyra-gold), var(--lyra-crimson), transparent);
+  opacity: 0.5;
+}
+.cleaner-hero .hero-media {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  object-fit: cover;
+  opacity: 0.15;
+  filter: brightness(0.4);
+  z-index: -1;
+}
+.hero-row {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  flex-wrap: wrap;
+}
+.hero-sigil {
+  width: 52px; height: 52px;
+  border-radius: var(--lyra-radius-md);
+  background: linear-gradient(135deg, var(--lyra-blood), var(--lyra-crimson));
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 0 20px rgba(220,20,60,0.3);
+  flex-shrink: 0;
+}
+.hero-sigil .material-icons { color: var(--lyra-gold); font-size: 28px; }
+.hero-text h1 {
+  font-family: 'Cinzel', serif; font-size: 22px; font-weight: 900;
+  letter-spacing: 2.5px; color: var(--lyra-text-bright); margin: 0;
+}
+.hero-text p {
+  font-family: 'Crimson Pro', serif; font-style: italic;
+  font-size: 14px; color: var(--lyra-ash); margin: 2px 0 0;
+}
+.hero-meta {
+  margin-left: auto;
+  display: flex; gap: 8px; align-items: center;
+}
+.meta-pill {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase;
+  padding: 4px 10px; border-radius: var(--lyra-radius-pill);
+  border: 1px solid;
+}
+.meta-pill.dave-on  { color: var(--lyra-success); border-color: rgba(0,255,136,0.3); background: rgba(0,255,136,0.06); }
+.meta-pill.dave-off { color: var(--lyra-warning); border-color: rgba(255,215,0,0.3); background: rgba(255,215,0,0.06); }
+.meta-pill.status   { color: var(--lyra-success); border-color: rgba(0,255,136,0.3); background: rgba(0,255,136,0.06); }
+.meta-pill.status.off { color: var(--lyra-error); border-color: rgba(255,45,64,0.3); background: rgba(255,45,64,0.06); }
+
+/* ─── Scan config panel ─────────────────────────────────────── */
+.panel {
+  background: var(--lyra-stone);
+  border: 1px solid var(--lyra-border);
+  border-radius: var(--lyra-radius-lg);
+  padding: 20px;
+  position: relative;
+  overflow: hidden;
+}
+.panel::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg, transparent, var(--lyra-crimson), transparent);
+  opacity: 0.3;
+}
+.panel-title {
+  font-family: 'Orbitron', sans-serif; font-size: 10px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 2.5px;
+  color: var(--lyra-crimson); margin-bottom: 14px;
+  display: flex; align-items: center; gap: 10px;
+}
+.panel-title::after {
+  content: ''; flex: 1; height: 1px;
+  background: linear-gradient(90deg, var(--lyra-border), transparent);
+}
+
+.scan-row {
+  display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
+}
+.scan-row input[type="text"] {
+  flex: 1; min-width: 220px;
+  font-family: 'JetBrains Mono', monospace;
+}
+.scan-row .scan-btn { min-width: 140px; }
+
+.scan-progress {
+  margin-top: 14px;
+  display: none;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--lyra-ash);
+}
+.scan-progress.active { display: block; }
+.progress-bar {
+  height: 3px; background: var(--lyra-iron);
+  border-radius: 2px; overflow: hidden; margin-top: 6px;
+}
+.progress-fill {
+  height: 100%; width: 30%;
+  background: linear-gradient(90deg, var(--lyra-blood), var(--lyra-crimson), var(--lyra-ember));
+  animation: shimmer 1.5s infinite;
+}
+@keyframes shimmer {
+  0%,100% { opacity: 0.6; }
+  50% { opacity: 1; }
+}
+.current-path {
+  overflow: hidden; white-space: nowrap; text-overflow: ellipsis;
+  max-width: 100%; display: block; margin-top: 4px;
+  color: var(--lyra-text-dim); font-size: 10px;
+}
+
+/* ─── Summary stat cards ───────────────────────────────────── */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px;
+  margin-top: 10px;
+}
+.stat-card {
+  background: var(--lyra-obsidian);
+  border: 1px solid var(--lyra-border);
+  border-radius: var(--lyra-radius-md);
+  padding: 12px 14px;
+  text-align: center;
+}
+.stat-value {
+  font-family: 'Cinzel', serif;
+  font-size: 20px; font-weight: 900;
+  color: var(--lyra-gold);
+  line-height: 1.1;
+}
+.stat-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px; letter-spacing: 1.5px; text-transform: uppercase;
+  color: var(--lyra-text-dim);
+  margin-top: 4px;
+}
+.stat-card.reclaim .stat-value { color: var(--lyra-crimson); }
+
+/* ─── Tabs ──────────────────────────────────────────────────── */
+.tab-row {
+  display: flex; gap: 2px; border-bottom: 1px solid var(--lyra-border);
+  margin-bottom: 14px; overflow-x: auto;
+}
+.tab-btn {
+  background: transparent; border: none; cursor: pointer;
+  padding: 10px 16px;
+  font-family: 'Cinzel', serif; font-size: 12px;
+  letter-spacing: 2px; text-transform: uppercase;
+  color: var(--lyra-text-dim);
+  border-bottom: 2px solid transparent;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+.tab-btn:hover { color: var(--lyra-silver); }
+.tab-btn.active {
+  color: var(--lyra-gold);
+  border-bottom-color: var(--lyra-crimson);
+}
+.tab-btn .count {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: var(--lyra-text-dim);
+  margin-left: 6px;
+}
+
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+
+/* ─── File list ─────────────────────────────────────────────── */
+.file-list {
+  max-height: 460px;
+  overflow-y: auto;
+  border: 1px solid var(--lyra-border);
+  border-radius: var(--lyra-radius-md);
+  background: var(--lyra-obsidian);
+}
+.file-row {
+  display: grid;
+  grid-template-columns: 28px 1fr auto auto;
+  gap: 12px;
+  align-items: center;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--lyra-border);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  transition: background 0.15s;
+}
+.file-row:last-child { border-bottom: none; }
+.file-row:hover { background: rgba(220,20,60,0.04); }
+.file-row.checked { background: rgba(220,20,60,0.08); }
+.file-row .cb {
+  width: 16px; height: 16px;
+  accent-color: var(--lyra-crimson);
+  cursor: pointer;
+}
+.file-path {
+  color: var(--lyra-silver);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+.file-size {
+  color: var(--lyra-text-dim);
+  min-width: 70px;
+  text-align: right;
+}
+.file-verdict {
+  font-size: 10px;
+  padding: 2px 8px;
+  border-radius: var(--lyra-radius-pill);
+  border: 1px solid;
+  min-width: 74px;
+  text-align: center;
+}
+.verdict-yeet      { color: var(--lyra-success); border-color: rgba(0,255,136,0.3); background: rgba(0,255,136,0.06); }
+.verdict-keep      { color: var(--lyra-silver);  border-color: var(--lyra-border); }
+.verdict-ask_human { color: var(--lyra-warning); border-color: rgba(255,215,0,0.3); background: rgba(255,215,0,0.06); }
+.verdict-none      { color: var(--lyra-text-dim); border-color: var(--lyra-border); }
+
+.dup-group {
+  border-bottom: 1px solid var(--lyra-border);
+  padding: 8px 0;
+}
+.dup-group:last-child { border-bottom: none; }
+.dup-group-header {
+  padding: 6px 14px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: var(--lyra-crimson);
+  letter-spacing: 1px;
+}
+
+.list-toolbar {
+  display: flex; gap: 8px; flex-wrap: wrap;
+  padding: 10px 0;
+  align-items: center;
+}
+.list-toolbar .grow { flex: 1; }
+
+.empty-list {
+  padding: 30px;
+  text-align: center;
+  font-family: 'Crimson Pro', serif; font-style: italic;
+  color: var(--lyra-text-dim);
+}
+
+/* ─── Dave reasoning display ────────────────────────────────── */
+.dave-panel {
+  background: var(--lyra-obsidian);
+  border: 1px solid var(--lyra-border);
+  border-left: 3px solid var(--lyra-crimson);
+  border-radius: var(--lyra-radius-md);
+  padding: 12px 16px;
+  margin-top: 10px;
+  display: none;
+}
+.dave-panel.active { display: block; }
+.dave-line {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px; color: var(--lyra-ash); margin-bottom: 4px;
+}
+.dave-line strong { color: var(--lyra-gold); }
+
+/* ─── Danger zone / deletion confirm ────────────────────────── */
+.delete-bar {
+  background: linear-gradient(135deg, rgba(139,0,0,0.15), rgba(220,20,60,0.08));
+  border: 1px solid rgba(220,20,60,0.4);
+  border-radius: var(--lyra-radius-md);
+  padding: 14px 18px;
+  display: none;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+.delete-bar.active { display: flex; }
+.delete-summary {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: var(--lyra-ember);
+  flex: 1;
+  min-width: 240px;
+}
+.delete-summary .big {
+  font-family: 'Cinzel', serif;
+  font-size: 16px; font-weight: 900;
+  color: var(--lyra-gold);
+}
+
+/* Confirm modal */
+.modal-scrim {
+  position: fixed; inset: 0;
+  background: rgba(6,6,10,0.85);
+  backdrop-filter: blur(8px);
+  display: none;
+  align-items: center; justify-content: center;
+  z-index: 1000;
+}
+.modal-scrim.active { display: flex; }
+.modal {
+  background: var(--lyra-stone);
+  border: 1px solid rgba(220,20,60,0.5);
+  border-radius: var(--lyra-radius-lg);
+  max-width: 520px; width: 92%;
+  padding: 26px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.7), 0 0 40px rgba(220,20,60,0.2);
+}
+.modal h3 {
+  font-family: 'Cinzel', serif; font-size: 18px;
+  color: var(--lyra-ember); letter-spacing: 2px;
+  margin-bottom: 10px; text-align: center;
+}
+.modal p {
+  font-family: 'Crimson Pro', serif; font-size: 14px;
+  color: var(--lyra-silver); line-height: 1.6; margin-bottom: 16px;
+}
+.modal .count-line {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: var(--lyra-gold);
+  text-align: center;
+  padding: 10px;
+  border: 1px solid var(--lyra-border);
+  border-radius: var(--lyra-radius-md);
+  background: var(--lyra-obsidian);
+  margin-bottom: 16px;
+}
+.modal-actions {
+  display: flex; gap: 10px; justify-content: flex-end;
+}
+</style>
+</head>
+<body>
+
+<div class="page-bg">
+  <!-- SLOT: page background media (video/image) -->
+  <!-- <video class="bg-media" autoplay loop muted playsinline><source src="assets/cleaner-bg.mp4" type="video/mp4"></video> -->
+</div>
+
+<header class="lyra-header">
+  <a href="tools.html" style="display:flex;align-items:center;gap:10px;text-decoration:none;color:inherit">
+    <div style="width:32px;height:32px;border-radius:6px;background:linear-gradient(135deg,var(--lyra-blood),var(--lyra-crimson));display:flex;align-items:center;justify-content:center;box-shadow:0 0 10px rgba(220,20,60,0.3)">
+      <span style="color:var(--lyra-gold);font-size:16px">🐉</span>
+    </div>
+    <span class="lyra-logo">DRAGON <span class="lyra-logo-accent">CLEANER</span></span>
+  </a>
+  <div class="lyra-status-pill"><div class="lyra-dot lyra-dot-pulse" id="dotStatus"></div><span id="lblStatus">…</span></div>
+</header>
+
+<main class="cleaner-layout">
+
+  <!-- Hero -->
+  <section class="cleaner-hero">
+    <!-- SLOT: hero background media -->
+    <video class="hero-media" autoplay loop muted playsinline><source src="assets/cleaner-hero.mp4" type="video/mp4"></video> -->
+    <div class="hero-row">
+      <div class="hero-sigil"><i class="material-icons">cleaning_services</i></div>
+      <div class="hero-text">
+        <h1>DRAGON CLEANER</h1>
+        <p>Dave scans your filesystem. You decide what goes.</p>
+      </div>
+      <div class="hero-meta">
+        <span class="meta-pill dave-off" id="daveStatus">⚙ Dave: checking…</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- Scan config -->
+  <section class="panel">
+    <div class="panel-title">Scan Configuration</div>
+    <div class="scan-row">
+      <input class="lyra-input" type="text" id="scanPath" placeholder="/home/user or C:\Users\you — drop a directory to scan" />
+      <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--lyra-ash);font-family:'JetBrains Mono',monospace">
+        <input type="checkbox" id="skipSystem" checked style="accent-color:var(--lyra-crimson)"> Skip system paths
+      </label>
+      <button class="lyra-btn lyra-btn-primary scan-btn" id="startBtn">
+        <i class="material-icons" style="font-size:16px">play_arrow</i> Start Scan
+      </button>
+      <button class="lyra-btn lyra-btn-ghost scan-btn" id="stopBtn" disabled style="display:none">
+        <i class="material-icons" style="font-size:16px">stop</i> Stop
+      </button>
+    </div>
+    <div class="scan-progress" id="scanProgress">
+      <span id="progressLabel">Preparing…</span>
+      <div class="progress-bar"><div class="progress-fill"></div></div>
+      <span class="current-path" id="currentPath"></span>
+    </div>
+  </section>
+
+  <!-- Results (hidden until scan completes) -->
+  <section class="panel" id="resultsPanel" style="display:none">
+    <div class="panel-title">Scan Results</div>
+
+    <div class="stats-grid">
+      <div class="stat-card"><div class="stat-value" id="statFiles">—</div><div class="stat-label">Files Scanned</div></div>
+      <div class="stat-card"><div class="stat-value" id="statSize">—</div><div class="stat-label">Total Size</div></div>
+      <div class="stat-card"><div class="stat-value" id="statJunk">—</div><div class="stat-label">Junk Files</div></div>
+      <div class="stat-card"><div class="stat-value" id="statDups">—</div><div class="stat-label">Duplicate Sets</div></div>
+      <div class="stat-card"><div class="stat-value" id="statLarge">—</div><div class="stat-label">Large Files</div></div>
+      <div class="stat-card reclaim"><div class="stat-value" id="statReclaim">—</div><div class="stat-label">Reclaimable</div></div>
+    </div>
+
+    <div style="margin-top:20px">
+      <div class="tab-row">
+        <button class="tab-btn active" data-tab="junk">Junk <span class="count" id="cntJunk">0</span></button>
+        <button class="tab-btn" data-tab="duplicates">Duplicates <span class="count" id="cntDup">0</span></button>
+        <button class="tab-btn" data-tab="large">Large Files <span class="count" id="cntLarge">0</span></button>
+      </div>
+
+      <div class="list-toolbar">
+        <button class="lyra-btn lyra-btn-ghost" id="selectAllBtn" style="padding:6px 12px;font-size:11px">
+          <i class="material-icons" style="font-size:14px">check_box</i> Select all visible
+        </button>
+        <button class="lyra-btn lyra-btn-ghost" id="clearSelBtn" style="padding:6px 12px;font-size:11px">
+          <i class="material-icons" style="font-size:14px">clear</i> Clear
+        </button>
+        <button class="lyra-btn lyra-btn-ghost" id="askDaveBtn" style="padding:6px 12px;font-size:11px">
+          <i class="material-icons" style="font-size:14px">smart_toy</i> Ask Dave
+        </button>
+        <span class="grow"></span>
+        <span class="lyra-mono lyra-text-dim" id="selectionSummary" style="font-size:11px">0 selected</span>
+      </div>
+
+      <!-- Tab panels -->
+      <div class="tab-panel active" data-panel="junk">
+        <div class="file-list" id="junkList"></div>
+      </div>
+      <div class="tab-panel" data-panel="duplicates">
+        <div class="file-list" id="dupList"></div>
+      </div>
+      <div class="tab-panel" data-panel="large">
+        <div class="file-list" id="largeList"></div>
+      </div>
+
+      <div class="dave-panel" id="davePanel">
+        <div class="dave-line"><strong>Dave's verdict:</strong> <span id="daveSummary"></span></div>
+        <div class="dave-line" id="daveSource"></div>
+      </div>
+
+      <!-- Delete bar -->
+      <div class="delete-bar" id="deleteBar" style="margin-top:16px">
+        <div class="delete-summary">
+          <div><span class="big" id="delCount">0</span> paths staged</div>
+          <div>Freeing <span id="delSize">—</span></div>
+        </div>
+        <button class="lyra-btn lyra-btn-danger" id="deleteBtn">
+          <i class="material-icons" style="font-size:16px">delete_forever</i> Review &amp; Delete
+        </button>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<!-- Confirm modal -->
+<div class="modal-scrim" id="confirmModal">
+  <div class="modal">
+    <h3>⚠ CONFIRM DELETION</h3>
+    <p>This is permanent. The selected paths will be removed from disk. System-protected paths are rejected automatically by the server, but Dragon Cleaner cannot undo mistakes.</p>
+    <div class="count-line" id="confirmDetail">—</div>
+    <div class="modal-actions">
+      <button class="lyra-btn lyra-btn-ghost" id="confirmCancel">Cancel</button>
+      <button class="lyra-btn lyra-btn-danger" id="confirmYes">
+        <i class="material-icons" style="font-size:16px">delete_forever</i> Delete Now
+      </button>
+    </div>
+  </div>
+</div>
+
+<footer class="lyra-footer">
+  <span class="lyra-footer-brand">Dragon Cleaner · Dave &amp; You, In Agreement</span>
+  <span class="lyra-mono" id="footerInfo">Port 8917</span>
+</footer>
+
+<script>
+const API = 'http://127.0.0.1:8917';
+const $ = id => document.getElementById(id);
+
+// ─── State ─────────────────────────────────────────────────
+let currentScanId = null;
+let scanPollTimer = null;
+let scanResults = null;
+let activeTab = 'junk';
+// Selection state: { [path]: { path, size, kind } }
+const selection = {};
+// Verdicts by path: { [path]: verdict }
+const verdicts = {};
+
+// ─── Utility ───────────────────────────────────────────────
+function humanSize(b) {
+  const u = ['B','KB','MB','GB','TB'];
+  let i = 0;
+  while (b >= 1024 && i < u.length - 1) { b /= 1024; i++; }
+  return b.toFixed(1) + ' ' + u[i];
+}
+
+function shortPath(p, max = 60) {
+  if (p.length <= max) return p;
+  return p.slice(0, 20) + '…' + p.slice(-(max - 22));
+}
+
+// ─── Status poll ───────────────────────────────────────────
+async function pollStatus() {
+  try {
+    const r = await fetch(`${API}/api/status`);
+    const d = await r.json();
+    $('dotStatus').className = 'lyra-dot lyra-dot-ok';
+    $('lblStatus').textContent = 'Online';
+    const ds = $('daveStatus');
+    if (d.dave_available) {
+      ds.className = 'meta-pill dave-on';
+      ds.innerHTML = '◆ Dave: ready';
+    } else {
+      ds.className = 'meta-pill dave-off';
+      ds.innerHTML = '⚙ Dave: offline · heuristic fallback';
+    }
+  } catch (e) {
+    $('dotStatus').className = 'lyra-dot lyra-dot-error';
+    $('lblStatus').textContent = 'Offline';
+    $('daveStatus').className = 'meta-pill dave-off';
+    $('daveStatus').innerHTML = '⚙ Server offline';
+  }
+}
+pollStatus();
+setInterval(pollStatus, 8000);
+
+// ─── Start scan ────────────────────────────────────────────
+$('startBtn').addEventListener('click', async () => {
+  const path = $('scanPath').value.trim();
+  if (!path) {
+    $('progressLabel').textContent = 'Enter a path first.';
+    $('scanProgress').classList.add('active');
+    return;
+  }
+  try {
+    const r = await fetch(`${API}/api/scan/start`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ path, skip_system: $('skipSystem').checked }),
+    });
+    const d = await r.json();
+    if (!r.ok) { alertFailure(d.error || 'Scan failed to start'); return; }
+    currentScanId = d.scan_id;
+    $('startBtn').disabled = true;
+    $('stopBtn').style.display = '';
+    $('stopBtn').disabled = false;
+    $('resultsPanel').style.display = 'none';
+    $('scanProgress').classList.add('active');
+    $('progressLabel').textContent = 'Scanning…';
+    scanPollTimer = setInterval(pollScan, 800);
+  } catch (e) {
+    alertFailure('Network error: ' + e.message);
+  }
+});
+
+$('stopBtn').addEventListener('click', async () => {
+  if (!currentScanId) return;
+  try { await fetch(`${API}/api/scan/stop/${currentScanId}`, { method: 'POST' }); } catch (e) {}
+});
+
+async function pollScan() {
+  if (!currentScanId) return;
+  try {
+    const r = await fetch(`${API}/api/scan/status/${currentScanId}`);
+    const d = await r.json();
+    if (!r.ok) { clearInterval(scanPollTimer); return; }
+    if (d.progress) {
+      $('progressLabel').textContent = `Scanning · ${d.progress.files_seen || 0} files`;
+      $('currentPath').textContent = d.progress.current_dir || '';
+    }
+    if (d.state === 'complete') {
+      clearInterval(scanPollTimer);
+      await loadResults();
+    } else if (d.state === 'error' || d.state === 'stopped') {
+      clearInterval(scanPollTimer);
+      $('progressLabel').textContent = d.state === 'stopped' ? 'Scan stopped.' : 'Error: ' + (d.error || 'unknown');
+      resetScanButtons();
+    }
+  } catch (e) {
+    clearInterval(scanPollTimer);
+    $('progressLabel').textContent = 'Lost connection.';
+    resetScanButtons();
+  }
+}
+
+function resetScanButtons() {
+  $('startBtn').disabled = false;
+  $('stopBtn').style.display = 'none';
+  $('stopBtn').disabled = true;
+}
+
+async function loadResults() {
+  try {
+    const r = await fetch(`${API}/api/scan/results/${currentScanId}`);
+    const d = await r.json();
+    if (!r.ok) { alertFailure(d.error); return; }
+    scanResults = d;
+    renderResults();
+    $('scanProgress').classList.remove('active');
+    $('resultsPanel').style.display = '';
+    resetScanButtons();
+  } catch (e) {
+    alertFailure(e.message);
+    resetScanButtons();
+  }
+}
+
+// ─── Render results ────────────────────────────────────────
+function renderResults() {
+  const r = scanResults;
+  $('statFiles').textContent = r.total_files.toLocaleString();
+  $('statSize').textContent = r.total_size_human;
+  $('statJunk').textContent = r.junk_count;
+  $('statDups').textContent = r.duplicate_groups;
+  $('statLarge').textContent = r.large_count;
+  $('statReclaim').textContent = r.reclaimable_human;
+  $('cntJunk').textContent = r.junk_count;
+  $('cntDup').textContent = r.duplicate_groups;
+  $('cntLarge').textContent = r.large_count;
+
+  renderJunk(r.junk_files);
+  renderDuplicates(r.duplicates);
+  renderLarge(r.large_files);
+  updateSelectionSummary();
+}
+
+function renderJunk(items) {
+  const el = $('junkList');
+  if (!items.length) { el.innerHTML = '<div class="empty-list">No junk detected. Cathedral is clean.</div>'; return; }
+  el.innerHTML = items.map(it => fileRowHTML(it, 'junk')).join('');
+  wireRowCheckboxes(el);
+}
+
+function renderDuplicates(groups) {
+  const el = $('dupList');
+  if (!groups.length) { el.innerHTML = '<div class="empty-list">No duplicates found.</div>'; return; }
+  el.innerHTML = groups.map(g => `
+    <div class="dup-group">
+      <div class="dup-group-header">◆ hash:${g.hash} · ${g.paths.length} copies</div>
+      ${g.paths.map((p, i) => fileRowHTML(p, 'duplicate', i === 0 ? ' (original — kept)' : '', i === 0)).join('')}
+    </div>`).join('');
+  wireRowCheckboxes(el);
+}
+
+function renderLarge(items) {
+  const el = $('largeList');
+  if (!items.length) { el.innerHTML = '<div class="empty-list">No large files.</div>'; return; }
+  el.innerHTML = items.map(it => fileRowHTML(it, 'large')).join('');
+  wireRowCheckboxes(el);
+}
+
+function fileRowHTML(it, kind, extra = '', isOriginal = false) {
+  const path = it.path;
+  const checked = selection[path] ? 'checked' : '';
+  const disabled = isOriginal ? 'disabled title="Original — keeps automatically"' : '';
+  const verdict = verdicts[path];
+  const vHtml = verdict
+    ? `<span class="file-verdict verdict-${verdict.verdict}" title="${(verdict.reason || '').replace(/"/g,'&quot;')}">${verdict.verdict}</span>`
+    : '<span class="file-verdict verdict-none">—</span>';
+  return `<div class="file-row ${checked ? 'checked' : ''}" data-path="${escapeAttr(path)}" data-size="${it.size}" data-kind="${kind}">
+    <input type="checkbox" class="cb" ${checked} ${disabled}>
+    <span class="file-path" title="${escapeAttr(path)}">${escapeHTML(path)}${extra}</span>
+    <span class="file-size">${humanSize(it.size)}</span>
+    ${vHtml}
+  </div>`;
+}
+
+function escapeHTML(s) {
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function escapeAttr(s) { return escapeHTML(s); }
+
+function wireRowCheckboxes(container) {
+  container.querySelectorAll('.file-row').forEach(row => {
+    const cb = row.querySelector('.cb');
+    if (!cb || cb.disabled) return;
+    cb.addEventListener('change', () => {
+      const path = row.dataset.path;
+      const size = Number(row.dataset.size);
+      const kind = row.dataset.kind;
+      if (cb.checked) {
+        selection[path] = { path, size, kind };
+        row.classList.add('checked');
+      } else {
+        delete selection[path];
+        row.classList.remove('checked');
+      }
+      updateSelectionSummary();
+    });
+  });
+}
+
+function updateSelectionSummary() {
+  const keys = Object.keys(selection);
+  const totalSize = keys.reduce((s, k) => s + selection[k].size, 0);
+  $('selectionSummary').textContent = `${keys.length} selected · ${humanSize(totalSize)}`;
+  const bar = $('deleteBar');
+  if (keys.length) {
+    bar.classList.add('active');
+    $('delCount').textContent = keys.length;
+    $('delSize').textContent = humanSize(totalSize);
+  } else {
+    bar.classList.remove('active');
+  }
+}
+
+// ─── Tabs ─────────────────────────────────────────────────
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    activeTab = btn.dataset.tab;
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b === btn));
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('active', p.dataset.panel === activeTab));
+  });
+});
+
+// ─── Selection helpers ────────────────────────────────────
+$('selectAllBtn').addEventListener('click', () => {
+  const panel = document.querySelector(`.tab-panel[data-panel="${activeTab}"]`);
+  panel.querySelectorAll('.cb:not(:disabled)').forEach(cb => {
+    if (!cb.checked) { cb.checked = true; cb.dispatchEvent(new Event('change')); }
+  });
+});
+$('clearSelBtn').addEventListener('click', () => {
+  document.querySelectorAll('.cb:checked').forEach(cb => { cb.checked = false; cb.dispatchEvent(new Event('change')); });
+});
+
+// ─── Ask Dave ─────────────────────────────────────────────
+$('askDaveBtn').addEventListener('click', async () => {
+  const candidates = Object.values(selection).slice(0, 100);
+  if (!candidates.length) {
+    $('daveSummary').textContent = 'Select something first.';
+    $('davePanel').classList.add('active');
+    return;
+  }
+  $('daveSummary').textContent = 'Consulting Dave…';
+  $('davePanel').classList.add('active');
+  try {
+    const r = await fetch(`${API}/api/dave/verdict`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ candidates }),
+    });
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.error || 'Dave failed');
+    const tally = { yeet: 0, keep: 0, ask_human: 0 };
+    d.verdicts.forEach((v, i) => {
+      const path = candidates[i].path;
+      verdicts[path] = v;
+      if (tally[v.verdict] !== undefined) tally[v.verdict]++;
+    });
+    $('daveSummary').textContent =
+      `${tally.yeet} yeet · ${tally.keep} keep · ${tally.ask_human} ask human`;
+    $('daveSource').innerHTML = `<strong>Source:</strong> ${d.source === 'dave' ? 'crimsondragonx7/dave (local)' : 'heuristic fallback (Dave offline)'}`;
+    // Re-render to show verdict pills
+    if (scanResults) renderResults();
+  } catch (e) {
+    $('daveSummary').textContent = 'Error: ' + e.message;
+  }
+});
+
+// ─── Delete flow ──────────────────────────────────────────
+$('deleteBtn').addEventListener('click', () => {
+  const keys = Object.keys(selection);
+  if (!keys.length) return;
+  const total = keys.reduce((s, k) => s + selection[k].size, 0);
+  $('confirmDetail').innerHTML = `${keys.length} paths · ${humanSize(total)} to be freed`;
+  $('confirmModal').classList.add('active');
+});
+
+$('confirmCancel').addEventListener('click', () => {
+  $('confirmModal').classList.remove('active');
+});
+
+$('confirmYes').addEventListener('click', async () => {
+  const paths = Object.keys(selection);
+  $('confirmModal').classList.remove('active');
+  try {
+    const r = await fetch(`${API}/api/delete`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ paths, confirm: true }),
+    });
+    const d = await r.json();
+    if (!r.ok) { alertFailure(d.error || 'Delete failed'); return; }
+    // Remove deleted rows
+    d.deleted.forEach(p => {
+      delete selection[p];
+      const row = document.querySelector(`.file-row[data-path="${CSS.escape(p)}"]`);
+      if (row) row.remove();
+    });
+    updateSelectionSummary();
+    $('daveSummary').textContent = `Deleted ${d.deleted.length}. Freed ${d.freed_human}. ${d.failed.length} failures.`;
+    $('daveSource').innerHTML = '';
+    $('davePanel').classList.add('active');
+  } catch (e) {
+    alertFailure(e.message);
+  }
+});
+
+function alertFailure(msg) {
+  $('progressLabel').textContent = 'Error: ' + msg;
+  $('scanProgress').classList.add('active');
+}
+</script>
+
+</body>
+</html>

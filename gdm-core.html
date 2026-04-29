@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GDM Core • RedVerse</title>
+  <link rel="stylesheet" href="lyra.css" />
+  <style>
+    .wrap { max-width: 980px; margin: 34px auto; padding: 16px; }
+    .card { background: var(--lyra-stone); border: 1px solid var(--lyra-border); border-radius: 14px; padding: 18px; margin-bottom: 14px; }
+    textarea, input { width: 100%; background: var(--lyra-obsidian); color: var(--lyra-silver); border: 1px solid var(--lyra-border); border-radius: 8px; padding: 10px; }
+    textarea { min-height: 90px; resize: vertical; }
+    .row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
+    pre { white-space: pre-wrap; background: var(--lyra-obsidian); border: 1px solid var(--lyra-border); border-radius: 10px; padding: 12px; }
+  </style>
+</head>
+<body>
+  <header class="lyra-header">
+    <a href="tools.html" class="lyra-logo">GDM <span class="lyra-logo-accent">Core</span></a>
+  </header>
+  <main class="wrap">
+    <div class="card">
+      <h1 class="lyra-title">Gaussian Delta Memory</h1>
+      <p class="lyra-subtitle">Authenticated per-user memory field API control.</p>
+      <div class="row">
+        <button class="lyra-btn lyra-btn-ghost" onclick="status()">Refresh Status</button>
+      </div>
+      <pre id="statusBox">Status not loaded.</pre>
+    </div>
+
+    <div class="card">
+      <h3>Remember</h3>
+      <textarea id="rememberText" placeholder="Store a memory..."></textarea>
+      <div class="row">
+        <input id="rememberRole" placeholder="role (default: user)" />
+        <button class="lyra-btn lyra-btn-primary" onclick="remember()">Remember</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Recall</h3>
+      <input id="query" placeholder="Ask memory field a query..." />
+      <div class="row">
+        <button class="lyra-btn lyra-btn-primary" onclick="recall()">Recall</button>
+      </div>
+      <pre id="recallBox">No recall yet.</pre>
+    </div>
+  </main>
+
+  <script>
+    async function status() {
+      const r = await fetch('/api/gdm/status');
+      const d = await r.json();
+      document.getElementById('statusBox').textContent = JSON.stringify(d, null, 2);
+    }
+
+    async function remember() {
+      const content = document.getElementById('rememberText').value.trim();
+      const role = document.getElementById('rememberRole').value.trim() || 'user';
+      const r = await fetch('/api/gdm/remember', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content, role })
+      });
+      const d = await r.json();
+      alert(d.ok ? 'Memory stored.' : (d.error || 'Failed to store memory'));
+      await status();
+    }
+
+    async function recall() {
+      const query = document.getElementById('query').value.trim();
+      const r = await fetch('/api/gdm/recall', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query, k: 6 })
+      });
+      const d = await r.json();
+      document.getElementById('recallBox').textContent = JSON.stringify(d, null, 2);
+    }
+
+    status();
+  </script>
+</body>
+</html>

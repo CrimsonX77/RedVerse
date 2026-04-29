@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dragon Forge — RedForest Labs</title>
+<link rel="stylesheet" href="lyra.css">
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+<style>
+html,body{height:100vh;overflow:hidden}body{display:flex;flex-direction:column}
+.forge-layout{flex:1;display:flex;align-items:flex-start;justify-content:center;overflow-y:auto;padding:24px}
+.forge-card{width:100%;max-width:680px;background:var(--lyra-stone);border:1px solid var(--lyra-border);border-radius:var(--lyra-radius-lg);overflow:hidden;position:relative;margin:auto}
+.forge-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--lyra-crimson) 20%,var(--lyra-gold) 50%,var(--lyra-crimson) 80%,transparent);opacity:0.5}
+.forge-body{padding:24px;display:flex;flex-direction:column;gap:18px}
+
+.drop-zone{border:2px dashed var(--lyra-border);border-radius:var(--lyra-radius-lg);padding:48px 20px;text-align:center;color:var(--lyra-ghost);cursor:pointer;transition:all 0.2s;background:var(--lyra-obsidian)}
+.drop-zone:hover,.drop-zone.dragover{border-color:var(--lyra-crimson);background:var(--lyra-blush);color:var(--lyra-silver)}
+.drop-zone .material-icons{font-size:56px;opacity:0.15;display:block;margin-bottom:14px;color:var(--lyra-crimson)}
+
+.file-info{background:var(--lyra-obsidian);border:1px solid var(--lyra-border);border-radius:var(--lyra-radius-md);padding:14px;display:none}
+.file-info.visible{display:flex;gap:16px;align-items:center}
+.file-info-icon{width:48px;height:48px;border-radius:var(--lyra-radius-md);background:linear-gradient(135deg,var(--lyra-blood),var(--lyra-crimson));display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.file-info-icon .material-icons{color:var(--lyra-gold);font-size:24px}
+.file-details{flex:1;min-width:0}
+.file-name{font-weight:700;font-size:14px;color:var(--lyra-text-bright);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.file-meta{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--lyra-ash);margin-top:4px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+
+.cat-badge{display:inline-block;padding:2px 8px;border-radius:var(--lyra-radius-pill);font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:1px;text-transform:uppercase}
+.cat-badge.image    {background:rgba(212,168,70,0.15);color:var(--lyra-gold);border:1px solid rgba(212,168,70,0.3)}
+.cat-badge.audio    {background:rgba(124,77,255,0.15);color:#b39dff;border:1px solid rgba(124,77,255,0.3)}
+.cat-badge.video    {background:rgba(220,20,60,0.15);color:var(--lyra-crimson);border:1px solid rgba(220,20,60,0.3)}
+.cat-badge.text     {background:rgba(100,200,150,0.12);color:#8fdab0;border:1px solid rgba(100,200,150,0.3)}
+.cat-badge.document {background:rgba(200,150,100,0.12);color:#d4a878;border:1px solid rgba(200,150,100,0.3)}
+
+.target-group{margin-bottom:14px}
+.target-group:last-child{margin-bottom:0}
+.target-group-label{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:2px;color:var(--lyra-dim);text-transform:uppercase;margin-bottom:8px;display:flex;align-items:center;gap:8px}
+.target-group-label::after{content:'';flex:1;height:1px;background:var(--lyra-border)}
+
+.target-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(78px,1fr));gap:6px}
+.target-tile{border:1px solid var(--lyra-border);border-radius:var(--lyra-radius-md);padding:9px 6px;text-align:center;cursor:pointer;background:var(--lyra-obsidian);transition:all 0.15s;user-select:none}
+.target-tile:hover{border-color:var(--lyra-crimson);transform:translateY(-1px)}
+.target-tile.active{border-color:var(--lyra-gold);background:linear-gradient(135deg,rgba(220,20,60,0.08),rgba(212,168,70,0.08));box-shadow:0 0 0 1px rgba(212,168,70,0.3)}
+.target-tile-name{font-family:'Cinzel',serif;font-size:12px;font-weight:700;color:var(--lyra-text-bright);letter-spacing:1px}
+.target-tile-ext{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--lyra-dim);margin-top:2px}
+
+.empty-targets{text-align:center;padding:20px;color:var(--lyra-ash);font-size:13px;font-style:italic}
+
+.quality-row{display:flex;align-items:center;gap:12px}
+.quality-row label{font-weight:600;font-size:13px;color:var(--lyra-silver);white-space:nowrap}
+.quality-value{font-family:'JetBrains Mono',monospace;font-size:14px;font-weight:700;color:var(--lyra-gold);min-width:42px;text-align:right}
+
+.forge-progress{height:4px;background:var(--lyra-iron);border-radius:2px;overflow:hidden;display:none}
+.forge-progress.active{display:block}
+.forge-progress-fill{height:100%;width:0%;background:linear-gradient(90deg,var(--lyra-blood),var(--lyra-crimson),var(--lyra-ember));transition:width 0.5s}
+
+.dep-warn{background:rgba(220,20,60,0.08);border:1px solid rgba(220,20,60,0.3);border-radius:var(--lyra-radius-md);padding:10px 12px;font-size:12px;color:var(--lyra-crimson);display:none}
+.dep-warn.visible{display:block}
+.dep-warn ul{margin:6px 0 0 18px;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--lyra-ash)}
+</style>
+</head>
+<body>
+<div class="lyra-cathedral"></div>
+<header class="lyra-header">
+  <a href="index.html" style="display:flex;align-items:center;gap:10px;text-decoration:none;color:inherit">
+    <div style="width:32px;height:32px;border-radius:6px;background:linear-gradient(135deg,var(--lyra-blood),var(--lyra-crimson));display:flex;align-items:center;justify-content:center;box-shadow:0 0 10px rgba(220,20,60,0.3)"><span style="color:var(--lyra-gold);font-size:16px">⚒</span></div>
+    <span class="lyra-logo">DRAGON <span class="lyra-logo-accent">FORGE</span></span>
+  </a>
+  <div class="lyra-status-pill"><div class="lyra-dot lyra-dot-pulse" id="dotStatus"></div><span id="lblStatus">…</span></div>
+</header>
+
+<div class="forge-layout">
+  <div class="forge-card">
+    <div class="forge-body">
+
+      <!-- Disabled-lanes warning -->
+      <div class="dep-warn" id="depWarn">
+        <i class="material-icons" style="font-size:14px;vertical-align:-2px">info</i>
+        Some conversion lanes are unavailable on this install:
+        <ul id="depList"></ul>
+      </div>
+
+      <!-- Drop zone -->
+      <div class="drop-zone" id="dropZone">
+        <i class="material-icons">whatshot</i>
+        <div style="font-family:'Cinzel',serif;font-size:16px;letter-spacing:2px;color:var(--lyra-ash)">Drop any file</div>
+        <div style="font-size:12px;margin-top:6px;color:var(--lyra-dim)">Images · Audio · Video · Text · Documents</div>
+      </div>
+      <input type="file" id="fileInput" style="display:none">
+
+      <!-- File info -->
+      <div class="file-info" id="fileInfo">
+        <div class="file-info-icon"><i class="material-icons" id="fileIcon">insert_drive_file</i></div>
+        <div class="file-details">
+          <div class="file-name" id="fileName">—</div>
+          <div class="file-meta" id="fileMeta">—</div>
+        </div>
+        <button class="lyra-btn lyra-btn-ghost" id="clearBtn" style="padding:4px 8px"><i class="material-icons" style="font-size:16px">close</i></button>
+      </div>
+
+      <!-- Target format grouped by category -->
+      <div id="targetSection" style="display:none">
+        <div class="lyra-section-title">Convert To</div>
+        <div id="targetGroups"></div>
+      </div>
+
+      <!-- Quality -->
+      <div id="qualitySection" style="display:none">
+        <div class="lyra-section-title">Quality</div>
+        <div class="quality-row">
+          <label>Level:</label>
+          <input class="lyra-range" type="range" id="qualitySlider" min="0" max="100" value="85" style="flex:1">
+          <span class="quality-value" id="qualityValue">85</span>
+        </div>
+      </div>
+
+      <!-- Progress -->
+      <div class="forge-progress" id="progress"><div class="forge-progress-fill" id="progressFill"></div></div>
+
+      <!-- Forge button -->
+      <button class="lyra-btn lyra-btn-primary" id="forgeBtn" disabled style="width:100%;justify-content:center;padding:14px">
+        <i class="material-icons" style="font-size:18px">whatshot</i> FORGE & DOWNLOAD
+      </button>
+
+      <div class="lyra-mono lyra-text-dim" style="font-size:11px;text-align:center" id="statusText">Drop a file to begin</div>
+    </div>
+  </div>
+</div>
+
+<footer class="lyra-footer">
+  <span class="lyra-footer-brand">Dragon Forge · RedForest Labs</span>
+  <span class="lyra-mono" id="footerInfo">Port 8916</span>
+</footer>
+
+<script>
+const API='http://127.0.0.1:8916';
+const $=id=>document.getElementById(id);
+let currentFile=null, currentInfo=null, selectedTarget=null;
+
+const TYPE_ICONS={image:'image',audio:'audiotrack',video:'movie',text:'article',document:'description'};
+const CAT_ORDER=['image','audio','video','text','document'];
+
+// Drop zone
+const dz=$('dropZone'),fi=$('fileInput');
+dz.addEventListener('click',()=>fi.click());
+dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('dragover')});
+dz.addEventListener('dragleave',()=>dz.classList.remove('dragover'));
+dz.addEventListener('drop',e=>{e.preventDefault();dz.classList.remove('dragover');if(e.dataTransfer.files[0])loadFile(e.dataTransfer.files[0])});
+fi.addEventListener('change',()=>{if(fi.files[0])loadFile(fi.files[0])});
+
+async function loadFile(file){
+  currentFile=file;
+  $('fileName').textContent=file.name;
+  $('fileInfo').classList.add('visible');
+  dz.style.display='none';
+  $('statusText').textContent='Inspecting…';
+
+  const fd=new FormData();fd.append('file',file);
+  try{
+    const r=await fetch(`${API}/api/detect`,{method:'POST',body:fd});
+    const d=await r.json();
+    if(!r.ok){
+      $('statusText').textContent='Error: '+(d.error||'detect failed');
+      $('fileMeta').textContent=`${(file.size/1048576).toFixed(2)} MB`;
+      return;
+    }
+    currentInfo=d;
+    $('fileIcon').textContent=TYPE_ICONS[d.category]||'insert_drive_file';
+    $('fileMeta').innerHTML=`<span class="cat-badge ${d.category}">${d.category}</span><span>${d.source_desc}</span><span style="color:var(--lyra-dim)">·</span><span>${d.size_mb} MB</span>`;
+
+    if(!d.targets||d.targets.length===0){
+      $('targetGroups').innerHTML='<div class="empty-targets">No conversion lanes available for this format on the current install.</div>';
+      $('targetSection').style.display='';
+      $('qualitySection').style.display='none';
+      $('statusText').textContent='No converters available';
+      return;
+    }
+    renderTargets(d.targets_by_category);
+    $('targetSection').style.display='';
+    $('qualitySection').style.display='';
+    $('statusText').textContent='Pick a target format';
+  }catch(e){
+    $('statusText').textContent='Error: '+e.message;
+  }
+}
+
+function renderTargets(byCategory){
+  const wrap=$('targetGroups');wrap.innerHTML='';
+  selectedTarget=null;
+  $('forgeBtn').disabled=true;
+
+  const cats=CAT_ORDER.filter(c=>byCategory[c]&&byCategory[c].length);
+  cats.forEach(cat=>{
+    const group=document.createElement('div');
+    group.className='target-group';
+    group.innerHTML=`<div class="target-group-label"><span class="cat-badge ${cat}">${cat}</span></div>`;
+    const grid=document.createElement('div');
+    grid.className='target-grid';
+    byCategory[cat].forEach(t=>{
+      const tile=document.createElement('div');
+      tile.className='target-tile';
+      tile.title=t.via||'';
+      tile.innerHTML=`<div class="target-tile-name">${t.desc}</div><div class="target-tile-ext">.${t.ext}</div>`;
+      tile.addEventListener('click',()=>{
+        document.querySelectorAll('.target-tile').forEach(x=>x.classList.remove('active'));
+        tile.classList.add('active');
+        selectedTarget=t.ext;
+        $('forgeBtn').disabled=false;
+        $('statusText').textContent=`Ready → ${t.desc} (.${t.ext})`;
+      });
+      grid.appendChild(tile);
+    });
+    group.appendChild(grid);
+    wrap.appendChild(group);
+  });
+}
+
+$('clearBtn').addEventListener('click',reset);
+function reset(){
+  currentFile=null;currentInfo=null;selectedTarget=null;
+  $('fileInfo').classList.remove('visible');
+  dz.style.display='';
+  $('targetSection').style.display='none';
+  $('qualitySection').style.display='none';
+  $('forgeBtn').disabled=true;
+  $('statusText').textContent='Drop a file to begin';
+  fi.value='';
+}
+
+$('qualitySlider').addEventListener('input',e=>$('qualityValue').textContent=e.target.value);
+
+// Forge
+$('forgeBtn').addEventListener('click',async()=>{
+  if(!currentFile||!selectedTarget)return;
+
+  $('forgeBtn').disabled=true;
+  $('progress').classList.add('active');
+  $('progressFill').style.width='30%';
+  $('statusText').textContent=`Forging → .${selectedTarget}…`;
+
+  const fd=new FormData();
+  fd.append('file',currentFile);
+  fd.append('target',selectedTarget);
+  fd.append('quality',$('qualitySlider').value);
+
+  try{
+    const r=await fetch(`${API}/api/convert`,{method:'POST',body:fd});
+    if(!r.ok){
+      const err=await r.json().catch(()=>({error:'forge failed'}));
+      throw new Error(err.error||'forge failed');
+    }
+    $('progressFill').style.width='100%';
+    const blob=await r.blob();
+    const disp=r.headers.get('Content-Disposition')||'';
+    const m=disp.match(/filename="?([^"]+)"?/);
+    const filename=m?m[1]:`forged_${Date.now()}.${selectedTarget}`;
+    const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=filename;a.click();
+    $('statusText').textContent=`Done — forged to .${selectedTarget}`;
+  }catch(e){
+    $('statusText').textContent='Error: '+e.message;
+  }
+
+  $('forgeBtn').disabled=false;
+  setTimeout(()=>{$('progress').classList.remove('active');$('progressFill').style.width='0%'},1000);
+});
+
+// Status poll
+async function poll(){
+  try{
+    const r=await fetch(`${API}/api/status`);
+    const d=await r.json();
+    $('dotStatus').className='lyra-dot lyra-dot-ok';
+    $('lblStatus').textContent='Online';
+    if(d.rules_disabled&&d.rules_disabled.length){
+      $('depList').innerHTML=d.rules_disabled.map(r=>`<li>${r.name}${r.note?' — '+r.note:''}</li>`).join('');
+      $('depWarn').classList.add('visible');
+    }else{
+      $('depWarn').classList.remove('visible');
+    }
+  }catch(e){
+    $('dotStatus').className='lyra-dot lyra-dot-error';
+    $('lblStatus').textContent='Offline';
+  }
+}
+poll();setInterval(poll,10000);
+</script>
+</body>
+</html>

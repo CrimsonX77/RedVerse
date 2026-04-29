@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RedVerse Cosmology</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Crimson+Pro:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #09090c;
+  --panel: #120d12;
+  --crimson: #c41230;
+  --gold: #d4a846;
+  --text: #e8e0d8;
+  --muted: #9b8e82;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  min-height: 100vh;
+  font-family: 'Crimson Pro', serif;
+  color: var(--text);
+  background:
+    radial-gradient(circle at 30% 20%, rgba(196,18,48,0.12), transparent 40%),
+    radial-gradient(circle at 70% 70%, rgba(212,168,70,0.08), transparent 35%),
+    var(--bg);
+  display: grid;
+  place-items: center;
+  padding: 1.5rem;
+}
+.card {
+  width: min(860px, 100%);
+  background: linear-gradient(160deg, rgba(18,13,18,0.92), rgba(10,10,12,0.94));
+  border: 1px solid rgba(196,18,48,0.35);
+  border-radius: 14px;
+  padding: 2rem;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.45);
+}
+h1 {
+  font-family: 'Cinzel', serif;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 0.75rem;
+  font-size: clamp(1.25rem, 3vw, 2rem);
+}
+p {
+  color: var(--muted);
+  line-height: 1.6;
+  margin-bottom: 1.3rem;
+  font-size: 1.02rem;
+}
+.path {
+  border-left: 2px solid rgba(212,168,70,0.35);
+  padding-left: 1rem;
+  margin: 1rem 0 1.6rem;
+}
+.path div { margin: 0.45rem 0; }
+.actions {
+  display: flex;
+  gap: 0.8rem;
+  flex-wrap: wrap;
+}
+.btn {
+  text-decoration: none;
+  font-family: 'Cinzel', serif;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  font-size: 0.78rem;
+  padding: 0.75rem 1rem;
+  border-radius: 9px;
+  border: 1px solid rgba(196,18,48,0.35);
+  color: var(--text);
+  background: rgba(196,18,48,0.12);
+}
+.btn:hover { border-color: var(--gold); color: var(--gold); }
+</style>
+</head>
+<body>
+  <main class="card">
+    <h1>Cosmology Gate</h1>
+    <p>
+      The map now routes through Cosmology first, then into the E-Drive heart, and from there into Control.
+    </p>
+
+    <div class="path">
+      <div>Map → <strong>Cosmology</strong></div>
+      <div>Cosmology → <strong>E-Drive</strong></div>
+      <div>E-Drive → <strong>Control Hall</strong></div>
+    </div>
+
+    <div class="actions">
+      <a class="btn" href="EDrive.html">Enter E-Drive</a>
+      <a class="btn" href="control hall/crimson-control-hall.html">Go to Control</a>
+      <a class="btn" href="Redverse.html">Back to RedVerse</a>
+      <a class="btn" href="obelisk_gate.html">Home (Obelisk)</a>
+    </div>
+  </main>
+</body>
+</html>

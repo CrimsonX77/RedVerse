@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gauntlet Protocol — RedVerse</title>
+<link rel="stylesheet" href="lyra.css">
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+<style>
+body { min-height: 100vh; }
+
+.product-page {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 32px 24px 80px;
+}
+
+.product-hero {
+  text-align: center;
+  padding: 48px 20px 36px;
+  position: relative;
+}
+
+.product-hero::before {
+  content: '';
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  width: 300px; height: 100px;
+  background: radial-gradient(ellipse, rgba(220,20,60,0.12), transparent 70%);
+  pointer-events: none;
+}
+
+.product-hero-icon {
+  font-size: 64px;
+  display: block;
+  margin-bottom: 16px;
+  filter: drop-shadow(0 0 20px rgba(220,20,60,0.3));
+}
+
+.product-hero-name {
+  font-family: 'Cinzel', serif;
+  font-size: clamp(1.4rem, 3.5vw, 2.2rem);
+  font-weight: 900;
+  color: var(--lyra-text-bright);
+  letter-spacing: 3px;
+  margin-bottom: 8px;
+}
+
+.product-hero-tagline {
+  font-size: 15px;
+  color: var(--lyra-ash);
+  font-style: italic;
+  letter-spacing: 0.5px;
+  max-width: 500px;
+  margin: 0 auto;
+  line-height: 1.5;
+}
+
+.product-hero-meta {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 20px;
+  flex-wrap: wrap;
+}
+
+.meta-badge {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 1px;
+  padding: 5px 14px;
+  border-radius: var(--lyra-radius-pill);
+  border: 1px solid;
+}
+
+.meta-price {
+  color: var(--lyra-crimson);
+  border-color: rgba(220,20,60,0.3);
+  background: rgba(220,20,60,0.06);
+  font-weight: 700;
+}
+
+.meta-price.free {
+  color: var(--lyra-success);
+  border-color: rgba(0,255,136,0.3);
+  background: rgba(0,255,136,0.06);
+}
+
+.meta-status {
+  color: var(--lyra-success);
+  border-color: rgba(0,255,136,0.3);
+  background: rgba(0,255,136,0.06);
+}
+
+.meta-category {
+  color: var(--lyra-ghost);
+  border-color: var(--lyra-border);
+}
+
+/* Sections */
+.product-section {
+  background: var(--lyra-stone);
+  border: 1px solid var(--lyra-border);
+  border-radius: var(--lyra-radius-lg);
+  padding: 24px;
+  margin-bottom: 16px;
+  position: relative;
+  overflow: hidden;
+}
+
+.product-section::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--lyra-crimson), transparent);
+  opacity: 0.3;
+}
+
+.section-title {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: var(--lyra-crimson);
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.section-title::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, var(--lyra-border), transparent);
+}
+
+.product-description {
+  font-size: 14px;
+  color: var(--lyra-ash);
+  line-height: 1.7;
+}
+
+.feature-list {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.feature-list li {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 13px;
+  color: var(--lyra-silver);
+  line-height: 1.5;
+}
+
+.feature-list li::before {
+  content: '◆';
+  color: var(--lyra-crimson);
+  font-size: 8px;
+  margin-top: 5px;
+  flex-shrink: 0;
+}
+
+.tech-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.tech-tag {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  padding: 4px 10px;
+  background: var(--lyra-obsidian);
+  border: 1px solid var(--lyra-border);
+  border-radius: var(--lyra-radius-sm);
+  color: var(--lyra-ash);
+}
+
+.install-block {
+  background: var(--lyra-void);
+  border: 1px solid var(--lyra-border);
+  border-radius: var(--lyra-radius-md);
+  padding: 14px 18px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: var(--lyra-cyan);
+  white-space: pre-wrap;
+  line-height: 1.8;
+  overflow-x: auto;
+}
+
+.product-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+
+.product-actions .lyra-btn {
+  flex: 1;
+  min-width: 140px;
+  justify-content: center;
+}
+</style>
+</head>
+<body>
+<div class="lyra-cathedral"></div>
+
+<header class="lyra-header">
+  <a href="index.html" style="display:flex;align-items:center;gap:10px;text-decoration:none;color:inherit">
+    <div style="width:32px;height:32px;border-radius:6px;background:linear-gradient(135deg,var(--lyra-blood),var(--lyra-crimson));display:flex;align-items:center;justify-content:center;box-shadow:0 0 10px rgba(220,20,60,0.3)">
+      <span style="color:var(--lyra-gold);font-size:16px">♦</span>
+    </div>
+    <span class="lyra-logo">RED<span class="lyra-logo-accent">VERSE</span></span>
+  </a>
+  <div style="display:flex;align-items:center;gap:16px">
+    <a href="redverse-shop.html" class="lyra-btn" style="padding:6px 14px;font-size:12px">
+      <i class="material-icons" style="font-size:16px">store</i> Shop
+    </a>
+  </div>
+</header>
+
+<main class="product-page">
+  <div class="product-hero">
+    <span class="product-hero-icon">🧤</span>
+    <h1 class="product-hero-name">Gauntlet Protocol</h1>
+    <p class="product-hero-tagline">Silent observation. Automated punishment. No mercy, only patterns.</p>
+    <div class="product-hero-meta">
+      <span class="meta-badge meta-price ">$4.20 NZD</span>
+      <span class="meta-badge meta-status">● Available</span>
+      <span class="meta-badge meta-category">Dragon Tools</span>
+    </div>
+  </div>
+
+  <div class="product-section">
+    <div class="section-title">About</div>
+    <p class="product-description">RAM and process monitoring with automated cleanup. The Gauntlet watches your system silently, identifies resource hogs by pattern, and takes action. Persistent state tracking means it learns what's normal and what's not. The quiet enforcer.</p>
+  </div>
+
+  <div class="product-section">
+    <div class="section-title">Features</div>
+    <ul class="feature-list">
+      <li>Real-time RAM and process monitoring</li>
+      <li>Pattern-based resource hog detection</li>
+      <li>Automated cleanup with configurable thresholds</li>
+      <li>Persistent state tracking across sessions</li>
+      <li>Network port monitoring</li>
+      <li>PyQt6 GUI + headless CLI mode</li>
+    </ul>
+  </div>
+
+  <div class="product-section">
+    <div class="section-title">Tech Stack</div>
+    <div class="tech-tags">
+      <span class="tech-tag">Python</span>
+      <span class="tech-tag">PyQt6</span>
+      <span class="tech-tag">psutil</span>
+      <span class="tech-tag">socket</span>
+    </div>
+  </div>
+
+  <div class="product-section">
+    <div class="section-title">Quick Start</div>
+    <div class="install-block">pip install PyQt6
+python gauntlet.py</div>
+    <div class="product-actions" style="margin-top:16px">
+      <a href="redverse-shop.html" class="lyra-btn lyra-btn-primary">
+        <i class="material-icons" style="font-size:16px">shopping_cart</i> Get from Shop
+      </a>
+      <a href="redverse-shop.html" class="lyra-btn">
+        <i class="material-icons" style="font-size:16px">arrow_back</i> Back to Catalog
+      </a>
+    </div>
+  </div>
+</main>
+
+<footer class="lyra-footer">
+  <span class="lyra-footer-brand">Gauntlet Protocol · RedVerse Tools</span>
+  <span class="lyra-mono">♦ Crimson Valentine 2026</span>
+</footer>
+</body>
+</html>
