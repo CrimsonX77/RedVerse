@@ -10,7 +10,7 @@ Usage:
 Author: Crimson Valentine
 Date: January 9, 2026
 """
-python3 consciousness-server.py --soul Sable_Cathedral_v5_3.yaml --port 7777
+# Example: python3 consciousness-server.py --soul Sable_Cathedral_v5_3.yaml --port 7777
 import argparse
 import socket
 import threading

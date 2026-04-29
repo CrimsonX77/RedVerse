@@ -46,20 +46,27 @@ ASSET_FOLDERS = {
 
 # (display_name, script_file, port, emoji)
 SERVERS = [
-    ("Main API",       "server.py",               8800, "🌐"),
-    ("Audio Cutter",   "audiocutter_server.py",    8914, "✂️"),
-    ("Loop Pad",       "looppad_server.py",        8912, "🎵"),
-    ("MultiTool",      "multitool_server.py",      8913, "🔧"),
-    ("QuickCam",       "quickcam_server.py",       8910, "🎥"),
-    ("Speaker",        "speaker_server.py",        8911, "🔊"),
-    ("Vision Switchboard", "vision_switchboard_server.py", 8920, "🧠"),
-    ("Checkout / Shop","checkout_server.py",       8915, "🛒"),
-    ("Dragon Forge",    "dragon_forge_server.py",    8916, "🐉"),
-    ("Dragon Cleaner",  "dragon_cleaner_server.py",  8917, "🧹"),
-    ("Gauntlet Protocol","gauntlet_server.py",       8918, "⚔️"),
-    ("Void Eater",      "void_eater_server.py",      8919, "🕳️"),
-    ("Consciousness",   "consciousness_server.py",   7777, "🧠"),
-    ("Control Backend", "control hall/crimson_control_backend.py", 8933, "⚡"),
+    ("Main API",           "server.py",                    8800, "🌐"),
+    ("Audio Cutter",       "audiocutter_server.py",        8914, "✂️"),
+    ("Loop Pad",           "looppad_server.py",            8912, "🎵"),
+    ("MultiTool",          "multitool_server.py",          8913, "🔧"),
+    ("QuickCam",           "quickcam_server.py",           8910, "🎥"),
+    ("Speaker",            "speaker_server.py",            8911, "🔊"),
+    ("Vision Switchboard", "vision_switchboard_server.py", 8920, "👁️"),
+    ("Checkout / Shop",    "checkout_server.py",           8915, "🛒"),
+    ("Dragon Forge",       "dragon_forge_server.py",       8916, "🐉"),
+    ("Dragon Cleaner",     "dragon_cleaner_server.py",     8917, "🧹"),
+    ("Gauntlet Protocol",  "gauntlet_server.py",           8918, "⚔️"),
+    ("Void Eater",         "void_eater_server.py",         8919, "🕳️"),
+    ("RedVox",             "redvox_server.py",             8921, "🩸"),
+    ("RedVault Indexer",   "redvault_indexer_server.py",   8923, "📇"),
+    ("Narrator",           "narrator_server.py",           8930, "🗣️"),
+    ("Recorder",           "recorder_server.py",           8931, "🎙️"),
+    ("Screen Recorder",    "screen_recorder_server.py",    8932, "🖥️"),
+    ("OmniSensor HUD",     "omnisensor_server.py",         8933, "⚡"),
+    ("Lyra Forge",         "lyra_forge_server.py",         8667, "🖼️"),
+    ("Embodiment",         "embodiment_server.py",         5000, "🤖"),
+    ("Consciousness",      "consciousness_server.py",      7777, "🧠"),
 ]
 
 processes: list[tuple[str, int, subprocess.Popen]] = []
@@ -183,14 +190,19 @@ if __name__ == "__main__":
     health_check()
 
     print(f"\n{G}  {ok}/{len(SERVERS)} services running{RST}")
-    print(f"\n  {DIM}Main site  {RST}→ {B}http://127.0.0.1:8800{RST}")
-    print(f"  {DIM}Shop       {RST}→ {B}http://127.0.0.1:8915{RST}")
-    print(f"  {DIM}Speaker    {RST}→ {B}http://127.0.0.1:8911{RST}")
-    print(f"  {DIM}QuickCam   {RST}→ {B}http://127.0.0.1:8910{RST}")
-    print(f"  {DIM}Dragon Forge{RST}→ {B}http://127.0.0.1:8916{RST}")
-    print(f"  {DIM}Dragon Cleaner{RST}→ {B}http://127.0.0.1:8917{RST}")
-    print(f"  {DIM}Gauntlet   {RST}→ {B}http://127.0.0.1:8918{RST}")
-    print(f"  {DIM}Void Eater {RST}→ {B}http://127.0.0.1:8919{RST}")
+    print(f"\n  {DIM}Main site    {RST}→ {B}http://127.0.0.1:8800{RST}")
+    print(f"  {DIM}Shop         {RST}→ {B}http://127.0.0.1:8915{RST}")
+    print(f"  {DIM}Speaker      {RST}→ {B}http://127.0.0.1:8911{RST}")
+    print(f"  {DIM}QuickCam     {RST}→ {B}http://127.0.0.1:8910{RST}")
+    print(f"  {DIM}Dragon Forge {RST}→ {B}http://127.0.0.1:8916{RST}")
+    print(f"  {DIM}Dragon Clean {RST}→ {B}http://127.0.0.1:8917{RST}")
+    print(f"  {DIM}Gauntlet     {RST}→ {B}http://127.0.0.1:8918{RST}")
+    print(f"  {DIM}Void Eater   {RST}→ {B}http://127.0.0.1:8919{RST}")
+    print(f"  {DIM}Vision       {RST}→ {B}http://127.0.0.1:8920{RST}")
+    print(f"  {DIM}RedVox       {RST}→ {B}http://127.0.0.1:8921{RST}")
+    print(f"  {DIM}RedVault     {RST}→ {B}http://127.0.0.1:8923{RST}")
+    print(f"  {DIM}OmniSensor   {RST}→ {B}http://127.0.0.1:8933{RST}")
+    print(f"  {DIM}Lyra Forge   {RST}→ {B}http://127.0.0.1:8667{RST}")
     print(f"\n  {DIM}Ctrl+C to stop everything.{RST}\n")
 
     try:
