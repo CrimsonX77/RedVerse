@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>w-AI-fu! — Welcome Backstage</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&family=JetBrains+Mono:wght@300;400&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+:root {
+  --crimson: #c41230;
+  --crimson-dark: #8b0a20;
+  --crimson-glow: #ff1a3d;
+  --gold: #d4a846;
+  --gold-dim: #a8843a;
+  --neon-pink: #ff2d7b;
+  --neon-cyan: #00e5ff;
+  --green: #10b981;
+  --silver: #b8c0cc;
+  --silver-dim: #6b7280;
+  --text-primary: #e8e0d8;
+  --text-secondary: #9b8e82;
+  --font-display: 'Orbitron', sans-serif;
+  --font-body: 'Crimson Pro', serif;
+  --font-mono: 'JetBrains Mono', monospace;
+  --font-church: 'Cinzel', serif;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  background: #000;
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg, transparent, transparent 2px,
+    rgba(0,0,0,0.06) 2px, rgba(0,0,0,0.06) 4px
+  );
+  pointer-events: none;
+  z-index: 10;
+}
+
+.bg-stage {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  background:
+    radial-gradient(ellipse at 30% 20%, rgba(16, 185, 129, 0.04) 0%, transparent 50%),
+    radial-gradient(ellipse at 70% 80%, rgba(0, 229, 255, 0.03) 0%, transparent 50%),
+    radial-gradient(ellipse at 50% 50%, rgba(255, 45, 123, 0.02) 0%, transparent 60%),
+    #000;
+}
+
+.vignette {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.6) 100%);
+  z-index: 1;
+}
+
+/* Nav */
+.waifu-nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 1rem 2rem;
+  background: rgba(10, 10, 12, 0.85);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(16, 185, 129, 0.2);
+}
+.waifu-nav .nav-brand {
+  font-family: var(--font-display);
+  font-size: 1rem; font-weight: 700;
+  color: var(--neon-pink); text-decoration: none; letter-spacing: 0.15em;
+}
+.waifu-nav .nav-status {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  letter-spacing: 0.15em;
+  color: var(--green);
+}
+.waifu-nav .nav-status::before {
+  content: '●';
+  margin-right: 6px;
+  animation: statusPulse 2s ease-in-out infinite;
+}
+@keyframes statusPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+/* Container */
+.club-container {
+  position: relative;
+  z-index: 2;
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 6rem 2rem 4rem;
+}
+
+/* Welcome header */
+.welcome-header {
+  text-align: center;
+  margin-bottom: 3rem;
+  padding-bottom: 2rem;
+  border-bottom: 1px solid rgba(16, 185, 129, 0.15);
+  animation: fadeUp 1s ease forwards;
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.welcome-badge {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--green);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  padding: 6px 16px;
+  margin-bottom: 1.5rem;
+}
+
+.welcome-header h1 {
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: clamp(1.8rem, 4vw, 2.8rem);
+  letter-spacing: 0.15em;
+  color: var(--text-primary);
+  margin-bottom: 0.75rem;
+}
+
+.welcome-header h1 span {
+  color: var(--neon-pink);
+}
+
+.welcome-header p {
+  font-family: var(--font-body);
+  font-style: italic;
+  color: var(--text-secondary);
+  font-size: 1.1rem;
+  max-width: 550px;
+  margin: 0 auto;
+  line-height: 1.8;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   DOWNLOAD CARDS
+   ═══════════════════════════════════════════════════════════════ */
+.download-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 2rem;
+  margin-bottom: 3rem;
+}
+
+.download-card {
+  background: linear-gradient(135deg, rgba(20, 5, 15, 0.7), rgba(10, 10, 12, 0.9));
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 2rem;
+  text-align: center;
+  transition: all 0.4s ease;
+  animation: fadeUp 1s ease forwards;
+  opacity: 0;
+}
+
+.download-card:nth-child(1) { animation-delay: 0.2s; }
+.download-card:nth-child(2) { animation-delay: 0.4s; }
+.download-card:nth-child(3) { animation-delay: 0.6s; }
+
+.download-card:hover {
+  border-color: rgba(255, 45, 123, 0.4);
+  box-shadow: 0 0 40px rgba(255, 45, 123, 0.1);
+  transform: translateY(-4px);
+}
+
+.dl-icon {
+  font-size: 2.5rem;
+  margin-bottom: 1rem;
+}
+
+.dl-name {
+  font-family: var(--font-display);
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: var(--text-primary);
+  margin-bottom: 0.5rem;
+}
+
+.dl-version {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  color: var(--silver-dim);
+  letter-spacing: 0.1em;
+  margin-bottom: 1rem;
+}
+
+.dl-desc {
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  margin-bottom: 1.5rem;
+}
+
+/* Download button */
+.dl-btn {
+  display: inline-block;
+  font-family: var(--font-display);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  padding: 0.75rem 2rem;
+  color: #fff;
+  background: linear-gradient(135deg, var(--crimson-dark), var(--crimson));
+  border: 1px solid var(--crimson);
+  text-decoration: none;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.dl-btn:hover {
+  background: linear-gradient(135deg, var(--crimson), var(--neon-pink));
+  box-shadow: 0 0 20px rgba(255, 45, 123, 0.3);
+  border-color: var(--neon-pink);
+}
+
+.dl-btn.general {
+  background: linear-gradient(135deg, #0a3d5c, #0d6eac);
+  border-color: var(--neon-cyan);
+}
+
+.dl-btn.general:hover {
+  background: linear-gradient(135deg, #0d6eac, var(--neon-cyan));
+  box-shadow: 0 0 20px rgba(0, 229, 255, 0.3);
+}
+
+.dl-size {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  color: var(--silver-dim);
+  margin-top: 0.75rem;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   SETUP GUIDE
+   ═══════════════════════════════════════════════════════════════ */
+.setup-section {
+  background: rgba(10, 10, 12, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  padding: 2.5rem;
+  margin-bottom: 3rem;
+  animation: fadeUp 1s ease 0.8s forwards;
+  opacity: 0;
+}
+
+.setup-section h2 {
+  font-family: var(--font-display);
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--neon-cyan);
+  margin-bottom: 1.5rem;
+}
+
+.setup-step {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  align-items: flex-start;
+}
+
+.setup-step:last-child { margin-bottom: 0; }
+
+.step-num {
+  font-family: var(--font-display);
+  font-size: 0.7rem;
+  font-weight: 900;
+  color: var(--neon-pink);
+  background: rgba(255, 45, 123, 0.1);
+  border: 1px solid rgba(255, 45, 123, 0.2);
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.step-text {
+  font-family: var(--font-body);
+  font-size: 1rem;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+.step-text code {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  color: var(--neon-cyan);
+  background: rgba(0, 229, 255, 0.05);
+  padding: 2px 6px;
+  border: 1px solid rgba(0, 229, 255, 0.1);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   PAYWALL BOUNCE (shown if no valid session)
+   ═══════════════════════════════════════════════════════════════ */
+.paywall-bounce {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 500;
+  background: #000;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2rem;
+  text-align: center;
+  padding: 2rem;
+}
+
+.paywall-bounce.active {
+  display: flex;
+}
+
+.paywall-bounce h2 {
+  font-family: var(--font-display);
+  font-size: 1.2rem;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  color: var(--crimson);
+}
+
+.paywall-bounce p {
+  font-family: var(--font-body);
+  font-size: 1rem;
+  color: var(--text-secondary);
+  max-width: 400px;
+}
+
+.paywall-bounce a {
+  font-family: var(--font-display);
+  font-size: 0.75rem;
+  letter-spacing: 0.15em;
+  padding: 0.75rem 2rem;
+  color: #fff;
+  background: linear-gradient(135deg, var(--crimson-dark), var(--neon-pink));
+  border: 1px solid var(--neon-pink);
+  text-decoration: none;
+  text-transform: uppercase;
+  transition: all 0.3s;
+}
+
+.paywall-bounce a:hover {
+  box-shadow: 0 0 30px rgba(255, 45, 123, 0.3);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .download-grid { grid-template-columns: 1fr; }
+  .club-container { padding: 5rem 1rem 2rem; }
+  .setup-section { padding: 1.5rem; }
+}
+</style>
+</head>
+<body>
+<nav style="position:fixed;top:12px;left:16px;z-index:9999;"><a href="index.html" style="font-family:Cinzel,serif;font-size:0.75rem;color:#d4a846;text-decoration:none;letter-spacing:0.15em;opacity:0.7;transition:opacity 0.3s;" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.7">⬡ PORTAL</a></nav>
+
+<!-- ═══ PAYWALL BOUNCE (if no Stripe session_id) ═══ -->
+<div class="paywall-bounce" id="paywallBounce">
+  <h2>Backstage Pass Required</h2>
+  <p>You need to purchase the w-AI-fu! Starter Pack to access this page.</p>
+  <a href="waifu_support.html">Get Your Pass — $39</a>
+</div>
+
+<!-- ═══ NAV ═══ -->
+<nav class="waifu-nav">
+  <a href="index_waifu.html" class="nav-brand">w-AI-fu!</a>
+  <div class="nav-status">BACKSTAGE ACCESS</div>
+</nav>
+
+<div class="bg-stage"></div>
+<div class="vignette"></div>
+
+<div class="club-container" id="clubContent">
+
+  <header class="welcome-header">
+    <div class="welcome-badge">✓ Payment Confirmed</div>
+    <h1>Welcome <span>Backstage</span></h1>
+    <p>
+      Your downloads are ready. Thank you for feeding the forge.
+    </p>
+  </header>
+
+  <!-- ═══ DOWNLOADS ═══ -->
+  <div class="download-grid">
+    <div class="download-card">
+      <div class="dl-icon">🎸</div>
+      <div class="dl-name">w-AI-fu! Club</div>
+      <div class="dl-version">v1.0 · April 2026</div>
+      <div class="dl-desc">
+        Full band ecosystem — character profiles, lore packs,
+        prompt frameworks, companion system.
+      </div>
+      <!-- ═══ REPLACE: Link to your hosted ZIP ═══ -->
+      <a class="dl-btn" href="downloads/waifu_club_v1.zip" download>
+        Download ZIP
+      </a>
+      <div class="dl-size">~XX MB · ZIP</div>
+    </div>
+
+    <div class="download-card">
+      <div class="dl-icon">🐱</div>
+      <div class="dl-name">DGM + Catgirl App</div>
+      <div class="dl-version">v1.0 · April 2026</div>
+      <div class="dl-desc">
+        Digital Girl Manager with catgirl companion interface.
+        18+ content — personality engine and interactive sessions.
+      </div>
+      <!-- ═══ REPLACE: Link to your hosted ZIP ═══ -->
+      <a class="dl-btn" href="downloads/dgm_catgirl_v1.zip" download>
+        Download ZIP
+      </a>
+      <div class="dl-size">~XX MB · ZIP · 18+</div>
+    </div>
+
+    <div class="download-card">
+      <div class="dl-icon">🖼️</div>
+      <div class="dl-name">CrimsonFrame</div>
+      <div class="dl-version">v1.0 · April 2026</div>
+      <div class="dl-desc">
+        General-audience creative framework. Visual tools,
+        prompt suite, and the RedVerse design system.
+      </div>
+      <!-- ═══ REPLACE: Link to your hosted ZIP ═══ -->
+      <a class="dl-btn general" href="downloads/crimsonframe_v1.zip" download>
+        Download ZIP
+      </a>
+      <div class="dl-size">~XX MB · ZIP · All Ages</div>
+    </div>
+  </div>
+
+  <!-- ═══ QUICK SETUP ═══ -->
+  <div class="setup-section">
+    <h2>Quick Start</h2>
+
+    <div class="setup-step">
+      <div class="step-num">1</div>
+      <div class="step-text">Unzip the downloaded file to a folder on your machine.</div>
+    </div>
+
+    <div class="setup-step">
+      <div class="step-num">2</div>
+      <div class="step-text">Open <code>index.html</code> in any modern browser (Chrome, Firefox, Edge).</div>
+    </div>
+
+    <div class="setup-step">
+      <div class="step-num">3</div>
+      <div class="step-text">
+        For AI features, install <code>Ollama</code> locally or configure your
+        API keys in the settings panel. See the included <code>SETUP.md</code> for details.
+      </div>
+    </div>
+
+    <div class="setup-step">
+      <div class="step-num">4</div>
+      <div class="step-text">
+        Issues? Open a ticket at
+        <a href="https://github.com/CrimsonX77/RedVerse/issues"
+           style="color:var(--neon-cyan);text-decoration:none;border-bottom:1px solid rgba(0,229,255,0.3);"
+           target="_blank">GitHub</a>
+        or email crimsonvalentine@redverse.dev
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script src="js/config.js"></script>
+<script src="js/auth.js"></script>
+<script>
+// ═══ SIMPLE PAYWALL CHECK ═══
+// Stripe Payment Links append ?session_id=xxx on redirect.
+// If present, we mark access in sessionStorage.
+// If not present AND no stored access, bounce to support page.
+//
+// NOTE: This is a soft gate for GitHub Pages (static hosting).
+// Determined users can bypass it. For hard enforcement,
+// use Stripe's customer portal + a real backend.
+// For your use case this is fine — honest people pay.
+
+(function() {
+  const params = new URLSearchParams(window.location.search);
+  const sessionId = params.get('session_id');
+
+  if (sessionId) {
+    // Came from Stripe — grant access
+    sessionStorage.setItem('waifu_access', 'true');
+    sessionStorage.setItem('waifu_session', sessionId);
+    // Clean URL
+    window.history.replaceState({}, '', window.location.pathname);
+  }
+
+  const hasAccess = sessionStorage.getItem('waifu_access');
+
+  if (!hasAccess) {
+    document.getElementById('paywallBounce').classList.add('active');
+    document.getElementById('clubContent').style.display = 'none';
+  }
+})();
+</script>
+</body>
+</html>

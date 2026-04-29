@@ -1,0 +1,969 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tools — RedVerse</title>
+<link rel="stylesheet" href="lyra.css">
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+<style>
+/* ═══════════════════════════════════════════════════════════════
+   TOOLS HUB — bespoke layout on top of lyra.css
+   Media slots marked <!-- SLOT:... --> for asset drop-in later
+   ═══════════════════════════════════════════════════════════════ */
+
+html, body { min-height: 100vh; }
+body { display: flex; flex-direction: column; }
+
+/* ─── Page background slot ─────────────────────────────────────
+   Replace the .bg-media child with a <video> or <img> whenever
+   you have one. Fallback below is the cathedral gradient. */
+.page-bg {
+  position: fixed; inset: 0; z-index: -2;
+  background: radial-gradient(ellipse at 20% 30%, rgba(220,20,60,0.08), transparent 60%),
+              radial-gradient(ellipse at 80% 70%, rgba(255,215,0,0.04), transparent 60%),
+              var(--lyra-void);
+  overflow: hidden;
+}
+.page-bg .bg-media {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  object-fit: cover;
+  opacity: 0.35;
+  filter: brightness(0.5) contrast(1.1) saturate(1.1);
+}
+.page-bg::after {
+  content: ''; position: absolute; inset: 0;
+  background: linear-gradient(180deg,
+    rgba(6,6,10,0.4) 0%,
+    rgba(6,6,10,0.75) 60%,
+    rgba(6,6,10,0.95) 100%);
+}
+
+/* ─── Hero title block ────────────────────────────────────────── */
+.tools-hero {
+  position: relative;
+  padding: 88px 24px 48px;
+  text-align: center;
+  overflow: hidden;
+  border-bottom: 1px solid var(--lyra-border);
+  isolation: isolate;
+}
+/* Title-box media slot — lives behind the title, tinted */
+.tools-hero .hero-media {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  object-fit: cover;
+  opacity: 0.25;
+  filter: brightness(0.4) contrast(1.2) saturate(0.85);
+  z-index: -1;
+}
+.tools-hero::before {
+  content: ''; position: absolute; inset: 0;
+  background: radial-gradient(ellipse 60% 80% at 50% 20%, rgba(220,20,60,0.15), transparent 70%);
+  z-index: -1;
+}
+.tools-hero::after {
+  content: ''; position: absolute; left: 50%; bottom: 0;
+  width: 60%; height: 1px;
+  transform: translateX(-50%);
+  background: linear-gradient(90deg, transparent, var(--lyra-crimson) 30%, var(--lyra-gold) 50%, var(--lyra-crimson) 70%, transparent);
+  opacity: 0.6;
+}
+.tools-hero-sigil {
+  width: 56px; height: 56px;
+  margin: 0 auto 18px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, var(--lyra-blood), var(--lyra-crimson));
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 0 24px rgba(220,20,60,0.35),
+              inset 0 1px 0 rgba(255,215,0,0.2);
+}
+.tools-hero-sigil .material-icons {
+  color: var(--lyra-gold);
+  font-size: 28px;
+}
+.tools-hero h1 {
+  font-family: 'Cinzel', serif;
+  font-size: clamp(1.8rem, 4.5vw, 3rem);
+  font-weight: 900;
+  letter-spacing: 4px;
+  color: var(--lyra-text-bright);
+  text-shadow: 0 0 30px rgba(220,20,60,0.3);
+  margin-bottom: 8px;
+}
+.tools-hero h1 .accent {
+  background: linear-gradient(135deg, var(--lyra-crimson), var(--lyra-gold));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.tools-hero p {
+  max-width: 620px;
+  margin: 0 auto;
+  color: var(--lyra-ash);
+  font-family: 'Crimson Pro', serif;
+  font-size: 17px;
+  font-style: italic;
+  line-height: 1.5;
+}
+.tools-hero .hero-meta {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 22px;
+  flex-wrap: wrap;
+}
+.hero-chip {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 1.5px;
+  padding: 5px 14px;
+  border-radius: var(--lyra-radius-pill);
+  border: 1px solid rgba(220,20,60,0.3);
+  background: rgba(220,20,60,0.06);
+  color: var(--lyra-crimson);
+  text-transform: uppercase;
+}
+.hero-chip.gold {
+  border-color: rgba(255,215,0,0.3);
+  background: rgba(255,215,0,0.05);
+  color: var(--lyra-gold);
+}
+
+/* ─── Section filters / nav strip ───────────────────────────── */
+.tools-filter {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: rgba(6,6,10,0.85);
+  backdrop-filter: blur(14px);
+  border-bottom: 1px solid var(--lyra-border);
+  padding: 14px 24px;
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+.filter-chip {
+  font-family: 'Cinzel', serif;
+  font-size: 12px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  padding: 7px 16px;
+  border-radius: var(--lyra-radius-pill);
+  border: 1px solid var(--lyra-border);
+  background: var(--lyra-obsidian);
+  color: var(--lyra-ash);
+  cursor: pointer;
+  transition: all 0.2s var(--lyra-ease-smooth);
+  user-select: none;
+}
+.filter-chip:hover {
+  border-color: rgba(220,20,60,0.4);
+  color: var(--lyra-silver);
+}
+.filter-chip.active {
+  border-color: var(--lyra-gold);
+  background: linear-gradient(135deg, rgba(220,20,60,0.12), rgba(255,215,0,0.08));
+  color: var(--lyra-gold);
+  box-shadow: 0 0 0 1px rgba(255,215,0,0.25);
+}
+
+/* ─── Tools grid ─────────────────────────────────────────────── */
+.tools-layout {
+  flex: 1;
+  max-width: 1280px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 36px 24px 64px;
+}
+.tools-section {
+  margin-bottom: 48px;
+}
+.tools-section-header {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  margin-bottom: 20px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--lyra-border);
+}
+.tools-section-title {
+  font-family: 'Cinzel', serif;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  color: var(--lyra-gold);
+}
+.tools-section-count {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--lyra-text-dim);
+}
+.tools-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 18px;
+}
+
+/* ─── Tool card ──────────────────────────────────────────────── */
+.tool-card {
+  position: relative;
+  background: var(--lyra-stone);
+  border: 1px solid var(--lyra-border);
+  border-radius: var(--lyra-radius-lg);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: all 0.3s var(--lyra-ease-smooth);
+  text-decoration: none;
+  color: inherit;
+  isolation: isolate;
+}
+.tool-card::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--lyra-crimson) 20%, var(--lyra-gold) 50%, var(--lyra-crimson) 80%, transparent);
+  opacity: 0;
+  transition: opacity 0.3s;
+  z-index: 2;
+}
+.tool-card:hover {
+  transform: translateY(-3px);
+  border-color: rgba(220,20,60,0.4);
+  box-shadow: 0 12px 32px rgba(0,0,0,0.5),
+              0 0 24px rgba(220,20,60,0.12);
+}
+.tool-card:hover::before { opacity: 1; }
+
+/* Card media slot — 16:9 preview for each tool */
+.tool-media {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  background: var(--lyra-obsidian);
+  overflow: hidden;
+  border-bottom: 1px solid var(--lyra-border);
+}
+.tool-media .media-asset {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  object-fit: cover;
+  opacity: 0.75;
+  transition: transform 0.5s var(--lyra-ease-smooth), opacity 0.3s;
+}
+.tool-card:hover .tool-media .media-asset {
+  transform: scale(1.05);
+  opacity: 1;
+}
+/* Placeholder glyph when no asset */
+.tool-media .media-placeholder {
+  position: absolute; inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background:
+    radial-gradient(ellipse at center, rgba(220,20,60,0.08), transparent 65%),
+    linear-gradient(135deg, var(--lyra-obsidian) 0%, var(--lyra-stone) 100%);
+}
+.tool-media .media-placeholder .material-icons {
+  font-size: 54px;
+  color: rgba(220,20,60,0.25);
+  filter: drop-shadow(0 0 18px rgba(220,20,60,0.3));
+}
+.tool-media::after {
+  content: '';
+  position: absolute; inset: 0;
+  background: linear-gradient(180deg, transparent 50%, rgba(10,10,12,0.85) 100%);
+  pointer-events: none;
+}
+
+/* Status pill overlay */
+.tool-status {
+  position: absolute;
+  top: 10px; right: 10px;
+  z-index: 2;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  padding: 3px 9px;
+  border-radius: var(--lyra-radius-pill);
+  backdrop-filter: blur(8px);
+  border: 1px solid;
+}
+.tool-status.live {
+  background: rgba(0,255,136,0.12);
+  color: var(--lyra-success);
+  border-color: rgba(0,255,136,0.3);
+}
+.tool-status.beta {
+  background: rgba(255,215,0,0.12);
+  color: var(--lyra-gold);
+  border-color: rgba(255,215,0,0.3);
+}
+.tool-status.wip {
+  background: rgba(220,20,60,0.12);
+  color: var(--lyra-crimson);
+  border-color: rgba(220,20,60,0.3);
+}
+.tool-status.desktop {
+  background: rgba(188,19,254,0.12);
+  color: var(--lyra-magenta);
+  border-color: rgba(188,19,254,0.3);
+}
+
+/* Card body */
+.tool-body {
+  padding: 16px 18px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex: 1;
+}
+.tool-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.tool-icon {
+  width: 36px; height: 36px;
+  border-radius: var(--lyra-radius-md);
+  background: linear-gradient(135deg, var(--lyra-blood), var(--lyra-crimson));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 0 12px rgba(220,20,60,0.25);
+}
+.tool-icon .material-icons {
+  color: var(--lyra-gold);
+  font-size: 18px;
+}
+.tool-name {
+  font-family: 'Cinzel', serif;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  color: var(--lyra-text-bright);
+  line-height: 1.2;
+}
+.tool-tagline {
+  font-family: 'Crimson Pro', serif;
+  font-size: 13px;
+  font-style: italic;
+  color: var(--lyra-ash);
+  line-height: 1.45;
+}
+.tool-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: auto;
+  padding-top: 10px;
+  border-top: 1px dashed var(--lyra-border);
+}
+.tool-tag {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: var(--lyra-text-dim);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+.tool-launch {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: 'Cinzel', serif;
+  font-size: 10px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--lyra-gold);
+  transition: transform 0.2s;
+}
+.tool-card:hover .tool-launch {
+  transform: translateX(3px);
+}
+
+/* Hidden state for filter */
+.tool-card.filter-hidden { display: none; }
+.tools-section.filter-empty { display: none; }
+
+/* ─── Footer ─────────────────────────────────────────────────── */
+.tools-footer {
+  padding: 28px 24px;
+  text-align: center;
+  border-top: 1px solid var(--lyra-border);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--lyra-text-dim);
+  letter-spacing: 1px;
+  background: rgba(6,6,10,0.6);
+}
+.tools-footer .sep { color: rgba(220,20,60,0.5); margin: 0 10px; }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     SLOT: PAGE BACKGROUND MEDIA
+     Uncomment and point src to your asset when ready.
+     ═══════════════════════════════════════════════════════════════ -->
+<div class="page-bg">
+  <img class="bg-media" src="assets/tools-bgimage.jpg" alt="Tools Background">
+  <!-- <img class="bg-media" src="assets/tools-bg.jpg" alt=""> -->
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     NAV — copy from Redverse.html for consistency
+     (Kept minimal here; swap for full nav when integrating)
+     ═══════════════════════════════════════════════════════════════ -->
+<header class="lyra-header">
+  <a href="Redverse.html" style="display:flex;align-items:center;gap:10px;text-decoration:none;color:inherit">
+    <div style="width:32px;height:32px;border-radius:6px;background:linear-gradient(135deg,var(--lyra-blood),var(--lyra-crimson));display:flex;align-items:center;justify-content:center;box-shadow:0 0 10px rgba(220,20,60,0.3)">
+      <span style="color:var(--lyra-gold);font-size:16px">♦</span>
+    </div>
+    <span class="lyra-logo">RED<span class="lyra-logo-accent">VERSE</span></span>
+  </a>
+  <div style="display:flex;gap:14px;align-items:center">
+    <a href="Redverse.html" class="lyra-btn lyra-btn-ghost" style="padding:6px 14px;font-size:12px">
+      <i class="material-icons" style="font-size:16px">arrow_back</i> Home
+    </a>
+    <a href="redverse-shop.html" class="lyra-btn" style="padding:6px 14px;font-size:12px">
+      <i class="material-icons" style="font-size:16px">store</i> Shop
+    </a>
+  </div>
+</header>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     HERO / TITLE BOX
+     SLOT: TITLE-BOX BACKGROUND MEDIA — uncomment when ready
+     ═══════════════════════════════════════════════════════════════ -->
+<section class="tools-hero">
+  <video class="hero-media" autoplay loop muted playsinline>
+    <source src="assets/tools-hero.mp4" type="video/mp4">
+  </video>
+  <img class="hero-media" src="assets/tools-hero.jpg" alt="Tools Hero">
+
+  <div class="tools-hero-sigil">
+    <i class="material-icons">build</i>
+  </div>
+  <h1>The <span class="accent">Forge</span></h1>
+  <p>Sixteen tools carved from the cathedral. Each one solves something specific. Together they are the workbench the RedVerse runs on.</p>
+  <div class="hero-meta">
+    <span class="hero-chip">20 Tools</span>
+    <span class="hero-chip gold">Lyra-Stack</span>
+    <span class="hero-chip">Self-Hosted</span>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     FILTER STRIP
+     ═══════════════════════════════════════════════════════════════ -->
+<nav class="tools-filter" id="toolFilter">
+  <button class="filter-chip active" data-filter="all">All</button>
+  <button class="filter-chip" data-filter="media">Media</button>
+  <button class="filter-chip" data-filter="system">System</button>
+  <button class="filter-chip" data-filter="capture">Capture</button>
+  <button class="filter-chip" data-filter="interface">Interface</button>
+</nav>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     TOOLS GRID — sections scaffolded, media slots on every card
+     ═══════════════════════════════════════════════════════════════ -->
+<main class="tools-layout">
+
+  <!-- ─── MEDIA & CONVERSION ─── -->
+  <section class="tools-section" data-category="media">
+    <header class="tools-section-header">
+      <span class="tools-section-title">Media &amp; Conversion</span>
+      <span class="tools-section-count">05 / 16</span>
+    </header>
+    <div class="tools-grid">
+
+      <a class="tool-card" href="audiocutter.html" data-category="media">
+        <div class="tool-media">
+          <span class="tool-status live">Live</span>
+          <video class="media-asset" autoplay loop muted playsinline>
+          <source src="assets/audiocutter-preview.mp4" type="video/mp4">
+          </video>
+        </div>
+        <div class="tool-body">
+          <div class="tool-head">
+            <div class="tool-icon"><i class="material-icons">content_cut</i></div>
+            <div class="tool-name">Audio Cutter</div>
+          </div>
+          <div class="tool-tagline">Split any audio file into N equal parts. Clean cuts, zipped delivery.</div>
+          <div class="tool-foot">
+            <span class="tool-tag">:8914</span>
+            <span class="tool-launch">Launch <i class="material-icons" style="font-size:12px">arrow_forward</i></span>
+          </div>
+        </div>
+      </a>
+
+      <a class="tool-card" href="dragon-forge-app.html" data-category="media">
+        <div class="tool-media">
+          <span class="tool-status live">Live</span>
+          <img class="media-asset" src="assets/dragon-forge-ui-preview.jpg" alt="Dragon Forge Preview">        </div>
+        <div class="tool-body">
+          <div class="tool-head">
+            <div class="tool-icon"><i class="material-icons">whatshot</i></div>
+            <div class="tool-name">Dragon Forge</div>
+          </div>
+          <div class="tool-tagline">Format-agnostic converter. Drop anything. Pick any compatible target.</div>
+          <div class="tool-foot">
+            <span class="tool-tag">:8916</span>
+            <span class="tool-launch">Launch <i class="material-icons" style="font-size:12px">arrow_forward</i></span>
+          </div>
+        </div>
+      </a>
+
+      <a class="tool-card" href="multitool.html" data-category="media">
+        <div class="tool-media">
+          <span class="tool-status live">Live</span>
+          <img class="media-asset" src="assets/multitool-preview.jpg" alt="Multitool Preview">        </div>
+        <div class="tool-body">
+          <div class="tool-head">
+            <div class="tool-icon"><i class="material-icons">construction</i></div>
+            <div class="tool-name">Multitool</div>
+          </div>
+          <div class="tool-tagline">WEBP converters, JSON mergers, scrapers — small jobs, fast.</div>
+          <div class="tool-foot">
+            <span class="tool-tag">:8913</span>
+            <span class="tool-launch">Launch <i class="material-icons" style="font-size:12px">arrow_forward</i></span>
+          </div>
+        </div>
+      </a>
+
+      <a class="tool-card" href="looppad.html" data-category="media">
+        <div class="tool-media">
+          <span class="tool-status live">Live</span>
+          <img class="media-asset" src="assets/looppad-preview.jpg" alt="Loop Pad Preview">        </div>
+        <div class="tool-body">
+          <div class="tool-head">
+            <div class="tool-icon"><i class="material-icons">grid_4x4</i></div>
+            <div class="tool-name">Loop Pad</div>
+          </div>
+          <div class="tool-tagline">Assign samples to a pad grid. Trigger, layer, loop.</div>
+          <div class="tool-foot">
+            <span class="tool-tag">:8912</span>
+            <span class="tool-launch">Launch <i class="material-icons" style="font-size:12px">arrow_forward</i></span>
+          </div>
+        </div>
+      </a>
+
+      <a class="tool-card" href="speaker.html" data-category="media">
+        <div class="tool-media">
+          <span class="tool-status live">Live</span>
+          <img class="media-asset" src="assets/speaker-preview.jpg" alt="Speaker Preview">        </div>
+        <div class="tool-body">
+          <div class="tool-head">
+            <div class="tool-icon"><i class="material-icons">record_voice_over</i></div>
+            <div class="tool-name">Speaker</div>
+          </div>
+          <div class="tool-tagline">Text-to-speech bench. Pick a voice, hear the line.</div>
+          <div class="tool-foot">
+            <span class="tool-tag">:8911</span>
+            <span class="tool-launch">Launch <i class="material-icons" style="font-size:12px">arrow_forward</i></span>
+          </div>
+        </div>
+      </a>
+
+    </div>
+  </section>
+
+  <!-- ─── SYSTEM ─── -->
+  <section class="tools-section" data-category="system">
+    <header class="tools-section-header">
+      <span class="tools-section-title">System</span>
+      <span class="tools-section-count">06 / 20</span>
+    </header>
+    <div class="tools-grid">
+
+      <a class="tool-card" href="dragon-cleaner-app.html" data-category="system">
+        <div class="tool-media">
+          <span class="tool-status wip">WIP</span>
+          <video class="media-asset" autoplay loop muted playsinline>
+            <source src="assets/dragon-cleaner-preview.mp4" type="video/mp4">
+          </video>
+        </div>
+        <div class="tool-body">
+          <div class="tool-head">
+            <div class="tool-icon"><i class="material-icons">cleaning_services</i></div>
+            <div class="tool-name">Dragon Cleaner</div>
+          </div>
+          <div class="tool-tagline">Deep storage optimizer. Dave decides what goes. You approve.</div>
+          <div class="tool-foot">
+            <span class="tool-tag">Dave :11434</span>
+            <span class="tool-launch">Launch <i class="material-icons" style="font-size:12px">arrow_forward</i></span>
+          </div>
+        </div>
+      </a>
+
+      <a class="tool-card" href="gauntlet-app.html" data-category="system">
+        <div class="tool-media">
+          <span class="tool-status wip">WIP</span>
+          <img class="media-asset" src="assets/gauntlet-preview.jpg" alt="Gauntlet Preview">        </div>
+        <div class="tool-body">
+          <div class="tool-head">
+            <div class="tool-icon"><i class="material-icons">memory</i></div>
+            <div class="tool-name">Gauntlet</div>
+          </div>
+          <div class="tool-tagline">RAM powerbomb. Flushes what shouldn't be there. No mercy on repeat.</div>
+          <div class="tool-foot">
+            <span class="tool-tag">Admin</span>
+            <span class="tool-launch">Launch <i class="material-icons" style="font-size:12px">arrow_forward</i></span>
+          </div>
+        </div>
+      </a>
+
+      <a class="tool-card" href="void-eater-app.html" data-category="system">
+        <div class="tool-media">
+          <span class="tool-status wip">WIP</span>
+          <img class="media-asset" src="assets/void-eater-preview.jpg" alt="Void Eater Preview">        </div>
+        <div class="tool-body">
+          <div class="tool-head">
+            <div class="tool-icon"><i class="material-icons">delete_forever</i></div>
+            <div class="tool-name">Void Eater</div>
+          </div>
+          <div class="tool-tagline">Cryptographic shredder. Scrambles, overwrites, unlinks. Gone.</div>
+          <div class="tool-foot">
+            <span class="tool-tag">Destructive</span>
+            <span class="tool-launch">Launch <i class="material-icons" style="font-size:12px">arrow_forward</i></span>
+          </div>
+        </div>
+      </a>
+
+      <a class="tool-card" href="#" data-category="system">
+        <div class="tool-media">
+          <span class="tool-status desktop">Desktop</span>
+          <img class="media-asset" src="assets/blackbox-preview.jpg" alt="Blackbox Preview">        </div>
+        <div class="tool-body">
+          <div class="tool-head">
+            <div class="tool-icon"><i class="material-icons">inventory_2</i></div>
+            <div class="tool-name">Blackbox</div>
+          </div>
+          <div class="tool-tagline">Diagnostic recorder. What happened and why.</div>
+          <div class="tool-foot">
+            <span class="tool-tag">.py</span>
+            <span class="tool-launch">Launch <i class="material-icons" style="font-size:12px">arrow_forward</i></span>
+          </div>
+        </div>
+      </a>
+
+      <a class="tool-card" href="gdm-core.html" data-category="system">
+        <div class="tool-media">
+          <span class="tool-status beta">Beta</span>
+          <div class="media-placeholder"><i class="material-icons">memory</i></div>
+        </div>
+        <div class="tool-body">
+          <div class="tool-head">
+            <div class="tool-icon"><i class="material-icons">psychology</i></div>
+            <div class="tool-name">GDM Core</div>
+          </div>
+          <div class="tool-tagline">Per-user Gaussian Delta Memory engine console and recall surface.</div>
+          <div class="tool-foot">
+            <span class="tool-tag">gdm_core.py</span>
+            <span class="tool-launch">Open <i class="material-icons" style="font-size:12px">arrow_forward</i></span>
+          </div>
+        </div>
+      </a>
+
+      <a class="tool-card" href="omnisensor-hud-v2.html" data-category="system">
+        <div class="tool-media">
+          <span class="tool-status beta">Beta</span>
+          <div class="media-placeholder"><i class="material-icons">sensors</i></div>
+        </div>
+        <div class="tool-body">
+          <div class="tool-head">
+            <div class="tool-icon"><i class="material-icons">monitor_heart</i></div>
+            <div class="tool-name">OmniSensor HUD v2</div>
+          </div>
+          <div class="tool-tagline">Control bridge for launching and tracing the Omnisensor desktop HUD.</div>
+          <div class="tool-foot">
+            <span class="tool-tag">omnisensor_hud_v2.py</span>
+            <span class="tool-launch">Open <i class="material-icons" style="font-size:12px">arrow_forward</i></span>
+          </div>
+        </div>
+      </a>
+
+    </div>
+  </section>
+
+  <!-- ─── CAPTURE & SCRIBE ─── -->
+  <section class="tools-section" data-category="capture">
+    <header class="tools-section-header">
+      <span class="tools-section-title">Capture &amp; Scribe</span>
+      <span class="tools-section-count">07 / 20</span>
+    </header>
+    <div class="tools-grid">
+
+      <a class="tool-card" href="quickcam.html" data-category="capture">
+        <div class="tool-media">
+          <span class="tool-status live">Live</span>
+          <img class="media-asset" src="assets/quickcam-preview.jpg" alt="QuickCam Preview">
+        </div>
+        <div class="tool-body">
+          <div class="tool-head">
+            <div class="tool-icon"><i class="material-icons">photo_camera</i></div>
+            <div class="tool-name">QuickCam</div>
+          </div>
+          <div class="tool-tagline">Fast webcam capture and vision-mode switcher.</div>
+          <div class="tool-foot">
+            <span class="tool-tag">:8910</span>
+            <span class="tool-launch">Launch <i class="material-icons" style="font-size:12px">arrow_forward</i></span>
+          </div>
+        </div>
+      </a>
+
+      <a class="tool-card" href="redvox-app.html" data-category="capture">
+        <div class="tool-media">
+          <span class="tool-status wip">WIP</span>
+          <img class="media-asset" src="assets/redvox-preview.jpg" alt="RedVox Preview">
+        </div>
+        <div class="tool-body">
+          <div class="tool-head">
+            <div class="tool-icon"><i class="material-icons">graphic_eq</i></div>
+            <div class="tool-name">RedVox</div>
+          </div>
+          <div class="tool-tagline">Long-form audio-to-text. Built for podcasts and all-day recordings.</div>
+          <div class="tool-foot">
+            <span class="tool-tag">Whisper</span>
+            <span class="tool-launch">Launch <i class="material-icons" style="font-size:12px">arrow_forward</i></span>
+          </div>
+        </div>
+      </a>
+
+      <a class="tool-card" href="scribe-app.html" data-category="capture">
+        <div class="tool-media">
+          <span class="tool-status wip">WIP</span>
+          <img class="media-asset" src="assets/scribe-preview.jpg" alt="Scribe Preview">
+        </div>
+        <div class="tool-body">
+          <div class="tool-head">
+            <div class="tool-icon"><i class="material-icons">edit_note</i></div>
+            <div class="tool-name">Scribe</div>
+          </div>
+          <div class="tool-tagline">Live speech-to-text with a writer's UX. Think. Say. Keep.</div>
+          <div class="tool-foot">
+            <span class="tool-tag">Realtime</span>
+            <span class="tool-launch">Launch <i class="material-icons" style="font-size:12px">arrow_forward</i></span>
+          </div>
+        </div>
+      </a>
+
+      <a class="tool-card" href="narrator.html" data-category="capture">
+        <div class="tool-media">
+          <span class="tool-status beta">Beta</span>
+          <div class="media-placeholder"><i class="material-icons">record_voice_over</i></div>
+        </div>
+        <div class="tool-body">
+          <div class="tool-head">
+            <div class="tool-icon"><i class="material-icons">auto_stories</i></div>
+            <div class="tool-name">Narrator</div>
+          </div>
+          <div class="tool-tagline">Multi-character narration engine for story text and TTS pipelines.</div>
+          <div class="tool-foot">
+            <span class="tool-tag">narrator.html</span>
+            <span class="tool-launch">Launch <i class="material-icons" style="font-size:12px">arrow_forward</i></span>
+          </div>
+        </div>
+      </a>
+
+      <a class="tool-card" href="screen_recorder.html" data-category="capture">
+        <div class="tool-media">
+          <span class="tool-status beta">Beta</span>
+          <div class="media-placeholder"><i class="material-icons">videocam</i></div>
+        </div>
+        <div class="tool-body">
+          <div class="tool-head">
+            <div class="tool-icon"><i class="material-icons">fiber_manual_record</i></div>
+            <div class="tool-name">Screen Recorder</div>
+          </div>
+          <div class="tool-tagline">Desktop and region capture module with RedVerse shell integration.</div>
+          <div class="tool-foot">
+            <span class="tool-tag">screen_recorder.html</span>
+            <span class="tool-launch">Launch <i class="material-icons" style="font-size:12px">arrow_forward</i></span>
+          </div>
+        </div>
+      </a>
+
+      <a class="tool-card" href="soulstacker.html" data-category="capture">
+        <div class="tool-media">
+          <span class="tool-status beta">Beta</span>
+          <div class="media-placeholder"><i class="material-icons">hub</i></div>
+        </div>
+        <div class="tool-body">
+          <div class="tool-head">
+            <div class="tool-icon"><i class="material-icons">account_tree</i></div>
+            <div class="tool-name">SoulStacker</div>
+          </div>
+          <div class="tool-tagline">Live memory-field visualizer for context, frequency, and decay dynamics.</div>
+          <div class="tool-foot">
+            <span class="tool-tag">soulstacker.html</span>
+            <span class="tool-launch">Launch <i class="material-icons" style="font-size:12px">arrow_forward</i></span>
+          </div>
+        </div>
+      </a>
+
+      <a class="tool-card" href="redvault-indexer-app.html" data-category="capture">
+        <div class="tool-media">
+          <span class="tool-status wip">WIP</span>
+          <video class="media-asset" autoplay loop muted playsinline>
+            <source src="assets/indexer-preview.mp4" type="video/mp4">
+          </video>
+        </div>
+        <div class="tool-body">
+          <div class="tool-head">
+            <div class="tool-icon"><i class="material-icons">inventory</i></div>
+            <div class="tool-name">Indexer</div>
+          </div>
+          <div class="tool-tagline">Content indexer for the Vault. Finds what you half-remember.</div>
+          <div class="tool-foot">
+            <span class="tool-tag">Search</span>
+            <span class="tool-launch">Launch <i class="material-icons" style="font-size:12px">arrow_forward</i></span>
+          </div>
+        </div>
+      </a>
+
+    </div>
+  </section>
+
+  <!-- ─── INTERFACE MODULES ─── -->
+  <section class="tools-section" data-category="interface">
+    <header class="tools-section-header">
+      <span class="tools-section-title">Interface Modules</span>
+      <span class="tools-section-count">04 / 16</span>
+    </header>
+    <div class="tools-grid">
+
+      <a class="tool-card" href="clock.html" data-category="interface">
+        <div class="tool-media">
+          <span class="tool-status live">Live</span>
+          <video class="media-asset" autoplay loop muted playsinline>
+            <source src="assets/clock-preview.mp4" type="video/mp4">
+          </video>
+        </div>
+        <div class="tool-body">
+          <div class="tool-head">
+            <div class="tool-icon"><i class="material-icons">schedule</i></div>
+            <div class="tool-name">Clock</div>
+          </div>
+          <div class="tool-tagline">Cathedral-themed time display. Runs on whatever wall you point it at.</div>
+          <div class="tool-foot">
+            <span class="tool-tag">Ambient</span>
+            <span class="tool-launch">Open <i class="material-icons" style="font-size:12px">arrow_forward</i></span>
+          </div>
+        </div>
+      </a>
+
+      <a class="tool-card" href="lyra_forge_ui.html" data-category="interface">
+        <div class="tool-media">
+          <span class="tool-status beta">Beta</span>
+          <video class="media-asset" autoplay loop muted playsinline>
+            <source src="assets/forge-ui-preview.mp4" type="video/mp4">
+          </video>
+        </div>
+        <div class="tool-body">
+          <div class="tool-head">
+            <div class="tool-icon"><i class="material-icons">dashboard</i></div>
+            <div class="tool-name">Lyra Forge UI</div>
+          </div>
+          <div class="tool-tagline">Component showcase and theming bench for lyra.css.</div>
+          <div class="tool-foot">
+            <span class="tool-tag">Reference</span>
+            <span class="tool-launch">Open <i class="material-icons" style="font-size:12px">arrow_forward</i></span>
+          </div>
+        </div>
+      </a>
+
+      <a class="tool-card" href="media-hud.html" data-category="interface">
+        <div class="tool-media">
+          <span class="tool-status beta">Beta</span>
+          <video class="media-asset" autoplay loop muted playsinline>
+            <source src="assets/media-hud-preview.mp4" type="video/mp4">
+          </video>
+        </div>
+        <div class="tool-body">
+          <div class="tool-head">
+            <div class="tool-icon"><i class="material-icons">queue_music</i></div>
+            <div class="tool-name">Media HUD</div>
+          </div>
+          <div class="tool-tagline">Full-screen media surface with queue, lyrics, and visuals.</div>
+          <div class="tool-foot">
+            <span class="tool-tag">Player</span>
+            <span class="tool-launch">Open <i class="material-icons" style="font-size:12px">arrow_forward</i></span>
+          </div>
+        </div>
+      </a>
+
+      <a class="tool-card" href="vision_app.html" data-category="interface">
+        <div class="tool-media">
+          <span class="tool-status desktop">Desktop</span>
+          <img class="media-asset" src="assets/switchboard-preview.jpg" alt="Switchboard Preview">
+        </div>
+        <div class="tool-body">
+          <div class="tool-head">
+            <div class="tool-icon"><i class="material-icons">toggle_on</i></div>
+            <div class="tool-name">Vision Switchboard</div>
+          </div>
+          <div class="tool-tagline">Routes capture streams between modules. Source → sink, cleanly.</div>
+          <div class="tool-foot">
+            <span class="tool-tag">.py</span>
+            <span class="tool-launch">Launch <i class="material-icons" style="font-size:12px">arrow_forward</i></span>
+          </div>
+        </div>
+      </a>
+
+    </div>
+  </section>
+
+</main>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     FOOTER
+     ═══════════════════════════════════════════════════════════════ -->
+<footer class="tools-footer">
+  <span>The Forge · RedVerse Tools</span>
+  <span class="sep">◆</span>
+  <span>20 Operational Modules</span>
+  <span class="sep">◆</span>
+  <span>Crimson Valentine 2026</span>
+</footer>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     FILTER LOGIC
+     ═══════════════════════════════════════════════════════════════ -->
+<script>
+(function() {
+  const chips = document.querySelectorAll('.filter-chip');
+  const cards = document.querySelectorAll('.tool-card');
+  const sections = document.querySelectorAll('.tools-section');
+
+  chips.forEach(chip => {
+    chip.addEventListener('click', () => {
+      const filter = chip.dataset.filter;
+      chips.forEach(c => c.classList.remove('active'));
+      chip.classList.add('active');
+
+      cards.forEach(card => {
+        const match = filter === 'all' || card.dataset.category === filter;
+        card.classList.toggle('filter-hidden', !match);
+      });
+
+      sections.forEach(sec => {
+        if (filter === 'all') {
+          sec.classList.remove('filter-empty');
+        } else {
+          sec.classList.toggle('filter-empty', sec.dataset.category !== filter);
+        }
+      });
+    });
+  });
+})();
+</script>
+
+</body>
+</html>

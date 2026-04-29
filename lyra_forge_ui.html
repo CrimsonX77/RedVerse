@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lyra's Image Forge — RedForest Labs</title>
+<link rel="stylesheet" href="lyra.css">
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+<style>
+html, body { height: 100vh; overflow: hidden; }
+body { display: flex; flex-direction: column; }
+.forge-layout { display: flex; flex: 1; overflow: hidden; position: relative; }
+
+/* Portal icon */
+.portal-link { display:flex; align-items:center; gap:10px; text-decoration:none; color:inherit; transition:all var(--lyra-duration-med); }
+.portal-link:hover { opacity:0.85; }
+.portal-link:hover .portal-icon { box-shadow:0 0 16px rgba(220,20,60,0.5); }
+.portal-icon { width:32px; height:32px; border-radius:6px; background:linear-gradient(135deg,var(--lyra-blood),var(--lyra-crimson)); display:flex; align-items:center; justify-content:center; box-shadow:0 0 10px rgba(220,20,60,0.3); transition:all var(--lyra-duration-med); position:relative; overflow:hidden; }
+.portal-icon::before { content:'♦'; color:var(--lyra-gold); font-size:16px; text-shadow:0 0 6px rgba(255,215,0,0.6); }
+.portal-icon::after { content:''; position:absolute; inset:0; background:linear-gradient(135deg,transparent 40%,rgba(255,255,255,0.15) 50%,transparent 60%); transform:translateX(-100%); transition:transform 0.6s; }
+.portal-link:hover .portal-icon::after { transform:translateX(100%); }
+
+/* Header extras */
+.header-controls { display:flex; align-items:center; gap:10px; }
+.reconnect-btn { background:none; border:1px solid var(--lyra-border); border-radius:var(--lyra-radius-sm); padding:4px 8px; color:var(--lyra-ash); cursor:pointer; display:flex; align-items:center; gap:4px; font-family:'Rajdhani',sans-serif; font-size:11px; font-weight:600; transition:all var(--lyra-duration-med); }
+.reconnect-btn:hover { border-color:var(--lyra-crimson); color:var(--lyra-text-bright); }
+.reconnect-btn .material-icons { font-size:14px; }
+.reconnect-btn.spinning .material-icons { animation:lyra-spin 0.8s linear infinite; }
+
+/* AI State */
+.ai-state { display:flex; align-items:center; gap:8px; padding:4px 12px; border-radius:var(--lyra-radius-pill); border:1px solid var(--lyra-border); background:rgba(0,0,0,0.3); font-size:11px; font-weight:600; font-family:'Rajdhani',sans-serif; letter-spacing:0.5px; transition:all var(--lyra-duration-med); }
+.ai-state-orb { width:8px; height:8px; border-radius:50%; flex-shrink:0; transition:all var(--lyra-duration-med); }
+.ai-state[data-state="idle"] { color:var(--lyra-ash); }
+.ai-state[data-state="idle"] .ai-state-orb { background:var(--lyra-ghost); }
+.ai-state[data-state="live"] { color:var(--lyra-green); border-color:rgba(0,255,136,0.2); }
+.ai-state[data-state="live"] .ai-state-orb { background:var(--lyra-green); box-shadow:0 0 8px var(--lyra-green); }
+.ai-state[data-state="thinking"] { color:var(--lyra-gold); border-color:rgba(255,215,0,0.2); }
+.ai-state[data-state="thinking"] .ai-state-orb { background:var(--lyra-gold); box-shadow:0 0 8px var(--lyra-gold); animation:lyra-pulse 1s ease infinite; }
+.ai-state[data-state="speaking"] { color:var(--lyra-cyan); border-color:rgba(0,229,255,0.2); }
+.ai-state[data-state="speaking"] .ai-state-orb { background:var(--lyra-cyan); box-shadow:0 0 8px var(--lyra-cyan); animation:ai-speak 0.6s ease infinite alternate; }
+.ai-state[data-state="loading"] { color:var(--lyra-magenta); border-color:rgba(200,144,255,0.2); }
+.ai-state[data-state="loading"] .ai-state-orb { background:var(--lyra-magenta); box-shadow:0 0 8px var(--lyra-magenta); animation:lyra-pulse 0.8s ease infinite; }
+.ai-state[data-state="error"] { color:var(--lyra-error); border-color:rgba(255,45,64,0.2); }
+.ai-state[data-state="error"] .ai-state-orb { background:var(--lyra-error); box-shadow:0 0 8px var(--lyra-error); }
+.ai-state[data-state="listening"] { color:var(--lyra-crimson); border-color:rgba(220,20,60,0.2); }
+.ai-state[data-state="listening"] .ai-state-orb { background:var(--lyra-crimson); box-shadow:0 0 8px var(--lyra-crimson); animation:ai-listen 1.2s ease infinite; }
+@keyframes ai-speak { from{transform:scale(1);opacity:1} to{transform:scale(1.5);opacity:0.5} }
+@keyframes ai-listen { 0%,100%{transform:scale(1)} 25%{transform:scale(1.3)} 50%{transform:scale(0.8)} 75%{transform:scale(1.2)} }
+
+/* Resizable panels */
+.chat-panel { width:400px; min-width:240px; max-width:600px; display:flex; flex-direction:column; background:var(--lyra-stone); border-right:1px solid var(--lyra-border); position:relative; }
+.resize-handle { position:absolute; top:0; bottom:0; right:-3px; width:6px; cursor:col-resize; z-index:20; transition:background var(--lyra-duration-fast); }
+.resize-handle:hover, .resize-handle.active { background:var(--lyra-crimson); box-shadow:0 0 8px rgba(220,20,60,0.4); }
+.resize-handle-h { position:absolute; left:0; right:0; bottom:-3px; height:6px; cursor:row-resize; z-index:20; transition:background var(--lyra-duration-fast); }
+.resize-handle-h:hover, .resize-handle-h.active { background:var(--lyra-crimson); box-shadow:0 0 8px rgba(220,20,60,0.4); }
+
+/* Forge */
+.forge-panel { flex:1; display:flex; flex-direction:column; overflow:hidden; }
+.forge-controls-wrap { position:relative; min-height:180px; max-height:70vh; }
+.forge-controls { display:flex; flex-direction:column; gap:14px; padding:16px 20px; border-bottom:1px solid var(--lyra-border); background:linear-gradient(180deg,var(--lyra-stone),var(--lyra-obsidian)); overflow-y:auto; height:100%; }
+.controls-grid { display:flex; gap:12px; flex-wrap:wrap; align-items:end; }
+.ctrl-group { display:flex; flex-direction:column; gap:4px; }
+.ctrl-group input[type="number"] { width:80px; }
+.slider-row { display:flex; align-items:center; gap:10px; flex:1; }
+.slider-val { width:44px; text-align:center; font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--lyra-crimson); background:var(--lyra-obsidian); border:1px solid var(--lyra-border); border-radius:var(--lyra-radius-sm); padding:2px 4px; }
+.toggle-row { display:flex; align-items:center; gap:8px; }
+.toggle-row > span { font-size:12px; color:var(--lyra-ash); font-weight:500; }
+.style-presets { display:flex; gap:6px; flex-wrap:wrap; }
+
+/* Chat */
+.chat-messages { flex:1; overflow-y:auto; padding:14px; display:flex; flex-direction:column; gap:10px; }
+.chat-input-area { display:flex; gap:8px; padding:12px 14px; border-top:1px solid var(--lyra-border); background:var(--lyra-obsidian); }
+.chat-input-area textarea { flex:1; background:var(--lyra-abyss); border:1px solid var(--lyra-border); border-radius:var(--lyra-radius-md); padding:10px 14px; color:var(--lyra-text); font-family:'Rajdhani',sans-serif; font-size:14px; resize:none; min-height:42px; max-height:120px; outline:none; transition:border-color var(--lyra-duration-med); }
+.chat-input-area textarea:focus { border-color:var(--lyra-crimson); }
+.chat-input-area textarea::placeholder { color:var(--lyra-ghost); }
+.send-btn { width:44px; flex-shrink:0; background:linear-gradient(135deg,var(--lyra-blood),var(--lyra-crimson)); border:none; border-radius:var(--lyra-radius-md); cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all var(--lyra-duration-med); }
+.send-btn:hover { box-shadow:0 0 16px rgba(220,20,60,0.4); transform:scale(1.05); }
+.send-btn:disabled { opacity:0.3; cursor:not-allowed; transform:none; }
+.send-btn .material-icons { color:#fff; font-size:20px; }
+
+/* Preview */
+.forge-content { flex:1; display:flex; overflow:hidden; }
+.preview-pane { flex:1; display:flex; align-items:center; justify-content:center; padding:20px; position:relative; overflow:hidden; background:radial-gradient(ellipse 50% 50% at 50% 50%,rgba(220,20,60,0.02),transparent); }
+.preview-placeholder { text-align:center; color:var(--lyra-ghost); }
+.preview-placeholder .material-icons { font-size:80px; opacity:0.08; display:block; margin-bottom:16px; color:var(--lyra-crimson); }
+.preview-placeholder .hint { font-size:13px; margin-top:6px; color:var(--lyra-dim); }
+.preview-img { max-width:100%; max-height:100%; object-fit:contain; border-radius:var(--lyra-radius-md); border:1px solid var(--lyra-border); animation:lyra-fadeIn 0.4s; cursor:pointer; display:none; }
+.preview-img:hover { border-color:var(--lyra-crimson); box-shadow:0 0 20px rgba(220,20,60,0.1); }
+.progress-overlay { position:absolute; inset:0; background:rgba(6,6,10,0.88); backdrop-filter:blur(6px); display:none; flex-direction:column; align-items:center; justify-content:center; gap:20px; z-index:10; }
+.progress-overlay.active { display:flex; }
+.progress-label { font-family:'Cinzel',serif; font-size:14px; font-weight:600; letter-spacing:4px; color:var(--lyra-crimson); text-shadow:0 0 20px rgba(220,20,60,0.3); }
+.progress-bar-wrap { width:55%; }
+.progress-elapsed { font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--lyra-ghost); }
+.meta-bar { position:absolute; bottom:0; left:0; right:0; background:linear-gradient(transparent,rgba(6,6,10,0.9)); padding:24px 16px 12px; display:none; flex-wrap:wrap; gap:6px; }
+.preview-pane:hover .meta-bar { display:flex; }
+.meta-badge { background:rgba(0,0,0,0.6); border:1px solid var(--lyra-border); border-radius:var(--lyra-radius-sm); padding:3px 8px; font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--lyra-ash); }
+.meta-badge span { color:var(--lyra-gold); }
+
+/* Gallery */
+.gallery-panel { width:150px; min-width:100px; max-width:300px; border-left:1px solid var(--lyra-border); background:var(--lyra-obsidian); display:flex; flex-direction:column; position:relative; }
+.gallery-panel > .resize-handle { left:-3px; right:auto; }
+.gallery-header { padding:8px 10px; border-bottom:1px solid var(--lyra-border); display:flex; flex-direction:column; gap:6px; background:var(--lyra-stone); }
+.gallery-actions { display:flex; gap:4px; }
+.gallery-action-btn { background:var(--lyra-obsidian); border:1px solid var(--lyra-border); border-radius:var(--lyra-radius-sm); padding:3px 6px; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all var(--lyra-duration-med); flex:1; }
+.gallery-action-btn:hover { border-color:var(--lyra-crimson); background:var(--lyra-blush); }
+.gallery-action-btn .material-icons { font-size:14px; color:var(--lyra-ash); }
+.gallery-action-btn:hover .material-icons { color:var(--lyra-text-bright); }
+.gallery-strip { flex:1; overflow-y:auto; padding:8px; display:flex; flex-direction:column; gap:8px; }
+.gallery-empty { font-size:11px; color:var(--lyra-dim); text-align:center; padding:24px 4px; font-style:italic; }
+.gallery-thumb-wrap { position:relative; }
+.gallery-thumb-wrap .thumb-select { position:absolute; top:4px; left:4px; width:18px; height:18px; border-radius:3px; border:1px solid rgba(255,255,255,0.3); background:rgba(0,0,0,0.5); cursor:pointer; display:flex; align-items:center; justify-content:center; opacity:0; transition:opacity var(--lyra-duration-fast); z-index:2; }
+.gallery-thumb-wrap:hover .thumb-select, .gallery-thumb-wrap.selected .thumb-select { opacity:1; }
+.gallery-thumb-wrap.selected .thumb-select { background:var(--lyra-crimson); border-color:var(--lyra-crimson); }
+.gallery-thumb-wrap.selected .thumb-select::after { content:'✓'; color:#fff; font-size:11px; font-weight:700; }
+.gallery-thumb-wrap .thumb-delete { position:absolute; top:4px; right:4px; width:18px; height:18px; border-radius:3px; border:1px solid rgba(255,45,64,0.3); background:rgba(0,0,0,0.5); cursor:pointer; display:flex; align-items:center; justify-content:center; opacity:0; transition:opacity var(--lyra-duration-fast); z-index:2; font-size:11px; color:var(--lyra-error); }
+.gallery-thumb-wrap:hover .thumb-delete { opacity:1; }
+.gallery-thumb-wrap .thumb-delete:hover { background:var(--lyra-error); color:#fff; }
+.gallery-count { font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--lyra-ghost); text-align:center; padding:6px; border-top:1px solid var(--lyra-border); }
+
+@media (max-width:900px) {
+  .forge-layout { flex-direction:column; }
+  .chat-panel { width:100%!important; max-width:100%; height:38vh; border-right:none; border-bottom:1px solid var(--lyra-border); }
+  .resize-handle { display:none; }
+  .gallery-panel { width:100px; min-width:80px; }
+}
+</style>
+</head>
+<body>
+<div class="lyra-cathedral"></div>
+
+<header class="lyra-header">
+  <a href="index.html" class="portal-link" title="Return to Portal">
+    <div class="portal-icon"></div>
+    <span class="lyra-logo">LYRA'S <span class="lyra-logo-accent">IMAGE FORGE</span></span>
+  </a>
+  <div class="header-controls">
+    <div class="ai-state" id="aiState" data-state="idle">
+      <div class="ai-state-orb"></div>
+      <span id="aiStateLabel">Idle</span>
+    </div>
+    <button class="reconnect-btn" id="reconnectBtn" title="Reconnect services">
+      <i class="material-icons">refresh</i><span>Reconnect</span>
+    </button>
+    <div class="lyra-status-pill">
+      <div class="lyra-dot lyra-dot-pulse" id="dotSD"></div>
+      <span id="lblSD">SD …</span>
+    </div>
+    <div class="lyra-status-pill">
+      <div class="lyra-dot lyra-dot-pulse" id="dotOllama"></div>
+      <span id="lblOllama">Ollama …</span>
+    </div>
+  </div>
+</header>
+
+<div class="forge-layout">
+  <div class="chat-panel" id="chatPanel">
+    <div class="lyra-panel-header">
+      <span class="lyra-heading" style="font-size:10px">☽ Lyra — Chat</span>
+      <span class="lyra-mono lyra-text-dim" id="chatModel"></span>
+    </div>
+    <div class="chat-messages" id="chatMessages">
+      <div class="lyra-msg lyra-msg-system">The forge is lit. Speak, or shape something from the panel.</div>
+    </div>
+    <div class="chat-input-area">
+      <textarea id="chatInput" placeholder="Talk to Lyra…" rows="1"></textarea>
+      <button class="send-btn" id="sendBtn" title="Send"><i class="material-icons">send</i></button>
+    </div>
+    <div class="resize-handle" id="chatResize"></div>
+  </div>
+
+  <div class="forge-panel">
+    <div class="forge-controls-wrap" id="controlsWrap">
+      <div class="forge-controls lyra-stagger">
+        <div>
+          <div class="lyra-section-title">Prompt</div>
+          <textarea class="lyra-input lyra-textarea" id="prompt" placeholder="Describe what to forge…" style="min-height:54px"></textarea>
+        </div>
+        <textarea class="lyra-input lyra-input-sm" id="negPrompt" placeholder="Negative prompt (optional — strong defaults apply)" style="min-height:36px;color:var(--lyra-ash);font-size:13px"></textarea>
+        <div>
+          <div class="lyra-section-title">Style Preset</div>
+          <div class="style-presets" id="stylePresets">
+            <button class="lyra-pill" data-style="none">None</button>
+            <button class="lyra-pill active" data-style="sable">Sable</button>
+            <button class="lyra-pill" data-style="lyra">Lyra</button>
+            <button class="lyra-pill" data-style="redverse">Redverse</button>
+            <button class="lyra-pill" data-style="cyberpunk">Cyberpunk</button>
+            <button class="lyra-pill" data-style="anime">Anime</button>
+            <button class="lyra-pill" data-style="realistic">Realistic</button>
+          </div>
+        </div>
+        <div>
+          <div class="lyra-section-title">Parameters</div>
+          <div class="controls-grid">
+            <div class="ctrl-group"><label class="lyra-label">Width</label><input class="lyra-input lyra-input-sm lyra-number" type="number" id="width" value="768" step="64" min="256" max="2048"></div>
+            <div class="ctrl-group"><label class="lyra-label">Height</label><input class="lyra-input lyra-input-sm lyra-number" type="number" id="height" value="768" step="64" min="256" max="2048"></div>
+            <div class="ctrl-group"><label class="lyra-label">Steps</label><input class="lyra-input lyra-input-sm lyra-number" type="number" id="steps" value="35" min="1" max="100"></div>
+            <div class="ctrl-group"><label class="lyra-label">Seed</label><input class="lyra-input lyra-input-sm lyra-number" type="number" id="seed" value="-1" min="-1"></div>
+            <div class="ctrl-group"><label class="lyra-label">Checkpoint</label><select class="lyra-select" id="checkpoint"><option value="Aetherion.safetensors">Aetherion</option></select></div>
+          </div>
+        </div>
+        <div class="controls-grid" style="align-items:center">
+          <div class="slider-row">
+            <label class="lyra-label" style="width:32px;flex-shrink:0">CFG</label>
+            <input class="lyra-range" type="range" id="cfg" min="1" max="20" step="0.5" value="7.5">
+            <span class="slider-val" id="cfgVal">7.5</span>
+          </div>
+          <div class="toggle-row"><span>Hi-Res</span><div class="lyra-toggle"><input type="checkbox" id="enableHr"><div class="lyra-toggle-track"></div></div></div>
+          <div class="toggle-row"><span>Refiner</span><div class="lyra-toggle"><input type="checkbox" id="enableRefiner"><div class="lyra-toggle-track"></div></div></div>
+        </div>
+        <div class="ctrl-group" style="flex:1"><label class="lyra-label">LoRAs (name:weight, comma-separated)</label><input class="lyra-input lyra-input-sm" type="text" id="loras" placeholder="e.g. detail:0.8, anime:0.6"></div>
+        <button class="lyra-btn lyra-btn-primary" id="generateBtn" style="align-self:flex-start;padding:12px 32px"><i class="material-icons" style="font-size:18px">auto_awesome</i> FORGE</button>
+      </div>
+      <div class="resize-handle-h" id="controlsResize"></div>
+    </div>
+
+    <div class="forge-content">
+      <div class="preview-pane" id="previewPane">
+        <div class="preview-placeholder" id="previewPlaceholder">
+          <i class="material-icons">local_fire_department</i>
+          <div style="font-size:15px;font-family:'Cinzel',serif;letter-spacing:2px;color:var(--lyra-ash)">Awaiting the spark</div>
+          <div class="hint">Shape your vision above, then hit <strong style="color:var(--lyra-crimson)">FORGE</strong></div>
+        </div>
+        <img class="preview-img" id="previewImg">
+        <div class="progress-overlay" id="progressOverlay">
+          <div class="progress-label">F O R G I N G</div>
+          <div class="progress-bar-wrap"><div class="lyra-progress-track"><div class="lyra-progress-fill" id="progressFill"></div></div></div>
+          <div class="progress-elapsed" id="progressElapsed">0s</div>
+        </div>
+        <div class="meta-bar" id="metaBar"></div>
+      </div>
+      <div class="gallery-panel" id="galleryPanel">
+        <div class="resize-handle" id="galleryResize"></div>
+        <div class="gallery-header">
+          <div class="lyra-heading" style="font-size:9px">Gallery</div>
+          <div class="gallery-actions">
+            <button class="gallery-action-btn" id="gallerySelectAll" title="Select all"><i class="material-icons">select_all</i></button>
+            <button class="gallery-action-btn" id="galleryExportSelected" title="Export selected"><i class="material-icons">download</i></button>
+            <button class="gallery-action-btn" id="galleryDeleteSelected" title="Delete selected"><i class="material-icons">delete_outline</i></button>
+          </div>
+        </div>
+        <div class="gallery-strip" id="galleryStrip"><div class="gallery-empty" id="galleryEmpty">No images yet</div></div>
+        <div class="gallery-count" id="galleryCount"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer class="lyra-footer">
+  <span class="lyra-footer-brand">Lyra's Image Forge · RedForest Labs</span>
+  <span id="footerInfo" class="lyra-mono">—</span>
+</footer>
+
+<div class="lyra-lightbox" id="lightbox"><img id="lightboxImg"></div>
+
+<script>
+const LYRA_FORGE_API='http://127.0.0.1:8667';
+const LYRA_CHAT_MODEL='CrimsonDragonX7/Lyra:4b';
+const API=window.location.port==='8667'?'':LYRA_FORGE_API;let chatHistory=[],generating=false,currentStyle='sable',sdConnected=false,ollamaConnected=false,galleryImages=[];
+const $=id=>document.getElementById(id);
+
+function setAiState(s,l){$('aiState').dataset.state=s;$('aiStateLabel').textContent=l||s.charAt(0).toUpperCase()+s.slice(1)}
+
+async function checkStatus(){try{const r=await fetch(`${API}/api/status`);const d=await r.json();sdConnected=d.sd_api==='connected';$('dotSD').className='lyra-dot '+(sdConnected?'lyra-dot-ok':'lyra-dot-error');$('lblSD').textContent=sdConnected?'SD ✓':'SD ✗';ollamaConnected=d.ollama==='connected';$('dotOllama').className='lyra-dot '+(ollamaConnected?'lyra-dot-ok':'lyra-dot-error');$('lblOllama').textContent=ollamaConnected?'Ollama ✓':'Ollama ✗';$('chatModel').textContent=d.ollama_model||'';if(sdConnected&&ollamaConnected)setAiState('live','Online');else if(ollamaConnected)setAiState('live','Chat Only');else setAiState('error','Offline')}catch(e){$('dotSD').className='lyra-dot lyra-dot-error';$('dotOllama').className='lyra-dot lyra-dot-error';$('lblSD').textContent='SD ✗';$('lblOllama').textContent='Server ✗';setAiState('error','Offline')}}
+
+$('reconnectBtn').addEventListener('click',async()=>{const b=$('reconnectBtn');b.classList.add('spinning');setAiState('loading','Reconnecting');await checkStatus();await loadCheckpoints();b.classList.remove('spinning')});
+
+async function loadCheckpoints(){try{const r=await fetch(`${API}/api/query?category=models`);const d=await r.json();if(d.models){const s=$('checkpoint');s.innerHTML='';d.models.forEach(m=>{const o=document.createElement('option');o.value=m+'.safetensors';o.textContent=m;if(m==='Aetherion')o.selected=true;s.appendChild(o)})}}catch(e){}}
+
+function addChatMsg(role,content,extra){const div=document.createElement('div');if(role==='system'){div.className='lyra-msg lyra-msg-system';div.textContent=content}else{div.className='lyra-msg '+(role==='user'?'lyra-msg-user':'lyra-msg-ai');const n=document.createElement('div');n.className='lyra-msg-name';n.textContent=role==='user'?'Crimson':'Lyra';div.appendChild(n);const t=document.createElement('div');t.innerHTML=formatText(content);div.appendChild(t);if(extra)div.appendChild(extra)}$('chatMessages').appendChild(div);$('chatMessages').scrollTop=$('chatMessages').scrollHeight;return div}
+
+function formatText(t){return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>').replace(/\*(.+?)\*/g,'<em>$1</em>').replace(/\n/g,'<br>')}
+
+async function sendChat(){const input=$('chatInput');const text=input.value.trim();if(!text||generating)return;input.value='';input.style.height='auto';addChatMsg('user',text);chatHistory.push({role:'user',content:text});$('sendBtn').disabled=true;setAiState('thinking','Thinking');const lyraDiv=addChatMsg('lyra','…');const textEl=lyraDiv.querySelector('div:last-child');try{const resp=await fetch(`${API}/api/chat`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:LYRA_CHAT_MODEL,messages:chatHistory})});setAiState('speaking','Speaking');const reader=resp.body.getReader();const decoder=new TextDecoder();let fullText='';while(true){const{done,value}=await reader.read();if(done)break;const chunk=decoder.decode(value,{stream:true});for(const line of chunk.split('\n')){if(!line.startsWith('data: '))continue;const payload=line.slice(6).trim();if(payload==='[DONE]')break;try{const json=JSON.parse(payload);if(json.message&&json.message.content){fullText+=json.message.content;textEl.innerHTML=formatText(fullText);$('chatMessages').scrollTop=$('chatMessages').scrollHeight}if(json.error){fullText+='\n[Error: '+json.error+']';textEl.innerHTML=formatText(fullText)}}catch(e){}}}chatHistory.push({role:'assistant',content:fullText});setAiState('live','Online')}catch(e){textEl.innerHTML='<em style="color:var(--lyra-error)">Connection failed</em>';setAiState('error','Disconnected')}$('sendBtn').disabled=false}
+
+$('sendBtn').addEventListener('click',sendChat);
+$('chatInput').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendChat()}});
+$('chatInput').addEventListener('input',function(){this.style.height='auto';this.style.height=Math.min(this.scrollHeight,120)+'px'});
+$('stylePresets').addEventListener('click',e=>{const b=e.target.closest('.lyra-pill');if(!b)return;document.querySelectorAll('.lyra-pill').forEach(x=>x.classList.remove('active'));b.classList.add('active');currentStyle=b.dataset.style});
+$('cfg').addEventListener('input',e=>$('cfgVal').textContent=parseFloat(e.target.value).toFixed(1));
+
+$('generateBtn').addEventListener('click',doGenerate);
+async function doGenerate(){const prompt=$('prompt').value.trim();if(!prompt){$('prompt').focus();return}if(generating)return;generating=true;$('generateBtn').disabled=true;$('previewPlaceholder').style.display='none';$('progressOverlay').classList.add('active');$('progressFill').style.width='0%';setAiState('loading','Forging');const t0=Date.now();const elapsed=setInterval(()=>{$('progressElapsed').textContent=((Date.now()-t0)/1000).toFixed(0)+'s';$('progressFill').style.width=Math.min(90,(Date.now()-t0)/600)+'%'},500);addChatMsg('system','⚡ Forging: "'+prompt.slice(0,80)+(prompt.length>80?'…':'')+'" ['+currentStyle+']');const params={prompt,negative_prompt:$('negPrompt').value.trim(),style_preset:currentStyle,width:parseInt($('width').value)||768,height:parseInt($('height').value)||768,steps:parseInt($('steps').value)||35,cfg_scale:parseFloat($('cfg').value)||7.5,seed:parseInt($('seed').value)||-1,checkpoint:$('checkpoint').value,enable_hr:$('enableHr').checked,refiner_enabled:$('enableRefiner').checked,refiner_checkpoint:$('enableRefiner').checked?'cat.safetensors':'',loras:$('loras').value.trim(),skip_open:true};try{const resp=await fetch(`${API}/api/generate`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(params)});const result=await resp.json();clearInterval(elapsed);$('progressFill').style.width='100%';setTimeout(()=>{$('progressOverlay').classList.remove('active');if(result.status==='success'){const imgUrl=`${API}/api/images/${result.filename}`;showPreview(imgUrl,result.metadata);addGalleryThumb(imgUrl,result.filename);const imgEl=document.createElement('img');imgEl.src=imgUrl;imgEl.style.cssText='max-width:100%;border-radius:8px;margin-top:8px;cursor:pointer;border:1px solid var(--lyra-border)';imgEl.addEventListener('click',()=>openLightbox(imgUrl));addChatMsg('lyra',result.commentary||'The composition holds.',imgEl);chatHistory.push({role:'user',content:`[Generated image. Prompt: "${prompt}". Style: ${currentStyle}. React briefly in character.]`});streamLyraReaction();$('footerInfo').textContent=`${result.filename} · ${result.generation_time_s}s · seed ${result.metadata.seed_used}`;setAiState('live','Online')}else{addChatMsg('system','✗ '+(result.error||'Generation failed'));setAiState('error','Gen Failed')}},400)}catch(e){clearInterval(elapsed);$('progressOverlay').classList.remove('active');addChatMsg('system','✗ Server error: '+e.message);setAiState('error','Error')}generating=false;$('generateBtn').disabled=false}
+
+async function streamLyraReaction(){setAiState('thinking','Thinking');const d=addChatMsg('lyra','…');const t=d.querySelector('div:last-child');try{const r=await fetch(`${API}/api/chat`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:LYRA_CHAT_MODEL,messages:chatHistory})});setAiState('speaking','Speaking');const reader=r.body.getReader();const dec=new TextDecoder();let full='';while(true){const{done,value}=await reader.read();if(done)break;for(const line of dec.decode(value,{stream:true}).split('\n')){if(!line.startsWith('data: '))continue;const p=line.slice(6).trim();if(p==='[DONE]')break;try{const j=JSON.parse(p);if(j.message&&j.message.content){full+=j.message.content;t.innerHTML=formatText(full);$('chatMessages').scrollTop=$('chatMessages').scrollHeight}}catch(e){}}}chatHistory.push({role:'assistant',content:full});setAiState('live','Online')}catch(e){t.innerHTML='<em style="color:var(--lyra-error)">Could not reach Lyra</em>';setAiState('error','Disconnected')}}
+
+function showPreview(url,meta){const img=$('previewImg');img.src=url;img.style.display='block';img.onclick=()=>openLightbox(url);if(meta){$('metaBar').innerHTML=[`<span>${meta.dimensions}</span>`,`<span>${meta.steps} steps</span>`,`cfg <span>${meta.cfg_scale}</span>`,`<span>${meta.sampler}</span>`,`seed <span>${meta.seed_used}</span>`,`<span>${meta.checkpoint}</span>`,`style <span>${meta.style_preset}</span>`].map(h=>`<div class="meta-badge">${h}</div>`).join('')}}
+
+function addGalleryThumb(url,filename){$('galleryEmpty').style.display='none';const wrap=document.createElement('div');wrap.className='gallery-thumb-wrap';wrap.dataset.filename=filename;wrap.dataset.url=url;const sel=document.createElement('div');sel.className='thumb-select';sel.addEventListener('click',e=>{e.stopPropagation();wrap.classList.toggle('selected');updateGalleryCount()});const del=document.createElement('div');del.className='thumb-delete';del.textContent='✕';del.addEventListener('click',e=>{e.stopPropagation();removeGalleryImage(wrap,filename)});const thumb=document.createElement('div');thumb.className='lyra-thumb';thumb.innerHTML=`<img src="${url}" alt="${filename}" loading="lazy">`;thumb.addEventListener('click',()=>{document.querySelectorAll('.lyra-thumb').forEach(t=>t.classList.remove('active'));thumb.classList.add('active');showPreview(url,null)});wrap.appendChild(sel);wrap.appendChild(del);wrap.appendChild(thumb);$('galleryStrip').prepend(wrap);galleryImages.push({url,filename,element:wrap});updateGalleryCount()}
+
+function removeGalleryImage(el,fn){el.remove();galleryImages=galleryImages.filter(i=>i.filename!==fn);fetch(`${API}/api/images/${fn}`,{method:'DELETE'}).catch(()=>{});updateGalleryCount();if(galleryImages.length===0)$('galleryEmpty').style.display='block'}
+function updateGalleryCount(){const s=document.querySelectorAll('.gallery-thumb-wrap.selected').length;const t=galleryImages.length;$('galleryCount').textContent=s>0?`${s}/${t} selected`:`${t} images`}
+
+$('gallerySelectAll').addEventListener('click',()=>{const w=document.querySelectorAll('.gallery-thumb-wrap');const all=[...w].every(x=>x.classList.contains('selected'));w.forEach(x=>{if(all)x.classList.remove('selected');else x.classList.add('selected')});updateGalleryCount()});
+$('galleryExportSelected').addEventListener('click',()=>{const s=document.querySelectorAll('.gallery-thumb-wrap.selected');if(s.length===0){galleryImages.forEach(i=>dlImg(i.url,i.filename));return}s.forEach(w=>dlImg(w.dataset.url,w.dataset.filename))});
+$('galleryDeleteSelected').addEventListener('click',()=>{const s=[...document.querySelectorAll('.gallery-thumb-wrap.selected')];if(!s.length)return;if(!confirm(`Delete ${s.length} image${s.length>1?'s':''}?`))return;s.forEach(w=>removeGalleryImage(w,w.dataset.filename))});
+function dlImg(url,fn){const a=document.createElement('a');a.href=url;a.download=fn||'lyra-forge.png';a.click()}
+
+function openLightbox(url){$('lightboxImg').src=url;$('lightbox').classList.add('open')}
+$('lightbox').addEventListener('click',()=>$('lightbox').classList.remove('open'));
+document.addEventListener('keydown',e=>{if(e.key==='Escape')$('lightbox').classList.remove('open')});
+
+async function loadGallery(){try{const r=await fetch(`${API}/api/gallery`);const d=await r.json();if(d.images&&d.images.length>0){$('galleryEmpty').style.display='none';d.images.forEach(i=>addGalleryThumb(i.url,i.filename))}}catch(e){}}
+
+// Resize logic
+function initResize(hId,tId,dir,prop){const h=$(hId);if(!h)return;let s0,sz0;const mv=e=>{const d=dir==='x'?(e.clientX-s0):(e.clientY-s0);$(tId).style[prop]=Math.max(100,sz0+d)+'px'};const up=()=>{h.classList.remove('active');document.body.style.cursor='';document.body.style.userSelect='';document.removeEventListener('mousemove',mv);document.removeEventListener('mouseup',up)};h.addEventListener('mousedown',e=>{e.preventDefault();h.classList.add('active');document.body.style.cursor=dir==='x'?'col-resize':'row-resize';document.body.style.userSelect='none';s0=dir==='x'?e.clientX:e.clientY;sz0=dir==='x'?$(tId).offsetWidth:$(tId).offsetHeight;document.addEventListener('mousemove',mv);document.addEventListener('mouseup',up)})}
+initResize('chatResize','chatPanel','x','width');
+initResize('controlsResize','controlsWrap','y','height');
+
+// Gallery resize (inverted)
+(function(){const h=$('galleryResize');if(!h)return;let sx,sw;const mv=e=>{$('galleryPanel').style.width=Math.max(100,Math.min(400,sw+(sx-e.clientX)))+'px'};const up=()=>{h.classList.remove('active');document.body.style.cursor='';document.body.style.userSelect='';document.removeEventListener('mousemove',mv);document.removeEventListener('mouseup',up)};h.addEventListener('mousedown',e=>{e.preventDefault();h.classList.add('active');document.body.style.cursor='col-resize';document.body.style.userSelect='none';sx=e.clientX;sw=$('galleryPanel').offsetWidth;document.addEventListener('mousemove',mv);document.addEventListener('mouseup',up)})})();
+
+checkStatus();loadCheckpoints();loadGallery();setInterval(checkStatus,30000);updateGalleryCount();
+</script>
+</body>
+</html>

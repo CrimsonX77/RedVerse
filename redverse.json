@@ -1,0 +1,66 @@
+{
+  "active_agent": "Sable",
+  "active_fold": "fire",
+  "recent_renders": [
+    {
+      "name": "w-AI-fu_debut_teaser.mp4",
+      "path": "/home/workdir/artifacts/renders/w-AI-fu_debut_teaser.mp4",
+      "size": 51,
+      "timestamp": "2026-04-28T04:39:22.567698",
+      "status": "new"
+    },
+    {
+      "name": "w-AI-fu_debut_teaser.mp4",
+      "path": "/home/workdir/artifacts/renders/w-AI-fu_debut_teaser.mp4",
+      "size": 51,
+      "timestamp": "2026-04-28T04:39:21.871979",
+      "status": "new"
+    }
+  ],
+  "tasks": [
+    {
+      "id": 1745820000,
+      "name": "Install 3D modeling tools and craft a simple cube model",
+      "agent": "BlenderHelper",
+      "status": "in_progress",
+      "progress": 10
+    }
+  ],
+  "gdm": {
+    "total_entries": 0,
+    "dimensions": 768,
+    "embedding_backend": "nomic"
+  },
+  "agent_activity": {
+    "Sable": {
+      "status": "active",
+      "last_action": "vocal tracking",
+      "uptime": "2h 14m"
+    },
+    "Luna": {
+      "status": "standby",
+      "last_action": "anchor hold",
+      "uptime": "18m"
+    },
+    "Navi": {
+      "status": "offline",
+      "last_action": "theory mapping",
+      "uptime": "\u2014"
+    },
+    "Lyra": {
+      "status": "active",
+      "last_action": "bass sustain",
+      "uptime": "this session"
+    },
+    "Misty": {
+      "status": "offline",
+      "last_action": "chaos seeding",
+      "uptime": "\u2014"
+    }
+  },
+  "omnisensor": {
+    "running": true,
+    "last_ping": "2026-04-28T04:39:17.265048"
+  },
+  "last_video": "/home/workdir/artifacts/renders/w-AI-fu_debut_teaser.mp4"
+}

@@ -1,0 +1,1286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Account | ProjectVault</title>
+  <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Fira+Code:wght@300;400;500&family=Cinzel:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    /* ─── RESET & VARS ─── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --crimson:       #c0392b;
+      --crimson-bright:#e74c3c;
+      --crimson-glow:  rgba(192,57,43,0.35);
+      --gold:          #d4a843;
+      --gold-dim:      rgba(212,168,67,0.18);
+      --bg:            #0a0a0c;
+      --bg-panel:      rgba(14,14,18,0.88);
+      --bg-elevated:   rgba(22,22,30,0.9);
+      --border:        rgba(192,57,43,0.22);
+      --border-gold:   rgba(212,168,67,0.28);
+      --fg:            #f0ecec;
+      --muted:         #7a6e6e;
+      --danger:        #e74c3c;
+      --accent:        #c0392b;
+    }
+
+    html, body {
+      height: 100%;
+      font-family: 'Rajdhani', sans-serif;
+      color: var(--fg);
+      background: var(--bg);
+      overflow-x: hidden;
+    }
+
+    /* ─── BACKGROUND LAYERS ─── */
+    #bg-layer {
+      position: fixed; inset: 0; z-index: 0;
+      background: #0a0a0c;
+      background-size: cover;
+      background-position: center;
+      transition: background 0.6s ease;
+    }
+    #bg-layer::after {
+      content: '';
+      position: absolute; inset: 0;
+      background:
+        radial-gradient(ellipse 60% 40% at 20% 30%, rgba(192,57,43,0.12) 0%, transparent 70%),
+        radial-gradient(ellipse 50% 35% at 80% 70%, rgba(212,168,67,0.07) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    #bg-video-el {
+      position: fixed; inset: 0; z-index: 0;
+      width: 100%; height: 100%;
+      object-fit: cover;
+      display: none;
+    }
+
+    .grid-veil {
+      position: fixed; inset: 0; z-index: 1;
+      background-image:
+        linear-gradient(rgba(192,57,43,0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(192,57,43,0.04) 1px, transparent 1px);
+      background-size: 48px 48px;
+      pointer-events: none;
+    }
+    .scanlines {
+      position: fixed; inset: 0; z-index: 2;
+      background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 3px,
+        rgba(0,0,0,0.06) 3px,
+        rgba(0,0,0,0.06) 4px
+      );
+      pointer-events: none;
+    }
+    .vignette {
+      position: fixed; inset: 0; z-index: 3;
+      background: radial-gradient(ellipse 100% 100% at 50% 50%, transparent 55%, rgba(0,0,0,0.72) 100%);
+      pointer-events: none;
+    }
+
+    /* ─── HEADER ─── */
+    header {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      background: rgba(8,8,11,0.82);
+      backdrop-filter: blur(14px) saturate(160%);
+      border-bottom: 1px solid var(--border);
+    }
+    .header-inner {
+      max-width: 1200px; margin: 0 auto;
+      padding: 0 28px;
+      height: 64px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .logo {
+      display: flex; align-items: center; gap: 12px;
+      text-decoration: none; color: var(--fg);
+    }
+    .logo-mark {
+      width: 38px; height: 38px;
+      background: linear-gradient(135deg, var(--crimson), var(--gold));
+      clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .logo-text {
+      font-family: 'Cinzel', serif;
+      font-size: 1.15rem;
+      letter-spacing: 0.12em;
+      font-weight: 600;
+      background: linear-gradient(90deg, var(--fg) 60%, var(--gold));
+      -webkit-background-clip: text; background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    nav a {
+      font-size: 0.85rem; letter-spacing: 0.1em; text-transform: uppercase;
+      color: var(--muted); text-decoration: none;
+      transition: color 0.2s;
+    }
+    nav a:hover { color: var(--gold); }
+    nav { display: flex; gap: 32px; }
+
+    .cart-btn {
+      position: relative; padding: 8px; border-radius: 8px;
+      background: transparent; border: none; cursor: pointer;
+      color: var(--muted); transition: color 0.2s;
+    }
+    .cart-btn:hover { color: var(--gold); }
+    .cart-count {
+      position: absolute; top: 2px; right: 2px;
+      background: var(--crimson); color: #fff;
+      font-size: 0.6rem; font-weight: 700;
+      min-width: 16px; height: 16px;
+      border-radius: 8px; display: flex; align-items: center; justify-content: center;
+      padding: 0 3px;
+    }
+
+    /* user avatar in header */
+    #userAvatar {
+      width: 34px; height: 34px; border-radius: 6px;
+      object-fit: cover;
+      border: 1px solid var(--border-gold);
+    }
+    #signOutBtn {
+      background: none; border: 1px solid var(--border);
+      color: var(--muted); cursor: pointer;
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 0.8rem; letter-spacing: 0.05em;
+      padding: 5px 12px; border-radius: 4px;
+      transition: all 0.2s;
+    }
+    #signOutBtn:hover { border-color: var(--crimson); color: var(--crimson); }
+
+    /* ─── MAIN ─── */
+    main {
+      position: relative; z-index: 10;
+      padding: 96px 28px 60px;
+      min-height: 100vh;
+    }
+    .content-wrap { max-width: 1100px; margin: 0 auto; }
+
+    /* ─── NOT LOGGED IN ─── */
+    .not-logged-in {
+      text-align: center; padding: 80px 0;
+    }
+    .not-logged-in h2 {
+      font-size: 2rem; font-weight: 700; margin-bottom: 8px;
+    }
+    .not-logged-in p { color: var(--muted); margin-bottom: 32px; }
+
+    /* ─── PROFILE HEADER CARD ─── */
+    .profile-card {
+      background: var(--bg-panel);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 32px 36px;
+      position: relative;
+      overflow: hidden;
+      animation: fadeUp 0.5s ease both;
+    }
+    .profile-card::before {
+      content: '';
+      position: absolute; top: 0; left: 0; right: 0; height: 2px;
+      background: linear-gradient(90deg, transparent, var(--crimson), var(--gold), transparent);
+    }
+    .profile-card::after {
+      content: '';
+      position: absolute; bottom: -60px; right: -40px;
+      width: 200px; height: 200px;
+      background: radial-gradient(circle, var(--crimson-glow) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .profile-flex {
+      display: flex; align-items: flex-start; gap: 28px;
+      flex-wrap: wrap;
+    }
+
+    /* ─── AVATAR BLOCK ─── */
+    .avatar-block {
+      position: relative; flex-shrink: 0;
+    }
+    .avatar-frame {
+      width: 108px; height: 108px;
+      border-radius: 12px;
+      border: 2px solid var(--border-gold);
+      overflow: hidden;
+      position: relative;
+      background: var(--bg-elevated);
+      cursor: pointer;
+    }
+    .avatar-frame:hover .avatar-overlay { opacity: 1; }
+    .avatar-frame img,
+    .avatar-frame video {
+      width: 100%; height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    .avatar-overlay {
+      position: absolute; inset: 0;
+      background: rgba(0,0,0,0.6);
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      gap: 4px;
+      opacity: 0;
+      transition: opacity 0.2s;
+      font-size: 0.65rem;
+      letter-spacing: 0.06em;
+      color: var(--gold);
+    }
+    .avatar-overlay svg { stroke: var(--gold); }
+    .avatar-badge {
+      position: absolute; bottom: -8px; right: -8px;
+      width: 26px; height: 26px;
+      background: var(--crimson);
+      border-radius: 6px;
+      display: flex; align-items: center; justify-content: center;
+      border: 2px solid var(--bg);
+    }
+    #avatarInput { display: none; }
+
+    .profile-info { flex: 1; min-width: 200px; }
+    .profile-name {
+      font-family: 'Cinzel', serif;
+      font-size: 2rem; font-weight: 600;
+      line-height: 1.1;
+      margin-bottom: 4px;
+      background: linear-gradient(90deg, var(--fg), var(--gold));
+      -webkit-background-clip: text; background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .profile-email {
+      font-family: 'Fira Code', monospace;
+      font-size: 0.78rem; color: var(--muted);
+      margin-bottom: 20px;
+    }
+
+    /* stat chips */
+    .stat-row { display: flex; flex-wrap: wrap; gap: 10px; }
+    .stat-chip {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 8px 16px;
+      display: flex; flex-direction: column;
+      gap: 2px;
+    }
+    .stat-chip.gold-chip { border-color: var(--border-gold); }
+    .stat-val {
+      font-family: 'Fira Code', monospace;
+      font-size: 1.1rem; font-weight: 500;
+      color: var(--fg);
+    }
+    .stat-chip.gold-chip .stat-val { color: var(--gold); }
+    .stat-label {
+      font-size: 0.68rem; letter-spacing: 0.1em;
+      text-transform: uppercase; color: var(--muted);
+    }
+
+    /* bg-customise button */
+    .bg-btn {
+      display: flex; align-items: center; gap: 8px;
+      background: rgba(212,168,67,0.08);
+      border: 1px solid var(--border-gold);
+      color: var(--gold);
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 0.82rem; letter-spacing: 0.08em; text-transform: uppercase;
+      padding: 9px 16px; border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+      flex-shrink: 0; align-self: flex-start;
+    }
+    .bg-btn:hover { background: rgba(212,168,67,0.16); }
+
+    /* ─── TABS ─── */
+    .tab-rail {
+      display: flex; gap: 0;
+      margin-top: 28px;
+      border-bottom: 1px solid var(--border);
+      animation: fadeUp 0.5s 0.08s ease both;
+    }
+    .tab-btn {
+      display: flex; align-items: center; gap: 8px;
+      background: none; border: none; cursor: pointer;
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 0.88rem; font-weight: 600;
+      letter-spacing: 0.06em; text-transform: uppercase;
+      color: var(--muted);
+      padding: 12px 22px;
+      position: relative;
+      transition: color 0.2s;
+    }
+    .tab-btn::after {
+      content: '';
+      position: absolute; bottom: -1px; left: 0; right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, var(--crimson), var(--gold));
+      transform: scaleX(0);
+      transition: transform 0.25s ease;
+    }
+    .tab-btn.active { color: var(--fg); }
+    .tab-btn.active::after { transform: scaleX(1); }
+    .tab-btn:hover:not(.active) { color: var(--fg); }
+
+    /* ─── TAB CONTENT ─── */
+    .tab-pane { display: none; animation: fadeUp 0.35s ease both; }
+    .tab-pane.active { display: block; }
+
+    /* ─── PURCHASE / DOWNLOAD ITEMS ─── */
+    .item-card {
+      background: var(--bg-panel);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px 24px;
+      display: flex; align-items: center; gap: 20px;
+      margin-bottom: 12px;
+      transition: border-color 0.2s;
+    }
+    .item-card:hover { border-color: var(--border-gold); }
+    .item-thumb {
+      width: 56px; height: 56px; border-radius: 8px;
+      background: linear-gradient(135deg, var(--crimson-glow), var(--gold-dim));
+      flex-shrink: 0;
+      border: 1px solid var(--border);
+    }
+    .item-info { flex: 1; }
+    .item-title { font-size: 1rem; font-weight: 600; margin-bottom: 4px; }
+    .item-meta {
+      font-family: 'Fira Code', monospace;
+      font-size: 0.72rem; color: var(--muted);
+    }
+    .item-price {
+      font-family: 'Fira Code', monospace;
+      font-size: 0.95rem; color: var(--gold);
+      font-weight: 500;
+    }
+    .dl-btn {
+      display: flex; align-items: center; gap: 6px;
+      background: rgba(192,57,43,0.12);
+      border: 1px solid var(--border);
+      border-radius: 6px; padding: 7px 14px;
+      color: var(--fg); cursor: pointer;
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 0.78rem; font-weight: 600; letter-spacing: 0.05em;
+      transition: all 0.2s;
+    }
+    .dl-btn:hover { border-color: var(--crimson); color: var(--crimson); }
+
+    /* empty state */
+    .empty-state {
+      text-align: center; padding: 64px 0;
+    }
+    .empty-icon {
+      width: 72px; height: 72px; border-radius: 16px;
+      background: var(--bg-elevated); border: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 20px;
+    }
+    .empty-state h3 { font-size: 1.3rem; margin-bottom: 8px; }
+    .empty-state p { color: var(--muted); margin-bottom: 24px; font-size: 0.9rem; }
+
+    /* ─── SETTINGS ─── */
+    .settings-shell {
+      background: var(--bg-panel);
+      border: 1px solid var(--border);
+      border-radius: 16px; padding: 32px 36px;
+      max-width: 700px;
+    }
+    .settings-shell h3 {
+      font-family: 'Cinzel', serif;
+      font-size: 1rem; letter-spacing: 0.1em;
+      color: var(--gold);
+      margin-bottom: 28px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border);
+    }
+    .setting-row { margin-bottom: 22px; }
+    .setting-label {
+      display: block;
+      font-size: 0.75rem; letter-spacing: 0.1em; text-transform: uppercase;
+      color: var(--muted); margin-bottom: 8px;
+    }
+    .input-field {
+      width: 100%; background: rgba(255,255,255,0.04);
+      border: 1px solid var(--border); border-radius: 8px;
+      padding: 10px 14px;
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 0.95rem; color: var(--fg);
+      outline: none; transition: border-color 0.2s;
+    }
+    .input-field:focus { border-color: var(--crimson); }
+    .input-field:disabled { opacity: 0.4; cursor: not-allowed; }
+    .setting-hint { font-size: 0.72rem; color: var(--muted); margin-top: 6px; }
+
+    /* checkbox */
+    .check-row {
+      display: flex; align-items: center; gap: 12px;
+      cursor: pointer; margin-bottom: 12px;
+    }
+    .check-row input[type="checkbox"] { display: none; }
+    .check-box {
+      width: 18px; height: 18px; border-radius: 4px;
+      border: 1px solid var(--border);
+      background: transparent;
+      flex-shrink: 0; position: relative;
+      transition: all 0.2s;
+    }
+    .check-row input:checked + .check-box {
+      background: var(--crimson); border-color: var(--crimson);
+    }
+    .check-row input:checked + .check-box::after {
+      content: '';
+      position: absolute; top: 3px; left: 6px;
+      width: 5px; height: 9px;
+      border: 2px solid #fff; border-top: none; border-left: none;
+      transform: rotate(45deg);
+    }
+
+    .danger-zone { margin-top: 28px; padding-top: 28px; border-top: 1px solid var(--border); }
+    .danger-zone h4 {
+      font-size: 0.75rem; letter-spacing: 0.1em; text-transform: uppercase;
+      color: var(--danger); margin-bottom: 16px;
+    }
+
+    /* ─── BUTTONS ─── */
+    .btn-primary {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: linear-gradient(135deg, var(--crimson) 0%, #a93226 100%);
+      border: none; border-radius: 8px;
+      color: #fff; font-family: 'Rajdhani', sans-serif;
+      font-size: 0.9rem; font-weight: 700; letter-spacing: 0.06em;
+      padding: 11px 24px; cursor: pointer;
+      transition: opacity 0.2s, transform 0.15s;
+      text-decoration: none;
+    }
+    .btn-primary:hover { opacity: 0.88; transform: translateY(-1px); }
+
+    .btn-ghost {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: transparent;
+      border: 1px solid var(--border); border-radius: 8px;
+      color: var(--fg); font-family: 'Rajdhani', sans-serif;
+      font-size: 0.9rem; font-weight: 600; letter-spacing: 0.06em;
+      padding: 10px 20px; cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-ghost:hover { border-color: var(--crimson); color: var(--crimson); }
+
+    .btn-danger {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: transparent;
+      border: 1px solid var(--danger); border-radius: 8px;
+      color: var(--danger); font-family: 'Rajdhani', sans-serif;
+      font-size: 0.88rem; font-weight: 600; letter-spacing: 0.06em;
+      padding: 9px 18px; cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-danger:hover { background: rgba(231,76,60,0.1); }
+
+    /* ─── BACKGROUND PANEL ─── */
+    .bg-panel-overlay {
+      position: fixed; inset: 0; z-index: 200;
+      background: rgba(0,0,0,0.7);
+      backdrop-filter: blur(4px);
+      display: none; align-items: center; justify-content: center;
+    }
+    .bg-panel-overlay.open { display: flex; }
+
+    .bg-panel {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-gold);
+      border-radius: 16px;
+      padding: 32px;
+      width: 540px; max-width: 95vw;
+      max-height: 85vh; overflow-y: auto;
+      position: relative;
+    }
+    .bg-panel h2 {
+      font-family: 'Cinzel', serif;
+      font-size: 1.1rem; letter-spacing: 0.1em;
+      color: var(--gold);
+      margin-bottom: 24px;
+    }
+    .bg-panel-close {
+      position: absolute; top: 16px; right: 16px;
+      background: none; border: none; cursor: pointer;
+      color: var(--muted); transition: color 0.2s;
+    }
+    .bg-panel-close:hover { color: var(--fg); }
+
+    .bg-section-label {
+      font-size: 0.7rem; letter-spacing: 0.12em; text-transform: uppercase;
+      color: var(--muted); margin: 20px 0 10px;
+    }
+    .bg-section-label:first-of-type { margin-top: 0; }
+
+    /* preset swatches */
+    .preset-grid {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;
+    }
+    .preset-swatch {
+      border-radius: 8px; height: 56px; cursor: pointer;
+      border: 2px solid transparent;
+      transition: border-color 0.2s, transform 0.15s;
+    }
+    .preset-swatch:hover { transform: scale(1.04); }
+    .preset-swatch.active { border-color: var(--gold); }
+
+    .bg-color-row { display: flex; gap: 12px; align-items: center; }
+    .color-input-wrap {
+      position: relative; width: 48px; height: 48px;
+      border-radius: 8px; overflow: hidden;
+      border: 1px solid var(--border);
+      cursor: pointer;
+    }
+    .color-input-wrap input[type="color"] {
+      position: absolute; inset: -8px;
+      width: calc(100% + 16px); height: calc(100% + 16px);
+      border: none; padding: 0; cursor: pointer;
+    }
+
+    .bg-upload-btn {
+      display: flex; align-items: center; gap: 10px;
+      background: rgba(255,255,255,0.04);
+      border: 1px dashed var(--border);
+      border-radius: 8px; padding: 14px 20px;
+      cursor: pointer; width: 100%;
+      color: var(--muted); font-family: 'Rajdhani', sans-serif;
+      font-size: 0.88rem; letter-spacing: 0.05em;
+      transition: all 0.2s;
+    }
+    .bg-upload-btn:hover { border-color: var(--gold); color: var(--gold); }
+    #bgImageInput, #bgVideoInput { display: none; }
+
+    .bg-reset-btn {
+      margin-top: 20px; width: 100%;
+      background: none; border: 1px solid var(--border);
+      border-radius: 8px; color: var(--muted);
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 0.8rem; letter-spacing: 0.06em; text-transform: uppercase;
+      padding: 9px; cursor: pointer;
+      transition: all 0.2s;
+    }
+    .bg-reset-btn:hover { border-color: var(--crimson); color: var(--crimson); }
+
+    /* ─── TOAST ─── */
+    .toast {
+      position: fixed; bottom: 28px; right: 28px; z-index: 300;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-gold);
+      border-radius: 10px;
+      padding: 14px 20px;
+      display: flex; align-items: center; gap: 10px;
+      font-size: 0.88rem;
+      transform: translateY(120%); opacity: 0;
+      transition: transform 0.3s ease, opacity 0.3s ease;
+      pointer-events: none;
+    }
+    .toast.show { transform: translateY(0); opacity: 1; }
+    .toast-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--gold); flex-shrink: 0;
+    }
+
+    /* ─── ANIMATIONS ─── */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .tab-content-wrap {
+      margin-top: 28px;
+      animation: fadeUp 0.35s ease both;
+    }
+
+    /* scrollbar */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+    /* hidden */
+    .hidden { display: none !important; }
+
+    @media (max-width: 600px) {
+      .profile-flex { flex-direction: column; }
+      .header-inner { padding: 0 16px; }
+      nav { display: none; }
+      main { padding-left: 16px; padding-right: 16px; }
+      .profile-card { padding: 20px; }
+      .settings-shell { padding: 20px; }
+      .preset-grid { grid-template-columns: repeat(3,1fr); }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Background layers -->
+<div id="bg-layer"></div>
+<video id="bg-video-el" autoplay muted loop playsinline></video>
+<div class="grid-veil"></div>
+<div class="scanlines"></div>
+<div class="vignette"></div>
+
+<!-- Header -->
+<header>
+  <div class="header-inner">
+    <a href="index.html" class="logo">
+      <div class="logo-mark">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0a0a0c" stroke-width="2.5">
+          <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+        </svg>
+      </div>
+      <span class="logo-text">ProjectVault</span>
+    </a>
+
+    <nav>
+      <a href="index.html">Projects</a>
+      <a href="cart.html">Cart</a>
+    </nav>
+
+    <div style="display:flex;align-items:center;gap:12px;">
+      <button class="cart-btn" aria-label="Cart">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
+          <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+        </svg>
+        <span id="cartCount" class="cart-count">0</span>
+      </button>
+
+      <div id="userMenu" style="display:flex;align-items:center;gap:10px;">
+        <img id="userAvatar" src="" alt="User">
+        <button id="signOutBtn">Sign Out</button>
+      </div>
+      <div id="authButtons" class="hidden">
+        <a href="signin.html" class="btn-primary" style="padding:7px 16px;font-size:0.8rem;">Sign In</a>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- Main -->
+<main>
+  <div class="content-wrap">
+
+    <!-- Not logged in -->
+    <div id="notLoggedIn" class="not-logged-in hidden">
+      <div class="empty-icon" style="width:96px;height:96px;margin-bottom:24px;">
+        <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="1.5">
+          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+          <circle cx="12" cy="7" r="4"/>
+        </svg>
+      </div>
+      <h2>Sign in to view your account</h2>
+      <p>Access your purchases, downloads, and saved preferences</p>
+      <a href="signin.html" class="btn-primary">
+        Sign In with Google
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
+        </svg>
+      </a>
+    </div>
+
+    <!-- Logged in -->
+    <div id="loggedInContent">
+
+      <!-- Profile card -->
+      <div class="profile-card">
+        <div class="profile-flex">
+
+          <!-- Avatar -->
+          <div class="avatar-block">
+            <div class="avatar-frame" id="avatarFrame" title="Click to change avatar">
+              <!-- filled by JS -->
+              <div class="avatar-overlay">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke-width="2">
+                  <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+                  <circle cx="12" cy="13" r="4"/>
+                </svg>
+                <span>CHANGE</span>
+              </div>
+            </div>
+            <div class="avatar-badge">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3">
+                <polyline points="20 6 9 17 4 12"/>
+              </svg>
+            </div>
+            <input type="file" id="avatarInput" accept="image/*,video/mp4">
+          </div>
+
+          <!-- Info -->
+          <div class="profile-info">
+            <div class="profile-name" id="profileName">User Name</div>
+            <div class="profile-email" id="profileEmail">user@email.com</div>
+            <div class="stat-row">
+              <div class="stat-chip">
+                <span class="stat-val" id="totalPurchases">0</span>
+                <span class="stat-label">Purchases</span>
+              </div>
+              <div class="stat-chip">
+                <span class="stat-val" id="totalSpent">$0</span>
+                <span class="stat-label">Total Spent</span>
+              </div>
+              <div class="stat-chip gold-chip">
+                <span class="stat-val">Member</span>
+                <span class="stat-label" id="memberSince">Since 2024</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- BG button -->
+          <button class="bg-btn" id="openBgPanel">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="3" width="18" height="18" rx="2"/>
+              <circle cx="8.5" cy="8.5" r="1.5"/>
+              <polyline points="21 15 16 10 5 21"/>
+            </svg>
+            Backdrop
+          </button>
+        </div>
+      </div>
+
+      <!-- Tabs -->
+      <div class="tab-rail" style="margin-top:28px;">
+        <button class="tab-btn active" data-tab="purchases">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/>
+            <line x1="3" y1="6" x2="21" y2="6"/>
+            <path d="M16 10a4 4 0 0 1-8 0"/>
+          </svg>
+          Purchases
+        </button>
+        <button class="tab-btn" data-tab="downloads">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="7 10 12 15 17 10"/>
+            <line x1="12" y1="15" x2="12" y2="3"/>
+          </svg>
+          Downloads
+        </button>
+        <button class="tab-btn" data-tab="settings">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="3"/>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+          </svg>
+          Settings
+        </button>
+      </div>
+
+      <!-- Tab content -->
+      <div class="tab-content-wrap">
+
+        <!-- Purchases -->
+        <div id="tab-purchases" class="tab-pane active">
+          <div id="purchasesList"></div>
+          <div id="noPurchases" class="empty-state">
+            <div class="empty-icon">
+              <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="1.5">
+                <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/>
+                <line x1="3" y1="6" x2="21" y2="6"/>
+                <path d="M16 10a4 4 0 0 1-8 0"/>
+              </svg>
+            </div>
+            <h3>No purchases yet</h3>
+            <p>Start building your collection today</p>
+            <a href="index.html" class="btn-primary">Browse Projects</a>
+          </div>
+        </div>
+
+        <!-- Downloads -->
+        <div id="tab-downloads" class="tab-pane">
+          <div id="downloadsList"></div>
+        </div>
+
+        <!-- Settings -->
+        <div id="tab-settings" class="tab-pane">
+          <div class="settings-shell">
+            <h3>Account Settings</h3>
+            <div class="setting-row">
+              <label class="setting-label">Display Name</label>
+              <input type="text" id="settingName" class="input-field" value="">
+            </div>
+            <div class="setting-row">
+              <label class="setting-label">Email Address</label>
+              <input type="email" id="settingEmail" class="input-field" value="" disabled>
+              <p class="setting-hint">Email cannot be changed. Managed through Google.</p>
+            </div>
+            <div class="setting-row">
+              <label class="setting-label">Notifications</label>
+              <label class="check-row">
+                <input type="checkbox" id="notifyUpdates" checked>
+                <span class="check-box"></span>
+                <span>Product updates and new releases</span>
+              </label>
+              <label class="check-row">
+                <input type="checkbox" id="notifyDeals" checked>
+                <span class="check-box"></span>
+                <span>Special deals and promotions</span>
+              </label>
+            </div>
+            <div style="padding-top:16px;border-top:1px solid var(--border);">
+              <button id="saveSettingsBtn" class="btn-primary">Save Changes</button>
+            </div>
+
+            <div class="danger-zone">
+              <h4>Danger Zone</h4>
+              <button id="clearDataBtn" class="btn-danger">Clear All Local Data</button>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /tab-content-wrap -->
+    </div><!-- /loggedInContent -->
+  </div>
+</main>
+
+<!-- Background Customiser Panel -->
+<div class="bg-panel-overlay" id="bgOverlay">
+  <div class="bg-panel">
+    <h2>Backdrop Customiser</h2>
+    <button class="bg-panel-close" id="closeBgPanel">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+      </svg>
+    </button>
+
+    <p class="bg-section-label">Presets</p>
+    <div class="preset-grid" id="presetGrid">
+      <!-- filled by JS -->
+    </div>
+
+    <p class="bg-section-label">Solid Color</p>
+    <div class="bg-color-row">
+      <div class="color-input-wrap" title="Pick color">
+        <input type="color" id="bgColorPicker" value="#0a0a0c">
+      </div>
+      <span style="font-size:0.82rem;color:var(--muted);">Pick any solid color</span>
+    </div>
+
+    <p class="bg-section-label">Upload Image</p>
+    <button class="bg-upload-btn" id="triggerBgImage">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <rect x="3" y="3" width="18" height="18" rx="2"/>
+        <circle cx="8.5" cy="8.5" r="1.5"/>
+        <polyline points="21 15 16 10 5 21"/>
+      </svg>
+      Choose background image (JPG / PNG / WebP)
+    </button>
+    <input type="file" id="bgImageInput" accept="image/jpeg,image/png,image/webp,image/gif">
+
+    <p class="bg-section-label">Upload Video Loop</p>
+    <button class="bg-upload-btn" id="triggerBgVideo">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <polygon points="23 7 16 12 23 17 23 7"/>
+        <rect x="1" y="5" width="15" height="14" rx="2"/>
+      </svg>
+      Choose background video (MP4, max 20 MB)
+    </button>
+    <input type="file" id="bgVideoInput" accept="video/mp4">
+
+    <button class="bg-reset-btn" id="bgResetBtn">↺ Reset to Default</button>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast">
+  <div class="toast-dot"></div>
+  <span id="toastMsg">Saved</span>
+</div>
+
+<script>
+// ────────────────────────────────────────────────────────────────
+//  IndexedDB helper  (stores blobs; avatar + backgrounds)
+// ────────────────────────────────────────────────────────────────
+const DB_NAME = 'ProjectVaultDB';
+const DB_VERSION = 1;
+let db;
+
+function openDB() {
+  return new Promise((res, rej) => {
+    const req = indexedDB.open(DB_NAME, DB_VERSION);
+    req.onupgradeneeded = e => {
+      e.target.result.createObjectStore('blobs');
+    };
+    req.onsuccess = e => { db = e.target.result; res(db); };
+    req.onerror   = e => rej(e);
+  });
+}
+
+function putBlob(key, blob) {
+  return new Promise((res, rej) => {
+    const tx  = db.transaction('blobs', 'readwrite');
+    const st  = tx.objectStore('blobs');
+    const req = st.put(blob, key);
+    req.onsuccess = () => res();
+    req.onerror   = e => rej(e);
+  });
+}
+
+function getBlob(key) {
+  return new Promise((res) => {
+    const tx  = db.transaction('blobs', 'readonly');
+    const st  = tx.objectStore('blobs');
+    const req = st.get(key);
+    req.onsuccess = e => res(e.target.result || null);
+    req.onerror   = () => res(null);
+  });
+}
+
+function deleteBlob(key) {
+  const tx = db.transaction('blobs', 'readwrite');
+  tx.objectStore('blobs').delete(key);
+}
+
+// ────────────────────────────────────────────────────────────────
+//  Toast
+// ────────────────────────────────────────────────────────────────
+let toastTimer;
+function showToast(msg) {
+  const el   = document.getElementById('toast');
+  document.getElementById('toastMsg').textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 2800);
+}
+
+// ────────────────────────────────────────────────────────────────
+//  Tab switching
+// ────────────────────────────────────────────────────────────────
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+  });
+});
+
+// ────────────────────────────────────────────────────────────────
+//  Avatar — image or MP4 video
+// ────────────────────────────────────────────────────────────────
+function renderAvatar(src, isVideo) {
+  const frame = document.getElementById('avatarFrame');
+  // remove existing media
+  frame.querySelectorAll('img, video').forEach(el => el.remove());
+
+  if (isVideo) {
+    const vid = document.createElement('video');
+    vid.src = src;
+    vid.autoplay = true;
+    vid.muted    = true;
+    vid.loop     = true;
+    vid.playsInline = true;
+    vid.style.cssText = 'width:100%;height:100%;object-fit:cover;display:block;';
+    frame.prepend(vid);
+    vid.play();
+  } else {
+    const img = document.createElement('img');
+    img.src = src;
+    img.alt = 'Avatar';
+    frame.prepend(img);
+  }
+
+  // also update header avatar (image only preview)
+  if (!isVideo) {
+    document.getElementById('userAvatar').src = src;
+  }
+}
+
+async function loadSavedAvatar() {
+  const meta = JSON.parse(localStorage.getItem('avatarMeta') || 'null');
+  if (!meta) {
+    // default placeholder
+    const img = document.createElement('img');
+    img.src = 'https://ui-avatars.com/api/?name=User&background=c0392b&color=fff&bold=true&size=108';
+    img.alt = 'Avatar';
+    document.getElementById('avatarFrame').prepend(img);
+    return;
+  }
+  const blob = await getBlob('avatar');
+  if (!blob) return;
+  const url = URL.createObjectURL(blob);
+  renderAvatar(url, meta.isVideo);
+}
+
+document.getElementById('avatarFrame').addEventListener('click', () => {
+  document.getElementById('avatarInput').click();
+});
+
+document.getElementById('avatarInput').addEventListener('change', async e => {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  const isVideo = file.type === 'video/mp4';
+
+  if (isVideo && file.size > 20 * 1024 * 1024) {
+    showToast('Video must be under 20 MB');
+    e.target.value = '';
+    return;
+  }
+
+  await putBlob('avatar', file);
+  localStorage.setItem('avatarMeta', JSON.stringify({ isVideo, name: file.name }));
+
+  const url = URL.createObjectURL(file);
+  renderAvatar(url, isVideo);
+  showToast(isVideo ? '🎬 Video avatar saved' : '📸 Avatar updated');
+  e.target.value = '';
+});
+
+// ────────────────────────────────────────────────────────────────
+//  Background customiser
+// ────────────────────────────────────────────────────────────────
+const BG_PRESETS = [
+  { label: 'Void',      css: '#0a0a0c', type: 'color' },
+  { label: 'Crimson',   css: 'linear-gradient(135deg,#1a0808 0%,#2d0a0a 50%,#0a0a0c 100%)', type: 'gradient' },
+  { label: 'Deep Sea',  css: 'linear-gradient(135deg,#020f1a 0%,#041824 60%,#020c14 100%)', type: 'gradient' },
+  { label: 'Dragon',    css: 'linear-gradient(160deg,#0a0808 0%,#1a0a00 40%,#0f0505 100%)', type: 'gradient' },
+  { label: 'Void Gold', css: 'linear-gradient(135deg,#0c0a04 0%,#1a1408 50%,#0a0a0c 100%)', type: 'gradient' },
+  { label: 'Nebula',    css: 'linear-gradient(135deg,#08040f 0%,#0d0818 50%,#060410 100%)', type: 'gradient' },
+  { label: 'Forest',    css: 'linear-gradient(135deg,#030a04 0%,#081508 50%,#030a04 100%)', type: 'gradient' },
+  { label: 'Slate',     css: 'linear-gradient(135deg,#06090e 0%,#0c1018 50%,#06090e 100%)', type: 'gradient' },
+];
+
+function buildPresets() {
+  const grid = document.getElementById('presetGrid');
+  const saved = localStorage.getItem('bgPresetIndex');
+  BG_PRESETS.forEach((p, i) => {
+    const swatch = document.createElement('div');
+    swatch.className = 'preset-swatch' + (saved == i ? ' active' : '');
+    swatch.style.background = p.css;
+    swatch.title = p.label;
+    swatch.addEventListener('click', () => {
+      applyBgColor(p.css);
+      document.querySelectorAll('.preset-swatch').forEach(s => s.classList.remove('active'));
+      swatch.classList.add('active');
+      localStorage.setItem('bgPresetIndex', i);
+      localStorage.removeItem('bgColorCustom');
+      clearBgVideo();
+      clearBgImage();
+    });
+    grid.appendChild(swatch);
+  });
+}
+
+function applyBgColor(cssVal) {
+  const layer = document.getElementById('bg-layer');
+  layer.style.background = cssVal;
+  layer.style.backgroundSize = 'cover';
+  layer.style.backgroundPosition = 'center';
+}
+
+function clearBgVideo() {
+  const vidEl = document.getElementById('bg-video-el');
+  vidEl.style.display = 'none';
+  vidEl.src = '';
+  deleteBlob('bgVideo');
+  localStorage.removeItem('bgVideoMeta');
+}
+
+function clearBgImage() {
+  deleteBlob('bgImage');
+  localStorage.removeItem('bgImageMeta');
+}
+
+// color picker
+document.getElementById('bgColorPicker').addEventListener('input', e => {
+  const hex = e.target.value;
+  applyBgColor(hex);
+  localStorage.setItem('bgColorCustom', hex);
+  localStorage.removeItem('bgPresetIndex');
+  document.querySelectorAll('.preset-swatch').forEach(s => s.classList.remove('active'));
+  clearBgVideo();
+  clearBgImage();
+});
+
+// bg image upload
+document.getElementById('triggerBgImage').addEventListener('click', () => {
+  document.getElementById('bgImageInput').click();
+});
+document.getElementById('bgImageInput').addEventListener('change', async e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  await putBlob('bgImage', file);
+  localStorage.setItem('bgImageMeta', JSON.stringify({ name: file.name }));
+  const url = URL.createObjectURL(file);
+  applyBgImageUrl(url);
+  clearBgVideo();
+  localStorage.removeItem('bgPresetIndex');
+  localStorage.removeItem('bgColorCustom');
+  showToast('Background image set');
+  e.target.value = '';
+});
+
+function applyBgImageUrl(url) {
+  const layer = document.getElementById('bg-layer');
+  layer.style.background = `url('${url}') center/cover no-repeat`;
+}
+
+// bg video upload
+document.getElementById('triggerBgVideo').addEventListener('click', () => {
+  document.getElementById('bgVideoInput').click();
+});
+document.getElementById('bgVideoInput').addEventListener('change', async e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  if (file.size > 20 * 1024 * 1024) { showToast('Video must be under 20 MB'); e.target.value=''; return; }
+  await putBlob('bgVideo', file);
+  localStorage.setItem('bgVideoMeta', JSON.stringify({ name: file.name }));
+  const url = URL.createObjectURL(file);
+  applyBgVideoUrl(url);
+  clearBgImage();
+  localStorage.removeItem('bgPresetIndex');
+  localStorage.removeItem('bgColorCustom');
+  // reset static bg layer
+  document.getElementById('bg-layer').style.background = '#000';
+  showToast('Background video set');
+  e.target.value = '';
+});
+
+function applyBgVideoUrl(url) {
+  const vidEl = document.getElementById('bg-video-el');
+  vidEl.src = url;
+  vidEl.style.display = 'block';
+  vidEl.play();
+}
+
+// reset
+document.getElementById('bgResetBtn').addEventListener('click', () => {
+  clearBgVideo(); clearBgImage();
+  localStorage.removeItem('bgPresetIndex');
+  localStorage.removeItem('bgColorCustom');
+  document.querySelectorAll('.preset-swatch').forEach(s => s.classList.remove('active'));
+  applyBgColor('#0a0a0c');
+  showToast('Background reset');
+});
+
+async function loadSavedBackground() {
+  // priority: bgVideo > bgImage > bgColorCustom > preset > default
+  const bgVideoMeta = localStorage.getItem('bgVideoMeta');
+  if (bgVideoMeta) {
+    const blob = await getBlob('bgVideo');
+    if (blob) { applyBgVideoUrl(URL.createObjectURL(blob)); return; }
+  }
+  const bgImageMeta = localStorage.getItem('bgImageMeta');
+  if (bgImageMeta) {
+    const blob = await getBlob('bgImage');
+    if (blob) { applyBgImageUrl(URL.createObjectURL(blob)); return; }
+  }
+  const custom = localStorage.getItem('bgColorCustom');
+  if (custom) { applyBgColor(custom); document.getElementById('bgColorPicker').value = custom; return; }
+  const preset = localStorage.getItem('bgPresetIndex');
+  if (preset !== null && BG_PRESETS[preset]) {
+    applyBgColor(BG_PRESETS[preset].css);
+  }
+}
+
+// panel open / close
+document.getElementById('openBgPanel').addEventListener('click', () => {
+  document.getElementById('bgOverlay').classList.add('open');
+});
+document.getElementById('closeBgPanel').addEventListener('click', () => {
+  document.getElementById('bgOverlay').classList.remove('open');
+});
+document.getElementById('bgOverlay').addEventListener('click', e => {
+  if (e.target === e.currentTarget) e.currentTarget.classList.remove('open');
+});
+
+// ────────────────────────────────────────────────────────────────
+//  Settings
+// ────────────────────────────────────────────────────────────────
+document.getElementById('saveSettingsBtn').addEventListener('click', () => {
+  const name = document.getElementById('settingName').value.trim();
+  if (name) {
+    document.getElementById('profileName').textContent = name;
+    localStorage.setItem('displayName', name);
+  }
+  localStorage.setItem('notifyUpdates', document.getElementById('notifyUpdates').checked);
+  localStorage.setItem('notifyDeals',   document.getElementById('notifyDeals').checked);
+  showToast('Settings saved');
+});
+
+document.getElementById('clearDataBtn').addEventListener('click', () => {
+  if (!confirm('Clear all local data? This cannot be undone.')) return;
+  localStorage.clear();
+  clearBgVideo(); clearBgImage(); deleteBlob('avatar');
+  location.reload();
+});
+
+// ────────────────────────────────────────────────────────────────
+//  Auth stub  (replace with real Firebase / Auth)
+// ────────────────────────────────────────────────────────────────
+function initAuth() {
+  // DEMO: always show logged-in state with placeholder data
+  const name  = localStorage.getItem('displayName') || 'Crimson Valentine';
+  const email = 'user@example.com';
+  const since = localStorage.getItem('memberSince') || '2024';
+
+  document.getElementById('profileName').textContent  = name;
+  document.getElementById('profileEmail').textContent = email;
+  document.getElementById('memberSince').textContent  = 'Since ' + since;
+  document.getElementById('settingName').value  = name;
+  document.getElementById('settingEmail').value = email;
+  document.getElementById('notifyUpdates').checked = localStorage.getItem('notifyUpdates') !== 'false';
+  document.getElementById('notifyDeals').checked   = localStorage.getItem('notifyDeals')   !== 'false';
+
+  // purchases demo
+  const purchases = JSON.parse(localStorage.getItem('purchases') || '[]');
+  renderPurchases(purchases);
+
+  document.getElementById('signOutBtn').addEventListener('click', () => {
+    showToast('Signed out');
+    setTimeout(() => location.href = 'signin.html', 1200);
+  });
+}
+
+function renderPurchases(list) {
+  const listEl = document.getElementById('purchasesList');
+  const emptyEl = document.getElementById('noPurchases');
+  document.getElementById('totalPurchases').textContent = list.length;
+  const total = list.reduce((s, p) => s + (p.price || 0), 0);
+  document.getElementById('totalSpent').textContent = '$' + total.toFixed(2);
+
+  if (!list.length) { emptyEl.classList.remove('hidden'); listEl.innerHTML = ''; return; }
+  emptyEl.classList.add('hidden');
+
+  listEl.innerHTML = '';
+  list.forEach(p => {
+    listEl.insertAdjacentHTML('beforeend', `
+      <div class="item-card">
+        <div class="item-thumb"></div>
+        <div class="item-info">
+          <div class="item-title">${p.title || 'Project'}</div>
+          <div class="item-meta">${p.date || ''}</div>
+        </div>
+        <div class="item-price">$${(p.price||0).toFixed(2)}</div>
+        <button class="dl-btn">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="7 10 12 15 17 10"/>
+            <line x1="12" y1="15" x2="12" y2="3"/>
+          </svg>
+          Download
+        </button>
+      </div>
+    `);
+  });
+
+  // mirror in downloads tab
+  document.getElementById('downloadsList').innerHTML = listEl.innerHTML;
+}
+
+// ────────────────────────────────────────────────────────────────
+//  Init
+// ────────────────────────────────────────────────────────────────
+(async () => {
+  await openDB();
+  buildPresets();
+  await loadSavedBackground();
+  await loadSavedAvatar();
+  initAuth();
+})();
+</script>
+</body>
+</html>

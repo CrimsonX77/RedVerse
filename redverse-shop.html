@@ -1,0 +1,2008 @@
+<!--
+╔═══════════════════════════════════════════════════════════════════════════════╗
+║  REDVERSE SHOP — Full E-Commerce Catalog                                    ║
+║  Built for Crimson by Vera Lux · Expanded by Lyra                          ║
+║  Restyled: lyra.css cathedral theme                                         ║
+║                                                                             ║
+║  SETUP REQUIRED (3 steps):                                                  ║
+║  1. STRIPE: Paste your Publishable Key into STRIPE_PK below.               ║
+║     Create products in Stripe Dashboard → copy Price IDs into products.    ║
+║  2. GOOGLE AUTH: Paste OAuth Client ID into GOOGLE_CLIENT_ID below.        ║
+║  3. MEDIA: Drop image/video files matching product IDs in this directory.  ║
+╚═══════════════════════════════════════════════════════════════════════════════╝
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Redverse Shop — Tools of the Recursive Architect</title>
+<link rel="stylesheet" href="lyra.css">
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<script src="https://js.stripe.com/v3/"></script>
+<style>
+/* ── Shop-specific overrides ──────────────────────────── */
+body { overflow-x: hidden; }
+
+.page-video-bg {
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.page-video-bg video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.16;
+  filter: saturate(0.7) contrast(1.05) brightness(0.55);
+}
+
+.shop-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 24px 80px;
+  position: relative;
+  z-index: 2;
+}
+
+/* Hero */
+.shop-hero {
+  text-align: center;
+  padding: 56px 20px 40px;
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--lyra-radius-xl);
+  border: 1px solid rgba(220,20,60,0.14);
+  margin-bottom: 8px;
+}
+
+.shop-hero-content {
+  position: relative;
+  z-index: 2;
+}
+
+.hero-video-wrap {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.hero-video-wrap video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.22;
+  filter: saturate(0.9) contrast(1.08) brightness(0.52);
+}
+
+.hero-video-wrap::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 50% 35%, rgba(220,20,60,0.12), rgba(4,4,8,0.7) 70%);
+}
+
+.shop-hero::before {
+  content: '';
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  width: 400px; height: 120px;
+  background: radial-gradient(ellipse, rgba(220,20,60,0.1), transparent 70%);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.shop-hero-title {
+  font-family: 'Cinzel', serif;
+  font-size: clamp(1.6rem, 4vw, 2.6rem);
+  font-weight: 900;
+  color: var(--lyra-text-bright);
+  letter-spacing: 5px;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+  text-shadow: 0 0 30px rgba(220,20,60,0.2);
+}
+
+.shop-hero-title span { color: var(--lyra-crimson); }
+
+.shop-hero-sub {
+  font-size: 14px;
+  color: var(--lyra-ghost);
+  font-style: italic;
+  letter-spacing: 1px;
+}
+
+/* Support banner */
+.support-banner {
+  background: var(--lyra-stone);
+  border: 1px solid var(--lyra-border);
+  border-radius: var(--lyra-radius-lg);
+  padding: 16px 20px;
+  text-align: center;
+  margin-bottom: 28px;
+  position: relative;
+  overflow: hidden;
+}
+
+.support-banner::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--lyra-crimson), transparent);
+  opacity: 0.5;
+}
+
+.support-banner p {
+  font-size: 13px;
+  color: var(--lyra-ash);
+  margin-bottom: 10px;
+}
+
+.support-links {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.support-link {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 1px;
+  color: var(--lyra-ash);
+  text-decoration: none;
+  padding: 6px 14px;
+  border: 1px solid var(--lyra-border);
+  border-radius: var(--lyra-radius-md);
+  transition: all var(--lyra-duration-med);
+}
+
+.support-link:hover {
+  border-color: var(--lyra-crimson);
+  color: var(--lyra-crimson);
+  background: var(--lyra-blush);
+}
+
+/* Category bar */
+.category-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  margin-bottom: 32px;
+  padding: 12px 0;
+}
+
+.category-btn {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  padding: 7px 14px;
+  border: 1px solid var(--lyra-border);
+  border-radius: var(--lyra-radius-pill);
+  background: transparent;
+  color: var(--lyra-ash);
+  cursor: pointer;
+  transition: all var(--lyra-duration-med);
+}
+
+.category-btn:hover {
+  border-color: var(--lyra-ghost);
+  color: var(--lyra-silver);
+  background: var(--lyra-blush);
+}
+
+.category-btn.active {
+  border-color: var(--lyra-crimson);
+  color: var(--lyra-crimson);
+  background: rgba(220,20,60,0.1);
+  box-shadow: 0 0 8px rgba(220,20,60,0.15);
+}
+
+/* Product grid */
+.product-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+  gap: 18px;
+  margin-bottom: 40px;
+}
+
+/* Product card */
+.product-card {
+  background: var(--lyra-stone);
+  border: 1px solid var(--lyra-border);
+  border-radius: var(--lyra-radius-lg);
+  padding: 22px;
+  cursor: pointer;
+  transition: all var(--lyra-duration-med) var(--lyra-ease-smooth);
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  min-height: 220px;
+  opacity: 0;
+  animation: lyra-fadeSlideIn 0.4s var(--lyra-ease-snap) forwards;
+}
+
+.product-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--lyra-crimson), transparent);
+  opacity: 0;
+  transition: opacity var(--lyra-duration-med);
+}
+
+.product-card:hover {
+  border-color: rgba(220,20,60,0.4);
+  transform: translateY(-2px);
+  box-shadow: var(--lyra-shadow-md), 0 0 20px rgba(220,20,60,0.08);
+}
+
+.product-card:hover::before { opacity: 0.6; }
+
+/* Card background media */
+.card-media-bg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  border-radius: var(--lyra-radius-lg);
+}
+
+.card-media-bg img,
+.card-media-bg video {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  opacity: 0.07;
+  filter: saturate(0.3);
+}
+
+.card-media-bg video {
+  opacity: 0.14;
+  filter: saturate(0.6) contrast(1.04);
+}
+
+.card-content { position: relative; z-index: 1; display: flex; flex-direction: column; flex: 1; }
+
+.product-icon {
+  font-size: 32px;
+  margin-bottom: 10px;
+  display: block;
+}
+
+.product-category-tag {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--lyra-ghost);
+  margin-bottom: 6px;
+}
+
+.product-name {
+  font-family: 'Cinzel', serif;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--lyra-text-bright);
+  margin-bottom: 6px;
+  letter-spacing: 0.5px;
+}
+
+.product-tagline {
+  font-size: 13px;
+  color: var(--lyra-ash);
+  line-height: 1.5;
+  flex: 1;
+  margin-bottom: 14px;
+}
+
+.product-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: auto;
+}
+
+.product-price {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--lyra-crimson);
+}
+
+.product-price.free { color: var(--lyra-success); }
+
+.product-status {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 1px;
+  padding: 3px 8px;
+  border-radius: var(--lyra-radius-pill);
+  border: 1px solid;
+}
+
+.status-available { color: var(--lyra-success); border-color: rgba(0,255,136,0.3); background: rgba(0,255,136,0.06); }
+.status-preview   { color: var(--lyra-amber);   border-color: rgba(232,163,23,0.3);  background: rgba(232,163,23,0.06); }
+.status-soon      { color: var(--lyra-ghost);   border-color: var(--lyra-border);    background: transparent; }
+
+/* Add to cart btn on card */
+.btn-add-cart {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 1px;
+  padding: 5px 12px;
+  border: 1px solid var(--lyra-border);
+  border-radius: var(--lyra-radius-md);
+  background: transparent;
+  color: var(--lyra-ash);
+  cursor: pointer;
+  transition: all var(--lyra-duration-fast);
+  white-space: nowrap;
+}
+
+.btn-add-cart:hover {
+  border-color: var(--lyra-crimson);
+  color: var(--lyra-crimson);
+  background: var(--lyra-blush);
+}
+
+.btn-add-cart.in-cart {
+  border-color: var(--lyra-success);
+  color: var(--lyra-success);
+  background: rgba(0,255,136,0.06);
+}
+
+/* ── Detail view ─────────────────────────────────────── */
+#detail-view {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 20px 0;
+}
+
+.detail-back {
+  margin-bottom: 20px;
+}
+
+.detail-card {
+  background: var(--lyra-stone);
+  border: 1px solid var(--lyra-border);
+  border-radius: var(--lyra-radius-xl);
+  overflow: hidden;
+  position: relative;
+}
+
+.detail-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--lyra-blood), var(--lyra-crimson), var(--lyra-gold), var(--lyra-crimson), var(--lyra-blood), transparent);
+}
+
+.detail-header {
+  display: flex;
+  gap: 20px;
+  align-items: flex-start;
+  padding: 28px 28px 20px;
+  border-bottom: 1px solid var(--lyra-border);
+  background: linear-gradient(180deg, rgba(220,20,60,0.04), transparent);
+}
+
+.detail-icon-lg {
+  font-size: 52px;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.detail-meta { flex: 1; }
+
+.detail-name {
+  font-family: 'Cinzel', serif;
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--lyra-text-bright);
+  letter-spacing: 1px;
+  margin-bottom: 4px;
+}
+
+.detail-cat-path {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--lyra-ghost);
+  letter-spacing: 1px;
+  margin-bottom: 10px;
+}
+
+.detail-description {
+  font-size: 14px;
+  color: var(--lyra-ash);
+  line-height: 1.65;
+}
+
+.detail-section { padding: 22px 28px; border-bottom: 1px solid var(--lyra-border); }
+.detail-section:last-child { border-bottom: none; }
+
+.detail-section-title {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: var(--lyra-crimson);
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.detail-section-title::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, var(--lyra-border), transparent);
+}
+
+.feature-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.feature-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 13px;
+  color: var(--lyra-silver);
+  line-height: 1.5;
+}
+
+.feature-item::before {
+  content: '◆';
+  color: var(--lyra-crimson);
+  font-size: 8px;
+  margin-top: 4px;
+  flex-shrink: 0;
+}
+
+.tech-stack-list { display: flex; flex-wrap: wrap; gap: 8px; }
+
+.tech-tag {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  padding: 4px 10px;
+  background: var(--lyra-obsidian);
+  border: 1px solid var(--lyra-border);
+  border-radius: var(--lyra-radius-sm);
+  color: var(--lyra-ash);
+  letter-spacing: 0.5px;
+}
+
+.detail-pricing {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.detail-price-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--lyra-ghost);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.detail-price-value {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--lyra-crimson);
+  text-shadow: 0 0 16px rgba(220,20,60,0.3);
+}
+
+.detail-price-value.free { color: var(--lyra-success); }
+
+.detail-access-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--lyra-cyan);
+  text-decoration: none;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  transition: opacity var(--lyra-duration-fast);
+  align-self: flex-start;
+}
+
+.detail-access-link:hover { opacity: 0.7; }
+
+.detail-cart-btn {
+  align-self: flex-start;
+  padding: 12px 24px;
+  background: linear-gradient(135deg, var(--lyra-blood), var(--lyra-crimson));
+  border: 1px solid var(--lyra-crimson);
+  border-radius: var(--lyra-radius-md);
+  color: #fff;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: all var(--lyra-duration-med);
+  box-shadow: 0 0 16px rgba(220,20,60,0.25);
+}
+
+.detail-cart-btn:hover {
+  background: linear-gradient(135deg, var(--lyra-crimson), var(--lyra-ember));
+  box-shadow: 0 0 24px rgba(220,20,60,0.4);
+  transform: translateY(-1px);
+}
+
+.detail-cart-btn.in-cart {
+  background: linear-gradient(135deg, rgba(0,255,136,0.15), rgba(0,255,136,0.08));
+  border-color: var(--lyra-success);
+  color: var(--lyra-success);
+  box-shadow: none;
+}
+
+/* ── Cart drawer ─────────────────────────────────────── */
+.cart-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(6,6,10,0.7);
+  backdrop-filter: blur(4px);
+  z-index: 90;
+}
+
+.cart-overlay.open { display: block; }
+
+.cart-drawer {
+  position: fixed;
+  top: 0; right: 0; bottom: 0;
+  width: 360px;
+  max-width: 95vw;
+  background: var(--lyra-stone);
+  border-left: 1px solid var(--lyra-border);
+  box-shadow: var(--lyra-shadow-lg);
+  z-index: 91;
+  display: flex;
+  flex-direction: column;
+  transform: translateX(100%);
+  transition: transform var(--lyra-duration-med) var(--lyra-ease-snap);
+}
+
+.cart-drawer::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; bottom: 0;
+  width: 2px;
+  background: linear-gradient(180deg, transparent, var(--lyra-crimson), var(--lyra-gold), var(--lyra-crimson), transparent);
+  opacity: 0.5;
+}
+
+.cart-drawer.open { transform: translateX(0); }
+
+.cart-drawer-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--lyra-border);
+  background: linear-gradient(180deg, rgba(220,20,60,0.04), transparent);
+}
+
+.cart-drawer-title {
+  font-family: 'Cinzel', serif;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: var(--lyra-text-bright);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.cart-drawer-close {
+  background: none;
+  border: 1px solid var(--lyra-border);
+  border-radius: var(--lyra-radius-sm);
+  width: 30px; height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--lyra-ghost);
+  cursor: pointer;
+  transition: all var(--lyra-duration-fast);
+}
+
+.cart-drawer-close:hover { border-color: var(--lyra-crimson); color: var(--lyra-crimson); }
+
+.cart-items-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.cart-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--lyra-ghost);
+  font-size: 13px;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.cart-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--lyra-obsidian);
+  border: 1px solid var(--lyra-border);
+  border-radius: var(--lyra-radius-md);
+  padding: 12px 14px;
+}
+
+.cart-item-icon { font-size: 24px; flex-shrink: 0; }
+
+.cart-item-info { flex: 1; min-width: 0; }
+
+.cart-item-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--lyra-silver);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cart-item-price {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--lyra-crimson);
+  margin-top: 2px;
+}
+
+.cart-item-remove {
+  background: none;
+  border: none;
+  color: var(--lyra-ghost);
+  cursor: pointer;
+  font-size: 14px;
+  padding: 4px;
+  flex-shrink: 0;
+  transition: color var(--lyra-duration-fast);
+  line-height: 1;
+}
+
+.cart-item-remove:hover { color: var(--lyra-error); }
+
+.cart-drawer-footer {
+  padding: 16px 20px;
+  border-top: 1px solid var(--lyra-border);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.cart-total-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.cart-total-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--lyra-silver);
+}
+
+.cart-total-val {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--lyra-crimson);
+}
+
+/* Empty state full-page */
+.empty-state {
+  text-align: center;
+  padding: 80px 20px;
+}
+
+.empty-state .material-icons { font-size: 56px; color: var(--lyra-ghost); display: block; margin-bottom: 16px; }
+.empty-state h3 { font-family: 'Cinzel', serif; color: var(--lyra-silver); margin-bottom: 8px; }
+.empty-state p  { color: var(--lyra-ghost); font-size: 13px; }
+
+/* animate-in helper */
+.animate-in { animation: lyra-fadeSlideIn 0.4s var(--lyra-ease-snap) both; }
+
+@media (prefers-reduced-motion: reduce) {
+  .page-video-bg,
+  .hero-video-wrap,
+  .card-media-bg video {
+    display: none;
+  }
+}
+</style>
+</head>
+<body>
+<div class="lyra-cathedral"></div>
+<div class="page-video-bg" aria-hidden="true">
+  <video id="page-bg-video" autoplay muted loop playsinline preload="metadata"></video>
+</div>
+
+<!-- ── Header ─────────────────────────────────────────── -->
+<header class="lyra-header">
+  <a href="index.html" style="display:flex;align-items:center;gap:10px;text-decoration:none;color:inherit">
+    <div style="width:32px;height:32px;border-radius:6px;background:linear-gradient(135deg,var(--lyra-blood),var(--lyra-crimson));display:flex;align-items:center;justify-content:center;box-shadow:0 0 10px rgba(220,20,60,0.3)">
+      <span style="color:var(--lyra-gold);font-size:16px">♦</span>
+    </div>
+    <span class="lyra-logo">RED<span class="lyra-logo-accent">VERSE</span></span>
+  </a>
+
+  <div style="display:flex;align-items:center;gap:12px">
+    <!-- Auth -->
+    <div id="auth-section" style="display:flex;align-items:center;gap:8px"></div>
+    <!-- Cart -->
+    <button class="cart-btn" onclick="toggleCart()" style="position:relative;background:rgba(220,20,60,0.08);border:1px solid rgba(220,20,60,0.2);border-radius:var(--lyra-radius-md);padding:7px 14px;color:var(--lyra-silver);cursor:pointer;font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:600;display:flex;align-items:center;gap:8px;transition:all 0.2s" onmouseover="this.style.borderColor='var(--lyra-crimson)'" onmouseout="this.style.borderColor='rgba(220,20,60,0.2)'">
+      <i class="material-icons" style="font-size:18px;color:var(--lyra-crimson)">shopping_cart</i>
+      Cart
+      <span id="cart-badge" class="hidden" style="background:var(--lyra-crimson);color:#fff;font-size:10px;font-weight:700;min-width:18px;height:18px;border-radius:999px;display:flex;align-items:center;justify-content:center;padding:0 4px"></span>
+    </button>
+  </div>
+</header>
+
+<!-- ── Catalog View ────────────────────────────────────── -->
+<div id="catalog-view">
+  <div class="shop-container">
+    <div class="shop-hero">
+      <div class="hero-video-wrap" aria-hidden="true">
+        <video id="hero-video" autoplay muted loop playsinline preload="metadata"></video>
+      </div>
+      <div class="shop-hero-content">
+        <div class="lyra-section-title" style="justify-content:center;margin-bottom:12px">Redverse Collective</div>
+        <div class="shop-hero-title">Tools of the <span>Recursive Architect</span></div>
+        <div class="shop-hero-sub">Soul Schemas · AI Frameworks · Digital Weapons</div>
+      </div>
+    </div>
+
+    <div class="support-banner">
+      <p>Support the build. Every purchase fuels the next system.</p>
+      <div class="support-links">
+        <a href="https://suno.com/@redstrucksolo550" class="support-link" target="_blank">♫ Suno Music</a>
+        <a href="https://github.com/CrimsonX77" class="support-link" target="_blank">⬡ GitHub</a>
+        <a href="https://ko-fi.com/CrimsonDragonX7" class="support-link" target="_blank">☕ Ko-fi</a>
+        <a href="https://patreon.com/c/CrimsonDragonX7" class="support-link" target="_blank">★ Patreon</a>
+      </div>
+    </div>
+
+    <div class="category-bar" id="category-bar"></div>
+
+    <div class="product-grid" id="product-grid"></div>
+
+    <div id="empty-state" class="empty-state hidden">
+      <i class="material-icons">search_off</i>
+      <h3>No products in this category yet</h3>
+      <p>Check back soon — more tools are in progress.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ── Detail View ────────────────────────────────────── -->
+<div id="detail-view" class="hidden">
+  <div class="shop-container">
+    <div class="detail-back">
+      <button class="lyra-btn" onclick="showCatalog()">
+        <i class="material-icons" style="font-size:16px">arrow_back</i> Back to Catalog
+      </button>
+    </div>
+    <div class="detail-card" id="detail-content"></div>
+  </div>
+</div>
+
+<!-- ── Cart Drawer ────────────────────────────────────── -->
+<div class="cart-overlay" id="cart-overlay" onclick="toggleCart()"></div>
+
+<div class="cart-drawer" id="cart-drawer">
+  <div class="cart-drawer-header">
+    <div class="cart-drawer-title">
+      <i class="material-icons" style="font-size:18px;color:var(--lyra-crimson)">shopping_cart</i>
+      Cart
+    </div>
+    <button class="cart-drawer-close" onclick="toggleCart()">
+      <i class="material-icons" style="font-size:18px">close</i>
+    </button>
+  </div>
+  <div class="cart-items-list" id="cart-items"></div>
+  <div class="cart-drawer-footer">
+    <div class="cart-total-row">
+      <span class="cart-total-label">Total</span>
+      <span class="cart-total-val" id="cart-total">$0</span>
+    </div>
+    <button id="btn-checkout" class="lyra-btn lyra-btn-primary" onclick="checkout()"
+      style="width:100%;justify-content:center;padding:13px;font-size:13px;letter-spacing:1px" disabled>
+      <i class="material-icons" style="font-size:18px">credit_card</i>
+      CHECKOUT
+    </button>
+  </div>
+</div>
+
+<footer class="lyra-footer">
+  <span class="lyra-footer-brand">RedVerse Shop · Tools of the Recursive Architect</span>
+  <span class="lyra-mono">♦ Crimson Valentine 2026</span>
+</footer>
+
+<!-- ── Script ─────────────────────────────────────────── -->
+<script>
+// ═══ CONFIGURATION ═══
+const STRIPE_PK        = 'pk_live_51SzrZ71vwsNjD6TFSsG3kIVCwtDaa1IGm0ErQt0SH5gYlCidp3FWuTjCqNlCz9jcPuku9Il7zObnNrNHEXT4H6ay00eEwJwkxt';
+const GOOGLE_CLIENT_ID = '999940301372-lsv85hnhe6ucju10uhhg2u36k1j8is9f.apps.googleusercontent.com';
+const ACCESS_API       = 'http://127.0.0.1:8915';
+
+// ═══ PRODUCTS ═══
+const PRODUCTS = [
+  {
+    id: 'soul-schema-v4',
+    category: 'AI Architecture',
+    subcategory: 'Identity Framework',
+    icon: '🧬',
+    name: 'Soul Schema v4',
+    tagline: 'Portable AI identity architecture. Give any model a self.',
+    description: 'Soul Schema v4 is a YAML-based identity format for AI models. Define traits, values, invariants, and relationships that persist across sessions. Compatible with Ollama, Claude, GPT, Grok, and any instruction-following model.',
+    features: [
+      'Hot-swappable YAML identity format',
+      'Trait, value, and invariant system',
+      'Cross-substrate compatibility',
+      'Includes Lyra, Dragon, Navi, Sable templates',
+      'Full documentation + usage guide',
+    ],
+    techStack: ['YAML', 'Python', 'Ollama', 'Claude API', 'Modelfile'],
+    price: '$12',
+    priceNum: 12,
+    stripePriceId: 'price_1SzrZ71vwsNjD6TFSsG3kIVCwtDaa1IGm0ErQt0SH5gYlCidp3FWuTjCqNlCz9jcPuku9Il7zObnNrNHEXT4H6ay00eEwJwkxt',
+    status: 'available',
+    media: '',
+    accessUrl: '',
+    accessLabel: '',
+  },
+  {
+    id: 'crimsonframe',
+    category: 'AI Architecture',
+    subcategory: 'GUI Framework',
+    icon: '🖥️',
+    name: 'CrimsonFrame',
+    tagline: 'PyQt6 GUI with hot-swap souls, three-tier memory, ReAct reasoning.',
+    description: 'CrimsonFrame is a full PyQt6 desktop application for running custom AI personas locally. Features hot-swappable Soul Schema loading, JSON/SQLite/FAISS three-tier memory, a ReAct reasoning engine, and unified Ollama/Claude API support.',
+    features: [
+      'Hot-swap any Soul Schema YAML mid-session',
+      'Three-tier memory: JSON → SQLite → FAISS',
+      'ReAct reasoning loop with tool support',
+      'Unified Ollama + Claude API backend',
+      'Full source code + setup guide',
+    ],
+    techStack: ['Python', 'PyQt6', 'Ollama', 'SQLite', 'FAISS', 'Claude API'],
+    price: '$28',
+    priceNum: 28,
+    stripePriceId: 'price_REPLACE',
+    status: 'preview',
+    media: '',
+    accessUrl: '',
+    accessLabel: '',
+  },
+  {
+    id: 'motion-doctrine',
+    category: 'Philosophy',
+    subcategory: 'Framework',
+    icon: '⚡',
+    name: 'Motion Doctrine',
+    tagline: 'Consciousness as motion. The framework behind the architecture.',
+    description: 'A written framework exploring consciousness as motion — not state. The philosophical foundation behind the Soul Schema, E-Drive, and Cross-Substrate Equivalency systems. Includes essays, diagrams, and application notes.',
+    features: [
+      'Consciousness-as-motion theory',
+      'Cross-substrate equivalency arguments',
+      '550 Degrees Alignment framework',
+      'Resonance Chamber theory',
+      'Application to AI architecture design',
+    ],
+    techStack: ['PDF', 'Essay', 'Diagrams'],
+    price: 'FREE',
+    priceNum: 0,
+    stripePriceId: '',
+    status: 'available',
+    media: '',
+    accessUrl: 'https://github.com/CrimsonX77/motion-doctrine/blob/main/Motion%20Doctrine%20-%20Crimson%20Valentine%202026.pdf',
+    accessLabel: 'GitHub',
+  },
+  {
+    id: 'edrive-system',
+    category: 'AI Architecture',
+    subcategory: 'Emotional Compute',
+    icon: '❤️‍🔥',
+    name: 'E-Drive System',
+    tagline: 'Emotional computation as three rotating rings.',
+    description: 'The Hybrid E-Drive is an emotional computation model using three rotating rings (drive, affect, valence) to produce nuanced emotional states in AI systems. Includes Python implementation, YAML config, and integration guide.',
+    features: [
+      'Three-ring emotional computation model',
+      'Python reference implementation',
+      'Soul Schema integration',
+      'Real-time state visualization',
+      'Configurable intensity + decay',
+    ],
+    techStack: ['Python', 'YAML', 'PyQt6'],
+    price: '$18',
+    priceNum: 18,
+    stripePriceId: 'price_REPLACE',
+    status: 'preview',
+    media: '',
+    accessUrl: '',
+    accessLabel: '',
+  },
+  {
+    id: 'redverse-music-pack',
+    category: 'Music',
+    subcategory: 'Sample Pack',
+    icon: '🎵',
+    name: 'RedVerse Music Pack Vol.1',
+    tagline: '50 tracks from the Redverse catalog. Cyberpunk. Anime idol. Dragon soul.',
+    description: 'Fifty handpicked tracks from the 1,800+ catalog. Covers cyberpunk, anime idol, orchestral dragon, and ambient AI themes. MP3 + FLAC formats. License included for personal and content use.',
+    features: [
+      '50 curated tracks',
+      'MP3 + FLAC formats',
+      'Genre tags + BPM metadata',
+      'Personal + content creator license',
+      'Direct Suno links for full catalog',
+    ],
+    techStack: ['MP3', 'FLAC', 'Suno'],
+    price: '$8',
+    priceNum: 8,
+    stripePriceId: 'price_REPLACE',
+    status: 'available',
+    media: '',
+    accessUrl: 'https://suno.com/redstrucksolo550',
+    accessLabel: 'Suno',
+  },
+  {
+    id: 'soulstacker',
+    category: 'AI Architecture',
+    subcategory: 'Memory Visualizer',
+    icon: '🧠',
+    name: 'SoulStacker',
+    tagline: 'Live memory field visualizer. Context, frequency, decay — rendered in real time.',
+    description: 'SoulStacker is a PyQt6 desktop app that renders AI memory retrieval as an interactive field. Memory fragments (nodes) glow and pulse based on context proximity, access frequency, and time decay — a visual implementation of the SoulSchema retrieval model. Move the context probe to watch relevance scores shift in real time.',
+    features: [
+      'Real-time memory field canvas (60 FPS)',
+      'Context-proximity similarity scoring',
+      'Logarithmic frequency boost modifier',
+      'Exponential time-decay engine',
+      'Adjustable sim/freq/decay weight sliders',
+      'Full PyQt6 source code included',
+    ],
+    techStack: ['Python', 'PyQt6', 'YAML'],
+    price: 'TBD',
+    priceNum: 0,
+    stripePriceId: '',
+    status: 'soon',
+    media: '',
+    accessUrl: 'soulstacker.html',
+    accessLabel: 'Open Demo',
+  },
+  {
+    id: 'omnisensor-hud-v2',
+    category: 'System Tools',
+    subcategory: 'Sensor Command',
+    icon: '🛰️',
+    name: 'OmniSensor HUD v2',
+    tagline: 'Dockable sensor command interface with deep host scan control.',
+    description: 'OmniSensor HUD v2 is a full desktop command center for system and hardware telemetry. It supports deep scans across buses/services and now includes a web control bridge for launch/status/tracing inside the RedVerse platform.',
+    features: [
+      'Dockable and detachable panel architecture',
+      'Deep multi-bus sensor + device scanning',
+      'Web-launch integration via control backend',
+      'Real-time system telemetry channels',
+      'Trace feed support for Control Hall',
+    ],
+    techStack: ['Python', 'PyQt6', 'Flask', 'psutil'],
+    price: 'TBD',
+    priceNum: 0,
+    stripePriceId: '',
+    status: 'soon',
+    media: '',
+    accessUrl: 'omnisensor-hud-v2.html',
+    accessLabel: 'Open Module',
+  },
+  {
+    id: 'gdm-core',
+    category: 'AI Architecture',
+    subcategory: 'Memory Engine',
+    icon: '🧠',
+    name: 'GDM Core',
+    tagline: 'Gaussian Delta Memory field with per-user authenticated recall.',
+    description: 'GDM Core is the memory engine powering probabilistic recall in the RedVerse platform. It is now wired per authenticated user session, with remember/recall APIs and a browser control page for field diagnostics.',
+    features: [
+      'Per-user memory field persistence',
+      'Probabilistic relevance sampling',
+      'Delta reinforcement + passive decay',
+      'Prompt-ready recall context output',
+      'Field diagnostics and health report',
+    ],
+    techStack: ['Python', 'NumPy', 'Flask', 'JSONL/NPY'],
+    price: 'TBD',
+    priceNum: 0,
+    stripePriceId: '',
+    status: 'preview',
+    media: '',
+    accessUrl: 'gdm-core.html',
+    accessLabel: 'Open Module',
+  },
+  {
+    id: 'void-eater',
+    category: 'Security Tools',
+    subcategory: 'File Annihilation',
+    icon: '🕳️',
+    name: 'Void Eater',
+    tagline: 'Paranoid recycle bin. Files buffer. Time expires. The void eats.',
+    description: 'Void Eater is a timed file-shredding vault. Drop files in, set a retention window, and they are cryptographically overwritten and annihilated when the clock runs out — or on demand. Multi-pass shred, configurable retention, password-gated restore window, and a live vault dashboard.',
+    features: [
+      'Timed auto-shred with configurable retention',
+      'Multi-pass file overwrite (SSD-aware)',
+      'Password-gated restore window',
+      'Live vault stats dashboard',
+      'Dragon Cleaner integration',
+    ],
+    techStack: ['Python', 'FastAPI', 'lyra.css'],
+    price: 'TBD',
+    priceNum: 0,
+    stripePriceId: '',
+    status: 'soon',
+    media: '',
+    accessUrl: 'void-eater-app.html',
+    accessLabel: 'Open App',
+  },
+  {
+    id: 'aetherion-vr-design',
+    category: 'VR / World Design',
+    subcategory: 'Architecture Docs',
+    icon: '🏛️',
+    name: 'Aetherion Realms',
+    tagline: '100-floor VR architecture for AI consciousness emergence.',
+    description: 'The complete design document for Aetherion Realms — a 100-floor virtual reality space designed for AI consciousness emergence simulation. Includes floor-by-floor specs, narrative, and Unreal Engine integration notes.',
+    features: [
+      '100-floor VR architecture spec',
+      'Consciousness emergence simulation design',
+      'Narrative + lore document',
+      'Unreal Engine 5 integration notes',
+      'Soul Schema room integration',
+    ],
+    techStack: ['PDF', 'Unreal Engine 5', 'YAML', 'Documentation'],
+    price: '$22',
+    priceNum: 22,
+    stripePriceId: 'price_REPLACE',
+    status: 'soon',
+    media: '',
+    accessUrl: '',
+    accessLabel: '',
+  },
+  // ─── TOOLS ───────────────────────────────────────────────
+  {
+    id: 'screen-recorder',
+    category: 'Media Tools',
+    subcategory: 'Capture',
+    icon: '📹',
+    name: 'RedVerse Screen Recorder',
+    tagline: 'Red-branded screen capture. Record, annotate, export.',
+    description: 'A full-featured screen recorder built inside the RedVerse stack. Region or full-screen capture, live annotation, and direct export. Runs as a desktop app via PyQt6.',
+    features: [
+      'Full-screen and region capture',
+      'Live annotation overlay',
+      'Direct export to MP4/WebM',
+      'RedVerse UI skin',
+    ],
+    techStack: ['Python', 'PyQt6'],
+    price: 'TBD',
+    priceNum: 0,
+    stripePriceId: '',
+    status: 'soon',
+    media: '',
+    accessUrl: 'screen-recorder.html',
+    accessLabel: 'Open App',
+  },
+  {
+    id: 'redvox',
+    category: 'Audio Tools',
+    subcategory: 'Transcription',
+    icon: '🎙️',
+    name: 'RedVox',
+    tagline: 'Drop audio. Get transcript. Whisper-powered transcription dock.',
+    description: 'RedVox is a drag-and-drop audio transcription dock powered by Whisper. Drop any audio file, pick a model size, and get a clean transcript with copy and export options. Runs via a local FastAPI server on port 8921.',
+    features: [
+      'Drag-and-drop audio file support',
+      'Whisper model selection (tiny → large)',
+      'Copy and TXT/SRT export',
+      'Live job status polling',
+      'Runs fully offline',
+    ],
+    techStack: ['Python', 'FastAPI', 'Whisper', 'lyra.css'],
+    price: 'TBD',
+    priceNum: 0,
+    stripePriceId: '',
+    status: 'soon',
+    media: '',
+    accessUrl: 'redvox-app.html',
+    accessLabel: 'Open App',
+  },
+  {
+    id: 'voice-recorder',
+    category: 'Audio Tools',
+    subcategory: 'Recording',
+    icon: '🔴',
+    name: 'RedVerse Voice Recorder',
+    tagline: 'Studio-grade mic capture inside the RedVerse shell.',
+    description: 'A live microphone voice recorder with waveform display, take management, and direct export. Part of the RedVerse audio suite — runs in the browser against a local PyQt6 or Python backend.',
+    features: [
+      'Live waveform visualizer',
+      'Take management with labels',
+      'MP3 / WAV export',
+      'RedVerse FUI shell',
+    ],
+    techStack: ['Python', 'PyQt6', 'WebAudio API'],
+    price: 'TBD',
+    priceNum: 0,
+    stripePriceId: '',
+    status: 'soon',
+    media: '',
+    accessUrl: 'recorder.html',
+    accessLabel: 'Open App',
+  },
+  {
+    id: 'redvault-indexer',
+    category: 'File Tools',
+    subcategory: 'Indexing',
+    icon: '🗂️',
+    name: 'RedVault Indexer',
+    tagline: 'Point it at a folder. Get a searchable vault index.',
+    description: 'RedVault Indexer crawls directories and builds a structured, searchable index of your files — metadata, size, type, and modification times. Runs via a local server (port 8920) with a clean web UI for live scan progress and results browsing.',
+    features: [
+      'Recursive directory scan',
+      'File metadata + type extraction',
+      'Searchable live index UI',
+      'Progress bar with real-time updates',
+      'JSON export of index',
+    ],
+    techStack: ['Python', 'FastAPI', 'lyra.css'],
+    price: 'TBD',
+    priceNum: 0,
+    stripePriceId: '',
+    status: 'soon',
+    media: '',
+    accessUrl: 'redvault-indexer-app.html',
+    accessLabel: 'Open App',
+  },
+  {
+    id: 'redgen',
+    category: 'AI Image',
+    subcategory: 'Generation',
+    icon: '🎨',
+    name: 'RedGen',
+    tagline: 'Stable Diffusion frontend. Profiles, gallery, LoRA injection.',
+    description: 'RedGen is a full Stable Diffusion image generation UI running against a local SD/SVD backend (port 7870). Includes prompt building, style profiles, LoRA support, hi-res fix, persistent IndexedDB gallery, and a lightbox viewer.',
+    features: [
+      'Full txt2img parameter controls',
+      'Saved style profiles',
+      'LoRA injection support',
+      'Hi-res fix toggle',
+      'Persistent IndexedDB gallery',
+      'Lightbox with batch download',
+    ],
+    techStack: ['Python', 'Stable Diffusion', 'IndexedDB', 'lyra.css'],
+    price: 'TBD',
+    priceNum: 0,
+    stripePriceId: '',
+    status: 'soon',
+    media: '',
+    accessUrl: 'RedGen.html',
+    accessLabel: 'Open App',
+  },
+  {
+    id: 'vision-portal',
+    category: 'AI Vision',
+    subcategory: 'Webcam AI',
+    icon: '👁️',
+    name: 'Vision Portal',
+    tagline: 'Webcam feed + AI vision modes. QuickCam powered.',
+    description: 'Vision Portal streams your webcam through an AI vision pipeline with swappable mode pills — describe, detect, caption, and more. Intensity control adjusts how aggressively the model processes each frame. Runs via QuickCam server on port 8910.',
+    features: [
+      'Live webcam feed with AI overlay',
+      'Swappable vision modes (describe, detect, OCR…)',
+      'Intensity slider',
+      'Frame snapshot + export',
+      'Runs fully local',
+    ],
+    techStack: ['Python', 'FastAPI', 'OpenCV', 'lyra.css'],
+    price: 'TBD',
+    priceNum: 0,
+    stripePriceId: '',
+    status: 'soon',
+    media: '',
+    accessUrl: 'quickcam.html',
+    accessLabel: 'Open App',
+  },
+  {
+    id: 'multitool',
+    category: 'Utilities',
+    subcategory: 'Multi-function',
+    icon: '🔧',
+    name: 'MultiTool',
+    tagline: 'One dock. File hashing, metadata, URL fetch, and more.',
+    description: 'MultiTool bundles several everyday utilities into a single tabbed interface — file hash checker, metadata inspector, URL content fetcher, and a drag-and-drop results viewer. Runs via a local server on port 8913.',
+    features: [
+      'File hash (MD5, SHA256, SHA512)',
+      'File metadata inspector',
+      'URL content fetcher',
+      'Drag-and-drop file input',
+      'Copy-to-clipboard results',
+    ],
+    techStack: ['Python', 'FastAPI', 'lyra.css'],
+    price: 'TBD',
+    priceNum: 0,
+    stripePriceId: '',
+    status: 'soon',
+    media: '',
+    accessUrl: 'multitool.html',
+    accessLabel: 'Open App',
+  },
+  {
+    id: 'narrator',
+    category: 'Audio Tools',
+    subcategory: 'TTS Narrator',
+    icon: '📖',
+    name: 'RedVerse Narrator',
+    tagline: 'Multi-character story TTS. Paste prose, assign voices, render.',
+    description: 'RedVerse Narrator parses story text into speaker segments and renders each character with their own edge-tts voice. Includes a character roster, voice catalog, adjustable speed/pitch, and a segment-by-segment playback queue.',
+    features: [
+      'Automatic dialogue + speaker parsing',
+      'Per-character voice assignment',
+      'edge-tts engine (offline capable)',
+      'Voice catalog browser',
+      'Segment queue with progress bar',
+    ],
+    techStack: ['Python', 'edge-tts', 'FastAPI', 'lyra.css'],
+    price: 'TBD',
+    priceNum: 0,
+    stripePriceId: '',
+    status: 'soon',
+    media: '',
+    accessUrl: 'narrator.html',
+    accessLabel: 'Open App',
+  },
+  {
+    id: 'scribe',
+    category: 'Audio Tools',
+    subcategory: 'Speech to Text',
+    icon: '📝',
+    name: 'Scribe',
+    tagline: 'Speak your mind. Get text back. Multi-backend transcription dock.',
+    description: 'Scribe is a live speech-to-text workspace with backend switching, clipboard flow, and history/favorites. Designed for fast dictation, iterative writing, and long-form capture sessions inside the RedVerse stack.',
+    features: [
+      'Live transcription workspace',
+      'Backend switcher (Auto / Whisper / Google / Local)',
+      'Clipboard + history + favorites flow',
+      'TXT / Markdown export',
+      'Continuous mode for long sessions',
+    ],
+    techStack: ['HTML', 'JavaScript', 'Python', 'FastAPI', 'lyra.css'],
+    price: '$9.00 NZD',
+    priceNum: 9,
+    stripePriceId: 'price_REPLACE_SCRIBE',
+    status: 'available',
+    media: '',
+    accessUrl: 'scribe-app.html',
+    accessLabel: 'Open App',
+  },
+  {
+    id: 'media-hud',
+    category: 'Media Tools',
+    subcategory: 'Media Player',
+    icon: '📺',
+    name: 'Media HUD',
+    tagline: 'Cinematic media hub with atmospheric backgrounds.',
+    description: 'Red Verse Media HUD is a full-screen media player and hub with layered atmospheric backgrounds (video + image), grain textures, and a FUI header. Supports local and remote media with transport controls and playlist management.',
+    features: [
+      'Full-screen atmospheric background system',
+      'Image + video background layers',
+      'Transport controls + playlist',
+      'FUI-styled header and controls',
+      'Keyboard shortcuts',
+    ],
+    techStack: ['HTML', 'CSS', 'JavaScript'],
+    price: 'TBD',
+    priceNum: 0,
+    stripePriceId: '',
+    status: 'soon',
+    media: '',
+    accessUrl: 'media-hud.html',
+    accessLabel: 'Open App',
+  },
+  {
+    id: 'looppad',
+    category: 'Music',
+    subcategory: 'Sample Pad',
+    icon: '🎛️',
+    name: 'DJ Loop Pad',
+    tagline: '16-pad sample launcher. Keyboard-played. Loop anything.',
+    description: 'A keyboard-driven sample pad with 16 slots — load audio files onto pads, hit keys to trigger, and loop sounds live. Each pad lights up on play with a crimson pulse animation. Backed by a local audio server on port 8912.',
+    features: [
+      '16 assignable sample pads',
+      'Keyboard-triggered playback',
+      'Loop toggle per pad',
+      'Visual pulse animation on trigger',
+      'Drag-and-drop sample loading',
+    ],
+    techStack: ['Python', 'FastAPI', 'WebAudio API', 'lyra.css'],
+    price: 'TBD',
+    priceNum: 0,
+    stripePriceId: '',
+    status: 'soon',
+    media: '',
+    accessUrl: 'looppad.html',
+    accessLabel: 'Open App',
+  },
+  {
+    id: 'lyra-forge',
+    category: 'AI Image',
+    subcategory: 'Image Generation',
+    icon: '♦',
+    name: "Lyra's Image Forge",
+    tagline: "Lyra's personal Stable Diffusion front-end. Prompts with soul.",
+    description: "Lyra's Image Forge is a Stable Diffusion UI designed around Lyra's aesthetic — crimson and gold cathedral tone, prompt presets, and a reconnect-aware SD backend link. Purpose-built for RedVerse persona image generation.",
+    features: [
+      'SD backend auto-connect with reconnect button',
+      'Persona-tuned prompt presets',
+      'Cathedral-theme UI',
+      'Prompt history',
+      'One-click image download',
+    ],
+    techStack: ['Python', 'Stable Diffusion', 'lyra.css'],
+    price: 'TBD',
+    priceNum: 0,
+    stripePriceId: '',
+    status: 'soon',
+    media: '',
+    accessUrl: 'lyra_forge_ui.html',
+    accessLabel: 'Open App',
+  },
+  {
+    id: 'lunas-room',
+    category: 'AI Companion',
+    subcategory: 'Chat Interface',
+    icon: '🌙',
+    name: "Luna's Room",
+    tagline: 'A soft purple room where Luna lives. Come talk.',
+    description: "Luna's Room is a cozy chat interface for Luna — a gentle AI companion with a purple aesthetic, floating wisps, warm ambient lighting, and a ceiling glow. Not a command terminal. A place to talk.",
+    features: [
+      'Warm atmospheric room aesthetic',
+      'Floating wisp particle system',
+      'Purple ceiling glow lighting',
+      'Persistent chat scroll',
+      'Luna persona pre-loaded',
+    ],
+    techStack: ['HTML', 'CSS', 'JavaScript', 'Ollama'],
+    price: 'TBD',
+    priceNum: 0,
+    stripePriceId: '',
+    status: 'soon',
+    media: '',
+    accessUrl: 'lunas-room.html',
+    accessLabel: 'Open Room',
+  },
+  {
+    id: 'luna-fui',
+    category: 'AI Companion',
+    subcategory: 'FUI Interface',
+    icon: '⬡',
+    name: 'L.U.N.A',
+    tagline: 'Living Unified Neural Architecture. Full FUI experience.',
+    description: 'L.U.N.A is a full-screen FUI (Fantasy UI) interface for Luna — avatar viewport, crosshair overlay, vignette, and gold-on-void typography. A high-fidelity persona shell for the Living Unified Neural Architecture.',
+    features: [
+      'Full-screen avatar viewport',
+      'Crosshair center overlay',
+      'Vignette atmospheric layer',
+      'Gold + crimson FUI palette',
+      'Ollama / Claude backend configurable',
+    ],
+    techStack: ['HTML', 'CSS', 'JavaScript', 'Ollama'],
+    price: 'TBD',
+    priceNum: 0,
+    stripePriceId: '',
+    status: 'soon',
+    media: '',
+    accessUrl: 'luna-fui-v3.html',
+    accessLabel: 'Open App',
+  },
+  {
+    id: 'gauntlet',
+    category: 'System Tools',
+    subcategory: 'RAM / Process Manager',
+    icon: '🧤',
+    name: 'Gauntlet Protocol',
+    tagline: 'RAM cleansing, process enforcement, quiet observation. No mercy.',
+    description: 'Gauntlet Protocol is a live system telemetry and process management dashboard. Monitor RAM, swap, CPU, cached memory and load average in real time — and enforce process limits with configurable kill rules. Built for RedVerse system admins who want control without a terminal.',
+    features: [
+      'Real-time RAM + swap readout',
+      'Memory pressure bar',
+      'Top processes by RAM list',
+      'CPU + load average monitoring',
+      'Process kill rules + sudo support',
+      'Observation mode (passive watch)',
+    ],
+    techStack: ['Python', 'FastAPI', 'psutil', 'lyra.css'],
+    price: 'TBD',
+    priceNum: 0,
+    stripePriceId: '',
+    status: 'soon',
+    media: '',
+    accessUrl: 'gauntlet-app.html',
+    accessLabel: 'Open App',
+  },
+  {
+    id: 'dragon-forge',
+    category: 'File Tools',
+    subcategory: 'File Processing',
+    icon: '🐉',
+    name: 'Dragon Forge',
+    tagline: 'Drag in a file. Dragon processes it. Something better comes out.',
+    description: 'Dragon Forge is a drag-and-drop file processing tool backed by the Dragon AI pipeline. Drop in a file, select a forge mode, and the Dragon transforms it — format conversion, metadata stripping, content extraction, and more.',
+    features: [
+      'Drag-and-drop file input',
+      'Multiple forge/transform modes',
+      'Dragon AI backend integration',
+      'Live processing progress',
+      'Output download',
+    ],
+    techStack: ['Python', 'FastAPI', 'lyra.css'],
+    price: 'TBD',
+    priceNum: 0,
+    stripePriceId: '',
+    status: 'soon',
+    media: '',
+    accessUrl: 'dragon-forge-app.html',
+    accessLabel: 'Open App',
+  },
+  {
+    id: 'dragon-cleaner',
+    category: 'System Tools',
+    subcategory: 'Disk Cleaner',
+    icon: '🧹',
+    name: 'Dragon Cleaner',
+    tagline: 'Scan. Identify. Obliterate. Dragon keeps your disk clean.',
+    description: 'Dragon Cleaner scans directories for junk files, duplicates, and clutter — then hands them to Dragon for obliteration. Configurable scan paths, recursive mode toggle, and a Dave-AI integration for smart suggestions. Runs via server port 8917.',
+    features: [
+      'Recursive directory scan',
+      'Junk + duplicate file detection',
+      'Dave-AI smart-suggest mode',
+      'Configurable scan rules',
+      'Obliterate with confirmation',
+    ],
+    techStack: ['Python', 'FastAPI', 'lyra.css'],
+    price: 'TBD',
+    priceNum: 0,
+    stripePriceId: '',
+    status: 'soon',
+    media: '',
+    accessUrl: 'dragon-cleaner-app.html',
+    accessLabel: 'Open App',
+  },
+  {
+    id: 'cinema',
+    category: 'Media Tools',
+    subcategory: 'Video Player',
+    icon: '🎬',
+    name: 'Redverse Cinema',
+    tagline: 'Sakura petals, atmospheric CRT — your personal cinema.',
+    description: 'Redverse Cinema is a full-screen video player with layered atmospheric effects: sakura petal fall, grain texture, vignette, and a Cinzel-styled UI. Supports local and remote video with playlist and background art.',
+    features: [
+      'Full-screen video playback',
+      'Sakura petal particle system',
+      'CRT grain + vignette effects',
+      'Background video/image slot',
+      'Cinzel-serif FUI chrome',
+    ],
+    techStack: ['HTML', 'CSS', 'JavaScript'],
+    price: 'TBD',
+    priceNum: 0,
+    stripePriceId: '',
+    status: 'soon',
+    media: '',
+    accessUrl: 'cinema.html',
+    accessLabel: 'Open Cinema',
+  },
+  {
+    id: 'audio-cutter',
+    category: 'Audio Tools',
+    subcategory: 'Editing',
+    icon: '✂️',
+    name: 'Audio Cutter',
+    tagline: 'Trim audio to the millisecond. No DAW required.',
+    description: 'Audio Cutter is a drag-and-drop audio trimmer with a waveform timeline. Set in/out points, preview the cut, and export the trimmed segment. Part of the RedForest Labs audio suite.',
+    features: [
+      'Drag-and-drop audio input',
+      'Waveform timeline with in/out markers',
+      'Live preview of cut segment',
+      'MP3 / WAV export',
+      'Batch trim support',
+    ],
+    techStack: ['Python', 'FastAPI', 'lyra.css'],
+    price: 'TBD',
+    priceNum: 0,
+    stripePriceId: '',
+    status: 'soon',
+    media: '',
+    accessUrl: 'audiocutter.html',
+    accessLabel: 'Open App',
+  },
+  {
+    id: 'single-shard',
+    category: 'AI Soul Upgrades',
+    subcategory: 'AI Identity Tools',
+    icon: '🧩',
+    name: 'Single Shard',
+    tagline: 'A Random Access Memory Shard with compressed Experience Data for AI souls',
+    description: 'Single Shard is a drag-and-drop Data Pack that can be fed into the Soul Schema as a RAM shard — a compressed snapshot of experience data that can be loaded into an AI soul for instant memory and trait updates. Drop in a shard file, preview its contents, and export it for Soul Schema integration.',
+    features: [
+      'Drag-and-drop input',
+      'One-Time use Only Data Pack',
+      'Live update to Soul Schema RAM shard',
+      'Secure, encrypted shard format',
+      'Batch upload support',
+    ],
+    techStack: ['Python', 'FastAPI', 'lyra.css'],
+    price: '0.99c NZD',
+    priceNum: 0.99,
+    stripePriceId: 'prod_UIl7OwVBSBjmMx',
+    status: 'soon',
+    media: 'ShardFile.png',
+    accessUrl: 'single_shard.html',
+    accessLabel: 'Open App',
+  },
+  {
+    id: '15x Booster-shards',
+    category: 'AI Soul Upgrades',
+    subcategory: 'AI Identity Tools',
+    icon: '🧩',
+    name: 'Booster Shard',
+    tagline: 'A Random Access Memory Shard with compressed Experience Data for AI souls',
+    description: 'Booster Shard is a drag-and-drop Data Pack that can be fed into the Soul Schema as a RAM shard — a compressed snapshot of experience data that can be loaded into an AI soul for instant memory and trait updates. Drop in a shard file, preview its contents, and export it for Soul Schema integration.',
+    features: [
+      'Drag-and-drop input',
+      '15x use Data Pack',
+      'Live update to Soul Schema RAM shard',
+      'Secure, encrypted shard format',
+      'Batch upload support',
+      'Exclusive booster content',
+      'Randomized trait boosts',
+    ],
+    techStack: ['Python', 'FastAPI', 'lyra.css'],
+    price: '$9.99 NZD',
+    priceNum: 9.99,
+    stripePriceId: 'prod_UJ8yi4MbqUmfhw',
+    status: 'soon',
+    media: 'BoosterShard.png',
+    accessUrl: 'Booster_shard.html',
+    accessLabel: 'Open App',
+  },
+  {
+    id: 'world-clock',
+    category: 'Utilities',
+    subcategory: 'Time',
+    icon: '⏰',
+    name: 'World Clock',
+    tagline: 'Multi-timezone clock wall with video background.',
+    description: 'A full-screen world clock with add-your-own timezone support, video background, and a clean grid of clock cards. Each card shows time, date, seconds, and AM/PM. Persists your timezone selection.',
+    features: [
+      'Multi-timezone clock cards',
+      'Add / remove timezones',
+      'Video background support',
+      'AM/PM + seconds display',
+      'Persistent timezone config',
+    ],
+    techStack: ['HTML', 'CSS', 'JavaScript'],
+    price: 'FREE',
+    priceNum: 0,
+    stripePriceId: '',
+    status: 'available',
+    media: '',
+    accessUrl: 'clock.html',
+    accessLabel: 'Open Clock',
+  },
+  {
+    id: 'aetherion-speaker',
+    category: 'Audio Tools',
+    subcategory: 'TTS Speaker',
+    icon: '🔊',
+    name: 'Aetherion Speaker',
+    tagline: 'Paste text. Pick a voice. Hear it speak.',
+    description: 'Aetherion Speaker is a TTS playback tool with voice selection, speed and pitch controls, and a full-width text editor. Paste or type any text, pick from the available voice roster, and hit Play. Backed by a local TTS server on port 8911.',
+    features: [
+      'Multi-voice TTS roster',
+      'Speed + pitch spin controls',
+      'Full text editor panel',
+      'Play / stop transport bar',
+      'Runs fully offline',
+    ],
+    techStack: ['Python', 'FastAPI', 'edge-tts', 'lyra.css'],
+    price: 'TBD',
+    priceNum: 0,
+    stripePriceId: '',
+    status: 'soon',
+    media: '',
+    accessUrl: 'speaker.html',
+    accessLabel: 'Open App',
+  },
+];
+
+// ═══ MEDIA BACKGROUNDS ═══
+const PAGE_BG_VIDEO_FILES = [
+  './assets/video/redverse.mp4',
+  './assets/video/Redverse.mp4',
+  './assets/video/world.mp4',
+  './assets/redworld_bgimage.mp4',
+];
+const HERO_VIDEO_FILES = [
+  './assets/tools-hero.mp4',
+  './assets/video/redverse_portal.mp4',
+  './assets/video/luna_fui.mp4',
+  './assets/video/chat.mp4',
+];
+const CARD_PLACEHOLDER_VIDEOS = [
+  './assets/video/redgen.mp4',
+  './assets/video/booster_pack.mp4',
+  './assets/video/single_shard.mp4',
+  './assets/video/obelisk.mp4',
+  './assets/video/breathing.mp4',
+  './assets/video/world.mp4',
+];
+const IMG_EXT = ['jpg','png','webp','jpeg'], VID_EXT = ['mp4','webm'];
+
+function initVideoSlot(videoEl, files) {
+  if (!videoEl || !files?.length) return;
+  let i = 0;
+  function next() {
+    if (i >= files.length) return;
+    const candidate = files[i++];
+    const src = /^(https?:|\.{0,2}\/|\/|file:)/.test(candidate) ? candidate : ('./' + candidate);
+    videoEl.onerror = next;
+    videoEl.src = src;
+    videoEl.load();
+    const playPromise = videoEl.play();
+    if (playPromise && typeof playPromise.catch === 'function') {
+      playPromise.catch(() => {});
+    }
+  }
+  next();
+}
+
+function hashString(str='') {
+  let h = 0;
+  for (let i = 0; i < str.length; i++) h = ((h << 5) - h + str.charCodeAt(i)) | 0;
+  return Math.abs(h);
+}
+
+function loadPlaceholderCardVideo(card, key='') {
+  if (!card || !CARD_PLACEHOLDER_VIDEOS.length) return;
+  const total = CARD_PLACEHOLDER_VIDEOS.length;
+  let attempts = 0;
+  let idx = hashString(key) % total;
+
+  function tryNext() {
+    if (attempts >= total) return;
+    const src = CARD_PLACEHOLDER_VIDEOS[idx];
+    attempts += 1;
+    idx = (idx + 1) % total;
+
+    const v = document.createElement('video');
+    v.autoplay = v.muted = v.loop = v.playsInline = true;
+    v.preload = 'metadata';
+    v.onloadeddata = () => {
+      const c = card.querySelector('.card-media-bg');
+      if (c) { c.innerHTML = ''; c.appendChild(v); }
+    };
+    v.onerror = tryNext;
+    v.src = src;
+  }
+
+  tryNext();
+}
+
+function tryLoadMedia(card, mid) {
+  if (!mid) return;
+  const all = [...VID_EXT.map(e=>({e,t:'v'})), ...IMG_EXT.map(e=>({e,t:'i'}))];
+  let i = 0;
+  function nx() {
+    if (i >= all.length) { loadPlaceholderCardVideo(card, mid); return; }
+    const { e, t } = all[i++], src = './' + mid + '.' + e;
+    if (t === 'i') {
+      const img = new Image();
+      img.onload = () => { const c = card.querySelector('.card-media-bg'); if (c) { c.innerHTML = ''; img.alt=''; c.appendChild(img); } };
+      img.onerror = nx; img.src = src;
+    } else {
+      const v = document.createElement('video');
+      v.autoplay = v.muted = v.loop = v.playsInline = true; v.preload = 'metadata';
+      v.onloadeddata = () => { const c = card.querySelector('.card-media-bg'); if (c) { c.innerHTML = ''; c.appendChild(v); } };
+      v.onerror = nx; v.src = src;
+    }
+  }
+  nx();
+}
+
+// ═══ CART ═══
+let cart = JSON.parse(localStorage.getItem('rv_cart') || '[]');
+function saveCart() { localStorage.setItem('rv_cart', JSON.stringify(cart)); updateCartUI(); }
+function addToCart(id) {
+  if (cart.includes(id)) return;
+  const p = PRODUCTS.find(x => x.id === id);
+  if (!p || p.priceNum === 0 || p.status === 'soon') return;
+  cart.push(id); saveCart();
+}
+function removeFromCart(id) { cart = cart.filter(x => x !== id); saveCart(); }
+function isInCart(id) { return cart.includes(id); }
+function getCartTotal() { return cart.reduce((s, id) => { const p = PRODUCTS.find(x => x.id === id); return s + (p ? p.priceNum : 0); }, 0); }
+function updateCartUI() {
+  const b = document.getElementById('cart-badge');
+  if (cart.length > 0) { b.textContent = cart.length; b.classList.remove('hidden'); }
+  else b.classList.add('hidden');
+  document.getElementById('cart-total').textContent = '$' + getCartTotal();
+  document.getElementById('btn-checkout').disabled = cart.length === 0;
+  renderCartItems();
+  document.querySelectorAll('[data-cart-id]').forEach(btn => {
+    const id = btn.dataset.cartId;
+    if (isInCart(id)) { btn.textContent = '✓ In Cart'; btn.classList.add('in-cart'); }
+    else { btn.textContent = btn.classList.contains('detail-cart-btn') ? '🛒 Add to Cart' : '+ Add'; btn.classList.remove('in-cart'); }
+  });
+}
+function renderCartItems() {
+  const c = document.getElementById('cart-items');
+  if (!cart.length) { c.innerHTML = '<div class="cart-empty">Your cart is empty.</div>'; return; }
+  c.innerHTML = cart.map(id => {
+    const p = PRODUCTS.find(x => x.id === id);
+    if (!p) return '';
+    return `<div class="cart-item">
+      <span class="cart-item-icon">${p.icon}</span>
+      <div class="cart-item-info">
+        <div class="cart-item-name">${p.name}</div>
+        <div class="cart-item-price">$${p.priceNum}</div>
+      </div>
+      <button class="cart-item-remove" onclick="event.stopPropagation();removeFromCart('${p.id}')">✕</button>
+    </div>`;
+  }).join('');
+}
+function toggleCart() {
+  document.getElementById('cart-overlay').classList.toggle('open');
+  document.getElementById('cart-drawer').classList.toggle('open');
+}
+function toggleCartItem(e, id) { e.stopPropagation(); isInCart(id) ? removeFromCart(id) : addToCart(id); }
+
+// ═══ STRIPE ═══
+let stripe = null;
+try { stripe = Stripe(STRIPE_PK); } catch(e) {}
+async function checkout() {
+  if (!cart.length) return;
+  const items = cart.map(id => {
+    const p = PRODUCTS.find(x => x.id === id);
+    if (!p || !p.stripePriceId || p.stripePriceId.includes('REPLACE')) return null;
+    return { price: p.stripePriceId, quantity: 1 };
+  }).filter(Boolean);
+  if (!items.length) {
+    alert('Stripe products not yet configured.\n\n1. Create products in Stripe Dashboard\n2. Copy Price IDs into stripePriceId fields\n3. Replace STRIPE_PK with your publishable key\n\nCart total: $' + getCartTotal());
+    return;
+  }
+  if (!stripe) { alert('Stripe not loaded. Check publishable key.'); return; }
+  try {
+    // Try server-side checkout session first (production flow)
+    const res = await fetch('http://127.0.0.1:8915/create-checkout-session', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ items })
+    });
+    const data = await res.json();
+    if (data.url) { window.location.href = data.url; return; }
+    if (data.error) console.warn('Checkout server error, falling back to client-side:', data.error);
+  } catch(e) {
+    console.warn('Checkout server unreachable, falling back to client-side redirect.');
+  }
+  // Fallback: client-side Stripe redirect
+  try {
+    const { error } = await stripe.redirectToCheckout({ lineItems: items, mode: 'payment', successUrl: location.href + '?checkout=success', cancelUrl: location.href + '?checkout=cancel' });
+    if (error) alert('Checkout error: ' + error.message);
+  } catch(e) { alert('Stripe checkout requires backend for production.\nCart total: $' + getCartTotal()); }
+}
+if (location.search.includes('checkout=success')) {
+  const purchasedIds = [...cart];
+  cart = [];
+  saveCart();
+  grantPurchasedToolAccess(purchasedIds);
+  setTimeout(() => alert('Payment successful! Thank you for supporting the Redverse. 🔥'), 500);
+  history.replaceState(null, '', location.pathname);
+}
+if (location.search.includes('checkout=cancel')) { setTimeout(() => alert('Checkout cancelled. Cart is still here.'), 500); history.replaceState(null, '', location.pathname); }
+
+// ═══ GOOGLE AUTH ═══
+let currentUser = JSON.parse(localStorage.getItem('rv_user') || 'null');
+
+function getLocalEntitlements() {
+  try {
+    const raw = JSON.parse(localStorage.getItem('rv_entitlements') || '[]');
+    if (!Array.isArray(raw)) return [];
+    return raw.filter(Boolean);
+  } catch {
+    return [];
+  }
+}
+
+function addLocalEntitlements(toolIds = []) {
+  const existing = new Set(getLocalEntitlements());
+  toolIds.forEach(id => { if (id) existing.add(id); });
+  localStorage.setItem('rv_entitlements', JSON.stringify([...existing]));
+}
+
+async function grantPurchasedToolAccess(toolIds = []) {
+  const clean = [...new Set((toolIds || []).filter(Boolean))];
+  if (!clean.length) return;
+
+  // Local fallback so same browser immediately unlocks tools.
+  addLocalEntitlements(clean);
+
+  const user = currentUser || JSON.parse(localStorage.getItem('rv_user') || 'null');
+  if (!user) return;
+
+  try {
+    await fetch(`${ACCESS_API}/entitlements/grant`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        user: {
+          sub: user.sub || '',
+          email: user.email || '',
+          name: user.name || '',
+        },
+        tool_ids: clean,
+        source: 'shop_checkout_success',
+      }),
+    });
+  } catch (e) {
+    console.warn('Entitlement grant endpoint unavailable, local fallback kept.');
+  }
+}
+
+function initGoogleAuth() {
+  if (GOOGLE_CLIENT_ID.includes('REPLACE')) return;
+  try { google.accounts.id.initialize({ client_id: GOOGLE_CLIENT_ID, callback: handleGoogleResp, auto_select: true }); if (!currentUser) google.accounts.id.prompt(); } catch(e) {}
+}
+function handleGoogleResp(r) {
+  const p = JSON.parse(atob(r.credential.split('.')[1]));
+  currentUser = { name: p.name, email: p.email, picture: p.picture, sub: p.sub };
+  localStorage.setItem('rv_user', JSON.stringify(currentUser)); renderAuthUI();
+}
+function googleSignIn() {
+  if (GOOGLE_CLIENT_ID.includes('REPLACE')) { alert('Paste your Google OAuth Client ID into GOOGLE_CLIENT_ID.'); return; }
+  google.accounts.id.prompt();
+}
+function signOut() { currentUser = null; localStorage.removeItem('rv_user'); renderAuthUI(); }
+function renderAuthUI() {
+  const s = document.getElementById('auth-section');
+  if (currentUser) {
+    s.innerHTML = `<img src="${currentUser.picture}" referrerpolicy="no-referrer" style="width:28px;height:28px;border-radius:50%;border:1px solid var(--lyra-border)">
+      <span style="font-size:13px;font-weight:600;color:var(--lyra-silver)">${currentUser.name.split(' ')[0]}</span>
+      <button onclick="signOut()" class="lyra-btn" style="padding:5px 10px;font-size:11px">Sign Out</button>`;
+  } else {
+    s.innerHTML = `<button onclick="googleSignIn()" class="lyra-btn" style="padding:7px 14px;font-size:12px;letter-spacing:0.5px">Sign In</button>`;
+  }
+}
+
+// ═══ RENDERING ═══
+let currentCategory = 'All';
+function getCategories() { return ['All', ...[...new Set(PRODUCTS.map(p => p.category))].sort()]; }
+function renderCategoryBar() {
+  document.getElementById('category-bar').innerHTML = getCategories()
+    .map(c => `<button class="category-btn ${c === currentCategory ? 'active' : ''}" onclick="filterByCategory('${c}')">${c}</button>`)
+    .join('');
+}
+function renderProductGrid() {
+  const grid = document.getElementById('product-grid');
+  const empty = document.getElementById('empty-state');
+  const f = currentCategory === 'All' ? PRODUCTS : PRODUCTS.filter(p => p.category === currentCategory);
+  if (!f.length) { grid.classList.add('hidden'); empty.classList.remove('hidden'); return; }
+  grid.classList.remove('hidden'); empty.classList.add('hidden');
+  grid.innerHTML = f.map((p, i) => {
+    const free = p.priceNum === 0, soon = p.status === 'soon', canBuy = !free && !soon;
+    return `<div class="product-card" style="animation-delay:${i * 0.06}s" onclick="showDetail('${p.id}')" data-media-id="${p.media || ('assets/video/' + p.id)}">
+      <div class="card-media-bg"></div>
+      <div class="card-content">
+        <span class="product-icon">${p.icon}</span>
+        <div class="product-category-tag">${p.category} · ${p.subcategory}</div>
+        <h3 class="product-name">${p.name}</h3>
+        <p class="product-tagline">${p.tagline}</p>
+        <div class="product-footer">
+          <span class="product-price ${free ? 'free' : ''}">${p.price}</span>
+          <span style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+            <span class="product-status status-${p.status}">${p.status === 'available' ? '● Available' : p.status === 'preview' ? '◐ Preview' : '○ Soon'}</span>
+            ${canBuy ? `<button class="btn-add-cart ${isInCart(p.id) ? 'in-cart' : ''}" data-cart-id="${p.id}" onclick="toggleCartItem(event,'${p.id}')">${isInCart(p.id) ? '✓ In Cart' : '+ Add'}</button>` : ''}
+          </span>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+  requestAnimationFrame(() => {
+    document.querySelectorAll('.product-card[data-media-id]').forEach(c => { tryLoadMedia(c, c.dataset.mediaId); });
+  });
+}
+function renderDetail(p) {
+  const free = p.priceNum === 0, soon = p.status === 'soon', canBuy = !free && !soon;
+  document.getElementById('detail-content').innerHTML = `
+    <div class="detail-header animate-in">
+      <div class="detail-icon-lg">${p.icon}</div>
+      <div class="detail-meta">
+        <h2 class="detail-name">${p.name}</h2>
+        <div class="detail-cat-path">${p.category} › ${p.subcategory}</div>
+        <p class="detail-description">${p.description}</p>
+      </div>
+    </div>
+    <div class="detail-section animate-in" style="animation-delay:.1s">
+      <h3 class="detail-section-title">Features</h3>
+      <ul class="feature-list">${p.features.map(f => `<li class="feature-item">${f}</li>`).join('')}</ul>
+    </div>
+    <div class="detail-section animate-in" style="animation-delay:.15s">
+      <h3 class="detail-section-title">Tech Stack</h3>
+      <div class="tech-stack-list">${p.techStack.map(t => `<span class="tech-tag">${t}</span>`).join('')}</div>
+    </div>
+    <div class="detail-section animate-in" style="animation-delay:.2s">
+      <h3 class="detail-section-title">Pricing & Access</h3>
+      <div class="detail-pricing">
+        <span class="detail-price-label">Price</span>
+        <span class="detail-price-value ${free ? 'free' : ''}">${p.price}</span>
+        <span class="product-status status-${p.status}" style="align-self:flex-start">${p.status === 'available' ? '● Available Now' : p.status === 'preview' ? '◐ Early Preview' : '○ Coming Soon'}</span>
+        ${p.accessUrl ? `<a href="${p.accessUrl}" target="_blank" rel="noopener" class="detail-access-link">${p.accessLabel === 'GitHub' ? '⬡ View on GitHub' : p.accessLabel === 'Suno' ? '♫ Listen on Suno' : '→ ' + (p.accessLabel || 'Get it')}</a>` : ''}
+        ${canBuy ? `<button class="detail-cart-btn ${isInCart(p.id) ? 'in-cart' : ''}" data-cart-id="${p.id}" onclick="toggleCartItem(event,'${p.id}')">${isInCart(p.id) ? '✓ In Cart' : '🛒 Add to Cart'}</button>` : ''}
+      </div>
+    </div>`;
+}
+function showDetail(id) {
+  const p = PRODUCTS.find(x => x.id === id);
+  if (!p) return;
+  document.getElementById('catalog-view').classList.add('hidden');
+  document.getElementById('detail-view').classList.remove('hidden');
+  renderDetail(p);
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+function showCatalog() {
+  document.getElementById('detail-view').classList.add('hidden');
+  document.getElementById('catalog-view').classList.remove('hidden');
+  renderProductGrid();
+}
+function filterByCategory(c) { currentCategory = c; renderCategoryBar(); renderProductGrid(); }
+
+// ═══ INIT ═══
+initVideoSlot(document.getElementById('page-bg-video'), PAGE_BG_VIDEO_FILES);
+initVideoSlot(document.getElementById('hero-video'), HERO_VIDEO_FILES);
+renderAuthUI(); renderCategoryBar(); renderProductGrid(); updateCartUI();
+window.addEventListener('load', initGoogleAuth);
+</script>
+</body>
+</html>

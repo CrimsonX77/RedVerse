@@ -1,0 +1,989 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Void Eater — RedForest Labs</title>
+<link rel="stylesheet" href="lyra.css">
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+<style>
+html, body { min-height: 100vh; }
+body { display: flex; flex-direction: column; }
+
+/* ─── Page bg slot ───────────────────────────────────────── */
+.page-bg {
+  position: fixed; inset: 0; z-index: -2;
+  background: radial-gradient(ellipse at 50% 30%, rgba(139,0,0,0.09), transparent 70%),
+              radial-gradient(ellipse at 30% 80%, rgba(188,19,254,0.04), transparent 70%),
+              var(--lyra-void);
+}
+.page-bg .bg-media {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  object-fit: cover; opacity: 0.18; filter: brightness(0.35);
+}
+.page-bg::after {
+  content: ''; position: absolute; inset: 0;
+  background: linear-gradient(180deg, rgba(6,6,10,0.55) 0%, rgba(6,6,10,0.92) 100%);
+}
+
+.void-layout {
+  flex: 1;
+  max-width: 1180px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 24px;
+  display: flex; flex-direction: column; gap: 16px;
+}
+
+/* ─── Hero ────────────────────────────────────────────────── */
+.void-hero {
+  position: relative;
+  background: var(--lyra-stone);
+  border: 1px solid var(--lyra-border);
+  border-radius: var(--lyra-radius-lg);
+  padding: 22px 24px;
+  overflow: hidden;
+  isolation: isolate;
+}
+.void-hero::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+  background: linear-gradient(90deg, transparent, var(--lyra-blood) 25%, var(--lyra-crimson) 50%, var(--lyra-blood) 75%, transparent);
+  opacity: 0.6;
+}
+.void-hero .hero-media {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  object-fit: cover; opacity: 0.15; filter: brightness(0.35); z-index: -1;
+}
+.hero-row { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
+.hero-sigil {
+  width: 54px; height: 54px;
+  border-radius: var(--lyra-radius-md);
+  background: radial-gradient(circle at center, var(--lyra-ember), var(--lyra-blood) 60%, #000 100%);
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 0 24px rgba(139,0,0,0.5), inset 0 0 8px rgba(0,0,0,0.6);
+  flex-shrink: 0;
+}
+.hero-sigil .material-icons { color: var(--lyra-gold); font-size: 30px; }
+.hero-text h1 {
+  font-family: 'Cinzel', serif; font-size: 22px; font-weight: 900;
+  letter-spacing: 3px; color: var(--lyra-text-bright); margin: 0;
+}
+.hero-text p {
+  font-family: 'Crimson Pro', serif; font-style: italic;
+  font-size: 14px; color: var(--lyra-ash); margin: 2px 0 0;
+}
+.hero-meta { margin-left: auto; display: flex; gap: 8px; flex-wrap: wrap; }
+.meta-pill {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase;
+  padding: 4px 10px; border-radius: var(--lyra-radius-pill);
+  border: 1px solid;
+}
+.meta-pill.ok  { color: var(--lyra-success); border-color: rgba(0,255,136,0.3); background: rgba(0,255,136,0.06); }
+.meta-pill.off { color: var(--lyra-warning); border-color: rgba(255,215,0,0.3); background: rgba(255,215,0,0.06); }
+.meta-pill.info { color: var(--lyra-cyan); border-color: rgba(0,229,255,0.3); background: rgba(0,229,255,0.06); }
+
+/* ─── Panels ──────────────────────────────────────────────── */
+.panel {
+  background: var(--lyra-stone);
+  border: 1px solid var(--lyra-border);
+  border-radius: var(--lyra-radius-lg);
+  padding: 20px;
+  position: relative;
+  overflow: hidden;
+}
+.panel::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg, transparent, var(--lyra-crimson), transparent);
+  opacity: 0.3;
+}
+.panel-title {
+  font-family: 'Orbitron', sans-serif; font-size: 10px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 2.5px;
+  color: var(--lyra-crimson); margin-bottom: 14px;
+  display: flex; align-items: center; gap: 10px;
+}
+.panel-title::after {
+  content: ''; flex: 1; height: 1px;
+  background: linear-gradient(90deg, var(--lyra-border), transparent);
+}
+
+.split {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+@media (max-width: 860px) { .split { grid-template-columns: 1fr; } }
+
+/* ─── Mode tabs ──────────────────────────────────────────── */
+.mode-tabs {
+  display: flex; gap: 2px; border-bottom: 1px solid var(--lyra-border);
+  margin-bottom: 14px;
+}
+.mode-tab {
+  background: transparent; border: none; cursor: pointer;
+  padding: 10px 18px;
+  font-family: 'Cinzel', serif; font-size: 12px;
+  letter-spacing: 2px; text-transform: uppercase;
+  color: var(--lyra-text-dim);
+  border-bottom: 2px solid transparent;
+  transition: all 0.2s;
+}
+.mode-tab:hover { color: var(--lyra-silver); }
+.mode-tab.active { color: var(--lyra-gold); border-bottom-color: var(--lyra-crimson); }
+
+.mode-body { display: none; }
+.mode-body.active { display: block; }
+
+/* ─── Drop zone ──────────────────────────────────────────── */
+.drop-zone {
+  border: 2px dashed var(--lyra-border);
+  border-radius: var(--lyra-radius-lg);
+  padding: 40px 20px;
+  text-align: center;
+  color: var(--lyra-ghost);
+  cursor: pointer;
+  transition: all 0.2s;
+  background: var(--lyra-obsidian);
+}
+.drop-zone:hover, .drop-zone.dragover {
+  border-color: var(--lyra-crimson);
+  background: var(--lyra-blush);
+  color: var(--lyra-silver);
+}
+.drop-zone .material-icons {
+  font-size: 52px; opacity: 0.18;
+  display: block; margin-bottom: 12px; color: var(--lyra-crimson);
+}
+
+.path-row {
+  display: flex; gap: 10px; margin-top: 12px;
+}
+.path-row input[type=text] {
+  flex: 1; font-family: 'JetBrains Mono', monospace; font-size: 12px;
+}
+
+/* ─── Item list ──────────────────────────────────────────── */
+.item-list {
+  max-height: 520px;
+  overflow-y: auto;
+  border: 1px solid var(--lyra-border);
+  border-radius: var(--lyra-radius-md);
+  background: var(--lyra-obsidian);
+}
+.item-row {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--lyra-border);
+  display: grid;
+  grid-template-columns: 36px 1fr auto;
+  gap: 12px;
+  align-items: center;
+  transition: background 0.15s;
+}
+.item-row:last-child { border-bottom: none; }
+.item-row:hover { background: rgba(220,20,60,0.04); }
+
+.item-icon {
+  width: 32px; height: 32px;
+  border-radius: var(--lyra-radius-sm);
+  background: linear-gradient(135deg, var(--lyra-blood), var(--lyra-crimson));
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.item-icon .material-icons { color: var(--lyra-gold); font-size: 16px; }
+
+.item-main { min-width: 0; }
+.item-name {
+  font-family: 'JetBrains Mono', monospace; font-size: 12px;
+  color: var(--lyra-text-bright); font-weight: 700;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.item-origin {
+  font-family: 'JetBrains Mono', monospace; font-size: 10px;
+  color: var(--lyra-text-dim); margin-top: 2px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.item-meta {
+  font-family: 'JetBrains Mono', monospace; font-size: 10px;
+  color: var(--lyra-ash); margin-top: 3px;
+  display: flex; gap: 10px; flex-wrap: wrap; align-items: center;
+}
+.item-meta .size { color: var(--lyra-gold); }
+.item-meta .ttl  { color: var(--lyra-crimson); }
+.item-meta .ttl.urgent { color: var(--lyra-ember); }
+
+.state-pill {
+  font-size: 9px; letter-spacing: 1px; text-transform: uppercase;
+  padding: 1px 7px;
+  border-radius: var(--lyra-radius-pill);
+  border: 1px solid;
+}
+.state-buffered     { color: var(--lyra-gold); border-color: rgba(255,215,0,0.3); background: rgba(255,215,0,0.06); }
+.state-restored     { color: var(--lyra-cyan); border-color: rgba(0,229,255,0.3); background: rgba(0,229,255,0.06); }
+.state-shredded     { color: var(--lyra-text-dim); border-color: var(--lyra-border); }
+.state-shred_failed { color: var(--lyra-error); border-color: rgba(255,45,64,0.35); background: rgba(255,45,64,0.06); }
+
+.item-actions {
+  display: flex; gap: 6px;
+  flex-shrink: 0;
+}
+.item-btn {
+  font-family: 'Cinzel', serif; font-size: 10px; letter-spacing: 1.5px;
+  text-transform: uppercase;
+  padding: 5px 10px;
+  border-radius: var(--lyra-radius-sm);
+  border: 1px solid var(--lyra-border);
+  background: var(--lyra-obsidian);
+  color: var(--lyra-ash);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.item-btn:hover { border-color: var(--lyra-crimson); color: var(--lyra-text-bright); }
+.item-btn.danger:hover { border-color: var(--lyra-ember); color: var(--lyra-ember); }
+.item-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+.empty-list {
+  padding: 36px 16px;
+  text-align: center;
+  font-family: 'Crimson Pro', serif; font-style: italic;
+  font-size: 14px; color: var(--lyra-text-dim);
+}
+
+.list-toolbar {
+  display: flex; gap: 8px; flex-wrap: wrap; align-items: center;
+  margin-bottom: 10px;
+}
+.list-toolbar input[type=search] {
+  flex: 1; min-width: 180px;
+  font-family: 'JetBrains Mono', monospace; font-size: 12px;
+}
+.filter-chip {
+  font-family: 'Cinzel', serif; font-size: 10px;
+  letter-spacing: 1.5px; text-transform: uppercase;
+  padding: 4px 10px;
+  border-radius: var(--lyra-radius-pill);
+  border: 1px solid var(--lyra-border);
+  background: var(--lyra-obsidian);
+  color: var(--lyra-ash);
+  cursor: pointer;
+}
+.filter-chip.active {
+  border-color: var(--lyra-gold);
+  color: var(--lyra-gold);
+  background: linear-gradient(135deg, rgba(220,20,60,0.08), rgba(255,215,0,0.06));
+}
+
+/* ─── Vault summary ──────────────────────────────────────── */
+.vault-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 10px;
+  margin-bottom: 14px;
+}
+.vault-stat {
+  background: var(--lyra-obsidian);
+  border: 1px solid var(--lyra-border);
+  border-radius: var(--lyra-radius-md);
+  padding: 12px 14px;
+  text-align: center;
+}
+.vault-stat-val {
+  font-family: 'Cinzel', serif; font-size: 22px; font-weight: 900;
+  color: var(--lyra-gold); line-height: 1;
+}
+.vault-stat-lbl {
+  font-family: 'JetBrains Mono', monospace; font-size: 9px;
+  letter-spacing: 1.5px; text-transform: uppercase;
+  color: var(--lyra-text-dim); margin-top: 4px;
+}
+
+/* ─── Settings ───────────────────────────────────────────── */
+.settings-row {
+  display: flex; align-items: center; gap: 14px;
+  padding: 10px 0;
+  border-bottom: 1px dotted rgba(220,20,60,0.1);
+}
+.settings-row:last-child { border-bottom: none; }
+.settings-label {
+  font-family: 'Cinzel', serif; font-size: 12px;
+  letter-spacing: 1.5px; color: var(--lyra-silver);
+  flex: 1; min-width: 160px;
+}
+.settings-desc {
+  font-family: 'Crimson Pro', serif; font-style: italic;
+  font-size: 11px; color: var(--lyra-text-dim);
+  margin-top: 2px;
+}
+.settings-row input[type=number] {
+  width: 90px;
+  font-family: 'JetBrains Mono', monospace;
+  text-align: center;
+}
+
+/* ─── Preview modal ──────────────────────────────────────── */
+.modal-scrim {
+  position: fixed; inset: 0;
+  background: rgba(6,6,10,0.88);
+  backdrop-filter: blur(10px);
+  display: none;
+  align-items: center; justify-content: center;
+  z-index: 1000;
+}
+.modal-scrim.active { display: flex; }
+.modal {
+  background: var(--lyra-stone);
+  border: 1px solid var(--lyra-border);
+  border-radius: var(--lyra-radius-lg);
+  max-width: 640px; width: 92%;
+  max-height: 82vh;
+  display: flex; flex-direction: column;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.7);
+}
+.modal-head {
+  padding: 18px 22px;
+  border-bottom: 1px solid var(--lyra-border);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.modal-head h3 {
+  font-family: 'Cinzel', serif; font-size: 16px;
+  letter-spacing: 2px; color: var(--lyra-text-bright); margin: 0;
+}
+.modal-body {
+  padding: 20px 22px;
+  overflow-y: auto;
+  flex: 1;
+  font-family: 'JetBrains Mono', monospace; font-size: 12px;
+  color: var(--lyra-ash); line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+.modal-body.danger {
+  color: var(--lyra-silver);
+  font-family: 'Crimson Pro', serif;
+  font-size: 14px;
+  line-height: 1.6;
+}
+.modal-foot {
+  padding: 14px 22px;
+  border-top: 1px solid var(--lyra-border);
+  display: flex; gap: 10px; justify-content: flex-end;
+}
+.modal-detail-bar {
+  margin: 0 22px 14px;
+  padding: 10px 14px;
+  border: 1px solid var(--lyra-border);
+  border-radius: var(--lyra-radius-md);
+  background: var(--lyra-obsidian);
+  font-family: 'JetBrains Mono', monospace; font-size: 11px;
+  color: var(--lyra-gold);
+  text-align: center;
+}
+.modal.danger { border-color: rgba(255,45,64,0.5); }
+.modal.danger .modal-head h3 { color: var(--lyra-ember); }
+
+/* Toast */
+.toast {
+  position: fixed; bottom: 24px; right: 24px;
+  background: var(--lyra-stone);
+  border: 1px solid var(--lyra-success);
+  border-left: 3px solid var(--lyra-success);
+  border-radius: var(--lyra-radius-md);
+  padding: 12px 18px;
+  font-family: 'JetBrains Mono', monospace; font-size: 12px;
+  color: var(--lyra-text-bright);
+  z-index: 2000;
+  box-shadow: var(--lyra-shadow-lg);
+  display: none;
+  max-width: 360px;
+}
+.toast.error { border-color: var(--lyra-error); border-left-color: var(--lyra-error); }
+.toast.warn  { border-color: var(--lyra-warning); border-left-color: var(--lyra-warning); }
+.toast.active { display: block; }
+
+/* SSD warning strip */
+.ssd-note {
+  background: rgba(0,229,255,0.06);
+  border: 1px solid rgba(0,229,255,0.25);
+  border-left: 3px solid var(--lyra-cyan);
+  border-radius: var(--lyra-radius-md);
+  padding: 10px 14px;
+  font-family: 'JetBrains Mono', monospace; font-size: 11px;
+  color: var(--lyra-silver); line-height: 1.5;
+  margin-bottom: 14px;
+}
+.ssd-note strong { color: var(--lyra-cyan); }
+</style>
+</head>
+<body>
+
+<div class="page-bg">
+  <!-- SLOT: page background media -->
+  <!-- <video class="bg-media" autoplay loop muted playsinline><source src="assets/void-bg.mp4" type="video/mp4"></video> -->
+</div>
+
+<header class="lyra-header">
+  <a href="tools.html" style="display:flex;align-items:center;gap:10px;text-decoration:none;color:inherit">
+    <div style="width:32px;height:32px;border-radius:6px;background:radial-gradient(circle,var(--lyra-ember),var(--lyra-blood));display:flex;align-items:center;justify-content:center;box-shadow:0 0 10px rgba(139,0,0,0.4)">
+      <span style="color:var(--lyra-gold);font-size:16px">🕳️</span>
+    </div>
+    <span class="lyra-logo">VOID <span class="lyra-logo-accent">EATER</span></span>
+  </a>
+  <div class="lyra-status-pill"><div class="lyra-dot lyra-dot-pulse" id="dotStatus"></div><span id="lblStatus">…</span></div>
+</header>
+
+<main class="void-layout">
+
+  <!-- Hero -->
+  <section class="void-hero">
+    <!-- SLOT: hero background media -->
+    <!-- <video class="hero-media" autoplay loop muted playsinline><source src="assets/void-hero.mp4" type="video/mp4"></video> -->
+    <div class="hero-row">
+      <div class="hero-sigil"><i class="material-icons">blur_on</i></div>
+      <div class="hero-text">
+        <h1>VOID EATER</h1>
+        <p>Paranoid recycle bin. Files buffer. Time expires. The void eats.</p>
+      </div>
+      <div class="hero-meta">
+        <span class="meta-pill info" id="retPill">⌛ retention: —</span>
+        <span class="meta-pill info" id="passPill">✦ shred: —</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- Vault summary -->
+  <section class="panel">
+    <div class="panel-title">Vault Status</div>
+    <div class="vault-stats">
+      <div class="vault-stat"><div class="vault-stat-val" id="statBuffered">—</div><div class="vault-stat-lbl">Buffered</div></div>
+      <div class="vault-stat"><div class="vault-stat-val" id="statSize">—</div><div class="vault-stat-lbl">Total Size</div></div>
+      <div class="vault-stat"><div class="vault-stat-val" id="statShredded">—</div><div class="vault-stat-lbl">Shredded (All-Time)</div></div>
+      <div class="vault-stat"><div class="vault-stat-val" id="statRestored">—</div><div class="vault-stat-lbl">Restored (All-Time)</div></div>
+    </div>
+    <div class="ssd-note">
+      <strong>Note on SSDs:</strong> Multi-pass overwrite is most effective on spinning disks. On SSDs with wear-leveling and TRIM, exact bytes may remain in unmapped cells. For forensic-grade erasure on SSDs, full-disk TRIM and hardware secure-erase are more reliable. For most users, this is sufficient.
+    </div>
+  </section>
+
+  <div class="split">
+
+    <!-- Left: ingest + shred-now -->
+    <section class="panel">
+      <div class="panel-title">Feed the Void</div>
+
+      <div class="mode-tabs">
+        <button class="mode-tab active" data-mode="buffer">Buffer</button>
+        <button class="mode-tab" data-mode="shred">Shred Now</button>
+      </div>
+
+      <!-- Buffer mode -->
+      <div class="mode-body active" data-mode="buffer">
+        <div style="font-family:'Crimson Pro',serif;font-style:italic;font-size:13px;color:var(--lyra-ash);margin-bottom:14px;line-height:1.5">
+          Files dropped here move to the vault. They sit for <span id="bufRetention" style="color:var(--lyra-gold);font-weight:700">—</span>,
+          fully restorable, until they expire and get shredded.
+        </div>
+        <div class="drop-zone" id="dropZone">
+          <i class="material-icons">south</i>
+          <div style="font-family:'Cinzel',serif;font-size:15px;letter-spacing:2px;color:var(--lyra-ash)">Drop files to buffer</div>
+          <div style="font-size:11px;margin-top:6px;color:var(--lyra-dim);font-family:'JetBrains Mono',monospace">drag &amp; drop OR click to pick</div>
+        </div>
+        <input type="file" id="fileInput" multiple style="display:none">
+
+        <div class="path-row">
+          <input class="lyra-input" type="text" id="pathInput" placeholder="OR enter a filesystem path: /home/me/old_project" />
+          <button class="lyra-btn lyra-btn-primary" id="ingestPathBtn">
+            <i class="material-icons" style="font-size:16px">south</i> Ingest
+          </button>
+        </div>
+      </div>
+
+      <!-- Shred-now mode -->
+      <div class="mode-body" data-mode="shred">
+        <div style="font-family:'Crimson Pro',serif;font-style:italic;font-size:13px;color:var(--lyra-ember);margin-bottom:14px;line-height:1.5">
+          ⚠ Skips the buffer entirely. Overwrites with random data, scrambles name, unlinks. <strong>No recovery.</strong>
+        </div>
+        <div class="path-row">
+          <input class="lyra-input" type="text" id="shredPathInput" placeholder="/absolute/path/to/obliterate" />
+          <button class="lyra-btn lyra-btn-danger" id="shredNowBtn">
+            <i class="material-icons" style="font-size:16px">delete_forever</i> Shred Now
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Right: settings -->
+    <section class="panel">
+      <div class="panel-title">Settings</div>
+
+      <div class="settings-row">
+        <div>
+          <div class="settings-label">Retention</div>
+          <div class="settings-desc">Hours before buffered items are shredded. 0 = shred on next sweep.</div>
+        </div>
+        <input class="lyra-input" type="number" id="setRetention" min="0" max="720" step="1">
+        <span class="lyra-mono lyra-text-dim" style="font-size:11px">hours</span>
+      </div>
+
+      <div class="settings-row">
+        <div>
+          <div class="settings-label">Shred Passes</div>
+          <div class="settings-desc">Random-data overwrite passes. 1 is fast. 3 is default. 7 is Paranoid. 35 is Gutmann.</div>
+        </div>
+        <input class="lyra-input" type="number" id="setPasses" min="1" max="35" step="1">
+        <span class="lyra-mono lyra-text-dim" style="font-size:11px">passes</span>
+      </div>
+
+      <div class="settings-row">
+        <div>
+          <div class="settings-label">Sweep Interval</div>
+          <div class="settings-desc">How often the expiry sweeper wakes. Lower = faster expiry, more CPU.</div>
+        </div>
+        <input class="lyra-input" type="number" id="setSweep" min="30" max="3600" step="30">
+        <span class="lyra-mono lyra-text-dim" style="font-size:11px">seconds</span>
+      </div>
+
+      <div style="display:flex;gap:8px;margin-top:14px">
+        <button class="lyra-btn lyra-btn-primary" id="saveSettingsBtn">
+          <i class="material-icons" style="font-size:16px">save</i> Save
+        </button>
+        <button class="lyra-btn lyra-btn-ghost" id="sweepNowBtn">
+          <i class="material-icons" style="font-size:16px">cleaning_services</i> Sweep Expired Now
+        </button>
+      </div>
+    </section>
+  </div>
+
+  <!-- Vault contents -->
+  <section class="panel">
+    <div class="panel-title">Vault Contents</div>
+
+    <div class="list-toolbar">
+      <input class="lyra-input" type="search" id="searchBox" placeholder="Search by name or original path…">
+      <button class="filter-chip active" data-filter="all">All</button>
+      <button class="filter-chip" data-filter="buffered">Buffered</button>
+      <button class="filter-chip" data-filter="restored">Restored</button>
+      <button class="filter-chip" data-filter="shredded">Shredded</button>
+    </div>
+
+    <div class="item-list" id="itemList">
+      <div class="empty-list">The void is empty. Feed it something.</div>
+    </div>
+  </section>
+
+</main>
+
+<!-- Preview modal (also doubles as confirm for shreds) -->
+<div class="modal-scrim" id="previewModal">
+  <div class="modal" id="previewModalBox">
+    <div class="modal-head">
+      <h3 id="previewTitle">—</h3>
+      <button class="lyra-btn lyra-btn-ghost" id="previewClose" style="padding:4px 10px">
+        <i class="material-icons" style="font-size:16px">close</i>
+      </button>
+    </div>
+    <div class="modal-detail-bar" id="previewDetail" style="display:none">—</div>
+    <div class="modal-body" id="previewBody">—</div>
+    <div class="modal-foot" id="previewFoot"></div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<footer class="lyra-footer">
+  <span class="lyra-footer-brand">Void Eater · Timed Annihilation</span>
+  <span class="lyra-mono" id="footerInfo">Port 8919</span>
+</footer>
+
+<script>
+const API = 'http://127.0.0.1:8919';
+const $ = id => document.getElementById(id);
+
+let currentItems = [];
+let filter = 'all';
+let searchQuery = '';
+
+// ─── Utils ─────────────────────────────────────────────────
+function humanSize(b) {
+  if (!b && b !== 0) return '—';
+  const u = ['B','KB','MB','GB','TB']; let i = 0;
+  while (b >= 1024 && i < u.length - 1) { b /= 1024; i++; }
+  return b.toFixed(1) + ' ' + u[i];
+}
+function fmtTTL(secs) {
+  if (secs == null) return '—';
+  if (secs <= 0) return 'expired';
+  const h = Math.floor(secs / 3600);
+  const m = Math.floor((secs % 3600) / 60);
+  const s = secs % 60;
+  if (h > 0) return `${h}h ${m}m`;
+  if (m > 0) return `${m}m ${s}s`;
+  return `${s}s`;
+}
+function esc(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+// ─── Toast ─────────────────────────────────────────────────
+let toastTimer = null;
+function toast(msg, type = 'ok') {
+  const el = $('toast');
+  el.className = 'toast active ' + (type === 'error' ? 'error' : type === 'warn' ? 'warn' : '');
+  el.textContent = msg;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('active'), 4000);
+}
+
+// ─── Status poll ───────────────────────────────────────────
+async function pollStatus() {
+  try {
+    const r = await fetch(`${API}/api/status`);
+    const d = await r.json();
+    $('dotStatus').className = 'lyra-dot lyra-dot-ok';
+    $('lblStatus').textContent = 'Online';
+    $('statBuffered').textContent = d.buffered_count;
+    $('statSize').textContent = humanSize(d.buffered_bytes);
+    $('retPill').textContent = `⌛ retention: ${d.config.retention_hours}h`;
+    $('passPill').textContent = `✦ shred: ${d.config.shred_passes} passes`;
+    $('bufRetention').textContent = d.config.retention_hours + ' hours';
+    // Populate settings inputs if untouched
+    if (!$('setRetention').value) $('setRetention').value = d.config.retention_hours;
+    if (!$('setPasses').value)    $('setPasses').value    = d.config.shred_passes;
+    if (!$('setSweep').value)     $('setSweep').value     = d.config.sweep_interval_s;
+  } catch (e) {
+    $('dotStatus').className = 'lyra-dot lyra-dot-error';
+    $('lblStatus').textContent = 'Offline';
+  }
+}
+
+async function loadManifest() {
+  try {
+    const r = await fetch(`${API}/api/manifest`);
+    const d = await r.json();
+    currentItems = d.items || [];
+    const shredded = currentItems.filter(i => i.state === 'shredded').length;
+    const restored = currentItems.filter(i => i.state === 'restored').length;
+    $('statShredded').textContent = shredded;
+    $('statRestored').textContent = restored;
+    renderItems();
+  } catch (e) {
+    $('itemList').innerHTML = '<div class="empty-list">Cannot reach Void Eater.</div>';
+  }
+}
+
+// ─── Render list ───────────────────────────────────────────
+function renderItems() {
+  const list = $('itemList');
+  const q = searchQuery.toLowerCase().trim();
+  const filtered = currentItems.filter(it => {
+    if (filter !== 'all' && it.state !== filter) return false;
+    if (q && !(
+      (it.original_name || '').toLowerCase().includes(q) ||
+      (it.original_path || '').toLowerCase().includes(q)
+    )) return false;
+    return true;
+  });
+  if (!filtered.length) {
+    list.innerHTML = '<div class="empty-list">Nothing here.</div>';
+    return;
+  }
+  list.innerHTML = filtered.map(it => {
+    const icon = it.is_dir ? 'folder' : 'insert_drive_file';
+    const ttlClass = (it.seconds_remaining != null && it.seconds_remaining < 3600) ? 'urgent' : '';
+    const ttl = it.state === 'buffered'
+      ? `<span class="ttl ${ttlClass}">⌛ ${fmtTTL(it.seconds_remaining)}</span>`
+      : '';
+    const origin = it.original_path || (it.source === 'upload' ? '(uploaded to vault)' : '—');
+    const bufferedOnly = it.state === 'buffered';
+    return `<div class="item-row" data-id="${it.id}">
+      <div class="item-icon"><i class="material-icons">${icon}</i></div>
+      <div class="item-main">
+        <div class="item-name">${esc(it.original_name)}</div>
+        <div class="item-origin">${esc(origin)}</div>
+        <div class="item-meta">
+          <span class="state-pill state-${it.state}">${it.state}</span>
+          <span class="size">${humanSize(it.size)}</span>
+          ${ttl}
+          <span>${esc(it.ingested_at)}</span>
+        </div>
+      </div>
+      <div class="item-actions">
+        <button class="item-btn" data-act="preview" ${!bufferedOnly ? 'disabled' : ''}>Preview</button>
+        <button class="item-btn" data-act="restore" ${!bufferedOnly ? 'disabled' : ''}>Restore</button>
+        <button class="item-btn danger" data-act="shred"   ${!bufferedOnly ? 'disabled' : ''}>Shred</button>
+      </div>
+    </div>`;
+  }).join('');
+
+  list.querySelectorAll('.item-row').forEach(row => {
+    row.querySelectorAll('.item-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const id = row.dataset.id;
+        const act = btn.dataset.act;
+        if (act === 'preview') doPreview(id);
+        else if (act === 'restore') doRestore(id);
+        else if (act === 'shred') doShredItem(id);
+      });
+    });
+  });
+}
+
+// ─── Mode tabs ─────────────────────────────────────────────
+document.querySelectorAll('.mode-tab').forEach(t => {
+  t.addEventListener('click', () => {
+    document.querySelectorAll('.mode-tab').forEach(x => x.classList.toggle('active', x === t));
+    document.querySelectorAll('.mode-body').forEach(b => b.classList.toggle('active', b.dataset.mode === t.dataset.mode));
+  });
+});
+
+// ─── Filter / search ───────────────────────────────────────
+document.querySelectorAll('.filter-chip').forEach(c => {
+  c.addEventListener('click', () => {
+    document.querySelectorAll('.filter-chip').forEach(x => x.classList.toggle('active', x === c));
+    filter = c.dataset.filter;
+    renderItems();
+  });
+});
+$('searchBox').addEventListener('input', e => {
+  searchQuery = e.target.value;
+  renderItems();
+});
+
+// ─── Drop zone / file picker ───────────────────────────────
+const dz = $('dropZone'), fi = $('fileInput');
+dz.addEventListener('click', () => fi.click());
+dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('dragover'); });
+dz.addEventListener('dragleave', () => dz.classList.remove('dragover'));
+dz.addEventListener('drop', e => {
+  e.preventDefault(); dz.classList.remove('dragover');
+  if (e.dataTransfer.files.length) ingestUploads(e.dataTransfer.files);
+});
+fi.addEventListener('change', () => {
+  if (fi.files.length) ingestUploads(fi.files);
+  fi.value = '';
+});
+
+async function ingestUploads(fileList) {
+  let ok = 0, fail = 0;
+  for (const f of fileList) {
+    const fd = new FormData();
+    fd.append('file', f);
+    try {
+      const r = await fetch(`${API}/api/ingest_upload`, { method: 'POST', body: fd });
+      const d = await r.json();
+      if (d.ok) ok++; else fail++;
+    } catch (e) { fail++; }
+  }
+  toast(`Buffered ${ok}${fail ? ', failed ' + fail : ''}`, fail ? 'warn' : 'ok');
+  loadManifest();
+}
+
+// ─── Ingest by path ────────────────────────────────────────
+$('ingestPathBtn').addEventListener('click', async () => {
+  const path = $('pathInput').value.trim();
+  if (!path) return;
+  try {
+    const r = await fetch(`${API}/api/ingest_path`, {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ path })
+    });
+    const d = await r.json();
+    if (!r.ok) { toast(d.error || 'Ingest failed', 'error'); return; }
+    toast('Buffered: ' + d.record.original_name);
+    $('pathInput').value = '';
+    loadManifest();
+  } catch (e) { toast('Error: ' + e.message, 'error'); }
+});
+
+// ─── Item actions ──────────────────────────────────────────
+async function doPreview(id) {
+  showModal({
+    title: 'Preview',
+    body: 'Loading…',
+    footButtons: [],
+    danger: false,
+  });
+  try {
+    const r = await fetch(`${API}/api/preview/${id}`);
+    const d = await r.json();
+    if (d.kind === 'text') {
+      showModal({
+        title: d.name,
+        detail: `${d.mime} · ${humanSize(d.size)}${d.truncated ? ' · truncated to 4KB' : ''}`,
+        body: d.preview || '(empty)',
+        footButtons: [{ label: 'Close', cls: 'lyra-btn lyra-btn-ghost', onClick: closeModal }],
+      });
+    } else if (d.kind === 'directory') {
+      const lines = d.entries.map(e => `${e.is_dir ? '📁' : '📄'}  ${e.name}  ${e.is_dir ? '' : '('+humanSize(e.size)+')'}`).join('\n');
+      showModal({
+        title: d.name + '/',
+        detail: `directory · ${d.entry_count} entries`,
+        body: lines || '(empty)',
+        footButtons: [{ label: 'Close', cls: 'lyra-btn lyra-btn-ghost', onClick: closeModal }],
+      });
+    } else if (d.kind === 'binary') {
+      showModal({
+        title: d.name,
+        detail: `${d.mime} · ${humanSize(d.size)}`,
+        body: d.note,
+        footButtons: [{ label: 'Close', cls: 'lyra-btn lyra-btn-ghost', onClick: closeModal }],
+      });
+    } else {
+      showModal({ title: 'Preview', body: 'Cannot preview: ' + (d.error || 'unknown'),
+                  footButtons: [{ label: 'Close', cls: 'lyra-btn lyra-btn-ghost', onClick: closeModal }] });
+    }
+  } catch (e) {
+    showModal({ title: 'Preview', body: 'Error: ' + e.message,
+                footButtons: [{ label: 'Close', cls: 'lyra-btn lyra-btn-ghost', onClick: closeModal }] });
+  }
+}
+
+async function doRestore(id) {
+  try {
+    const r = await fetch(`${API}/api/restore/${id}`, {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({})
+    });
+    const d = await r.json();
+    if (!r.ok) { toast(d.error || 'Restore failed', 'error'); return; }
+    toast('Restored to ' + d.restored_to);
+    loadManifest();
+  } catch (e) { toast('Error: ' + e.message, 'error'); }
+}
+
+function doShredItem(id) {
+  const it = currentItems.find(x => x.id === id);
+  if (!it) return;
+  showModal({
+    danger: true,
+    title: '⚠ SHRED FROM VAULT',
+    detail: `${it.original_name} · ${humanSize(it.size)}`,
+    bodyClass: 'danger',
+    body: 'This will overwrite with random bytes, scramble the filename, and unlink the file. After this, restoration is not possible.',
+    footButtons: [
+      { label: 'Cancel', cls: 'lyra-btn lyra-btn-ghost', onClick: closeModal },
+      { label: 'SHRED', icon: 'delete_forever', cls: 'lyra-btn lyra-btn-danger', onClick: async () => {
+        closeModal();
+        try {
+          const r = await fetch(`${API}/api/shred/${id}`, {
+            method: 'POST', headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({ confirm: true })
+          });
+          const d = await r.json();
+          if (d.ok) toast('Shredded · ' + (d.note || 'ok'));
+          else toast('Shred failed: ' + (d.note || 'unknown'), 'error');
+        } catch (e) { toast('Error: ' + e.message, 'error'); }
+        loadManifest();
+      }},
+    ],
+  });
+}
+
+// ─── Shred-now (skip buffer) ───────────────────────────────
+$('shredNowBtn').addEventListener('click', () => {
+  const path = $('shredPathInput').value.trim();
+  if (!path) return;
+  showModal({
+    danger: true,
+    title: '⚠ IMMEDIATE SHRED',
+    detail: path,
+    bodyClass: 'danger',
+    body: 'This path will be annihilated right now. Skips the buffer. No restore window. No second chance.',
+    footButtons: [
+      { label: 'Cancel', cls: 'lyra-btn lyra-btn-ghost', onClick: closeModal },
+      { label: 'ANNIHILATE', icon: 'whatshot', cls: 'lyra-btn lyra-btn-danger', onClick: async () => {
+        closeModal();
+        try {
+          const r = await fetch(`${API}/api/shred_now`, {
+            method: 'POST', headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({ path, confirm: true })
+          });
+          const d = await r.json();
+          if (d.ok) {
+            toast('Annihilated · ' + path);
+            $('shredPathInput').value = '';
+          } else {
+            toast('Shred failed: ' + (d.error || d.note || 'unknown'), 'error');
+          }
+        } catch (e) { toast('Error: ' + e.message, 'error'); }
+      }},
+    ],
+  });
+});
+
+// ─── Settings ──────────────────────────────────────────────
+$('saveSettingsBtn').addEventListener('click', async () => {
+  const body = {
+    retention_hours:   parseInt($('setRetention').value),
+    shred_passes:      parseInt($('setPasses').value),
+    sweep_interval_s:  parseInt($('setSweep').value),
+  };
+  try {
+    const r = await fetch(`${API}/api/config`, {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify(body),
+    });
+    await r.json();
+    toast('Settings saved');
+    pollStatus();
+  } catch (e) { toast('Error: ' + e.message, 'error'); }
+});
+
+$('sweepNowBtn').addEventListener('click', async () => {
+  showModal({
+    danger: true,
+    title: '⚠ SWEEP EXPIRED',
+    body: 'This immediately shreds any buffered items past their retention. Continue?',
+    footButtons: [
+      { label: 'Cancel', cls: 'lyra-btn lyra-btn-ghost', onClick: closeModal },
+      { label: 'SWEEP', icon: 'cleaning_services', cls: 'lyra-btn lyra-btn-danger', onClick: async () => {
+        closeModal();
+        try {
+          const r = await fetch(`${API}/api/shred_all_expired`, {
+            method: 'POST', headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({ confirm: true })
+          });
+          const d = await r.json();
+          toast(`Swept: ${d.shredded}/${d.candidates} shredded`);
+          loadManifest();
+        } catch (e) { toast('Error: ' + e.message, 'error'); }
+      }},
+    ],
+  });
+});
+
+// ─── Modal plumbing ────────────────────────────────────────
+function showModal(opts) {
+  const box = $('previewModalBox');
+  box.classList.toggle('danger', !!opts.danger);
+  $('previewTitle').textContent = opts.title || '';
+  $('previewBody').textContent = opts.body || '';
+  $('previewBody').className = 'modal-body' + (opts.bodyClass ? ' ' + opts.bodyClass : '');
+  if (opts.detail) {
+    $('previewDetail').style.display = '';
+    $('previewDetail').textContent = opts.detail;
+  } else {
+    $('previewDetail').style.display = 'none';
+  }
+  const foot = $('previewFoot');
+  foot.innerHTML = '';
+  (opts.footButtons || []).forEach(b => {
+    const btn = document.createElement('button');
+    btn.className = b.cls || 'lyra-btn';
+    btn.innerHTML = (b.icon ? `<i class="material-icons" style="font-size:16px">${b.icon}</i> ` : '') + b.label;
+    btn.addEventListener('click', b.onClick);
+    foot.appendChild(btn);
+  });
+  $('previewModal').classList.add('active');
+}
+function closeModal() { $('previewModal').classList.remove('active'); }
+$('previewClose').addEventListener('click', closeModal);
+$('previewModal').addEventListener('click', e => { if (e.target === $('previewModal')) closeModal(); });
+
+// ─── Loops ─────────────────────────────────────────────────
+pollStatus(); setInterval(pollStatus, 5000);
+loadManifest(); setInterval(loadManifest, 4000);
+</script>
+
+</body>
+</html>

@@ -1,0 +1,210 @@
+<FILE filename="vision-app.html">
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vision Switchboard — RedVerse</title>
+<link rel="stylesheet" href="lyra.css">
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+<style>
+/* Same cathedral glow as void-eater.html + extra app-specific tweaks */
+.product-page { max-width: 1100px; margin: 0 auto; padding: 24px; }
+.app-panel {
+  background: var(--lyra-stone);
+  border: 1px solid var(--lyra-border);
+  border-radius: var(--lyra-radius-lg);
+  padding: 24px;
+  box-shadow: 0 0 30px rgba(220,20,60,0.15);
+}
+.image-drop {
+  border: 3px dashed var(--lyra-crimson);
+  border-radius: var(--lyra-radius-md);
+  height: 320px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  color: var(--lyra-ash);
+  cursor: pointer;
+  transition: all 0.3s;
+}
+.image-drop:hover { border-color: var(--lyra-gold); background: rgba(220,20,60,0.05); }
+.preview-img { max-height: 300px; max-width: 100%; border-radius: 8px; }
+.controls-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+@media (max-width: 900px) { .controls-grid { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<div class="lyra-cathedral"></div>
+
+<header class="lyra-header">
+  <a href="index.html" style="display:flex;align-items:center;gap:10px;text-decoration:none;color:inherit">
+    <div style="width:32px;height:32px;border-radius:6px;background:linear-gradient(135deg,var(--lyra-blood),var(--lyra-crimson));display:flex;align-items:center;justify-content:center;box-shadow:0 0 10px rgba(220,20,60,0.3)">
+      <span style="color:var(--lyra-gold);font-size:16px">♦</span>
+    </div>
+    <span class="lyra-logo">RED<span class="lyra-logo-accent">VERSE</span></span>
+  </a>
+</header>
+
+<main class="product-page">
+  <div class="product-hero">
+    <span class="product-hero-icon">🧠</span>
+    <h1 class="product-hero-name">Vision Switchboard</h1>
+    <p class="product-hero-tagline">OCR • CLIP • BLIP • YOLO • SAM • Ollama Vision • Live perception engine</p>
+  </div>
+
+  <div class="app-panel">
+    <!-- IMAGE PREVIEW -->
+    <div id="drop-zone" class="image-drop">
+      <span class="material-icons" style="font-size:64px;margin-bottom:12px">cloud_upload</span>
+      <p>Drop image here or <strong>click to load</strong></p>
+      <input type="file" id="file-input" accept="image/*" style="display:none">
+      <img id="image-preview" class="preview-img" style="display:none">
+    </div>
+
+    <div style="margin-top:20px;display:grid;grid-template-columns:1fr 1fr;gap:20px">
+      <!-- LEFT COLUMN -->
+      <div>
+        <label style="display:block;margin-bottom:8px;font-weight:700;color:var(--lyra-crimson)">🧾 OCR Output</label>
+        <textarea id="ocr-output" rows="4" style="width:100%;background:var(--lyra-void);color:var(--lyra-silver);border:1px solid var(--lyra-border);border-radius:6px;padding:12px" readonly placeholder="OCR will appear here…"></textarea>
+
+        <label style="display:block;margin:16px 0 8px;font-weight:700;color:var(--lyra-crimson)">✍️ Manual Annotations (optional)</label>
+        <textarea id="user-note" rows="3" style="width:100%;background:var(--lyra-void);color:var(--lyra-silver);border:1px solid var(--lyra-border);border-radius:6px;padding:12px" placeholder="Add your own notes here…"></textarea>
+      </div>
+
+      <!-- RIGHT COLUMN -->
+      <div>
+        <label style="display:block;margin-bottom:8px;font-weight:700;color:var(--lyra-crimson)">Fusion Strategy</label>
+        <select id="strategy" style="width:100%;background:var(--lyra-void);color:var(--lyra-silver);border:1px solid var(--lyra-border);border-radius:6px;padding:12px">
+          <option value="Literal">Literal</option>
+          <option value="Symbolic">Symbolic</option>
+          <option value="Emotional">Emotional</option>
+          <option value="OllamaVision">OllamaVision</option>
+        </select>
+
+        <label id="ollama-label" style="display:block;margin:16px 0 8px;font-weight:700;color:var(--lyra-crimson)">🧠 Ollama Vision Model</label>
+        <select id="ollama-model" style="width:100%;background:var(--lyra-void);color:var(--lyra-silver);border:1px solid var(--lyra-border);border-radius:6px;padding:12px">
+          <!-- populated by JS -->
+        </select>
+
+        <label style="display:block;margin:16px 0 8px;font-weight:700;color:var(--lyra-crimson)">🧩 Final Interpretation</label>
+        <textarea id="final-output" rows="8" style="width:100%;background:var(--lyra-void);color:var(--lyra-gold);border:1px solid var(--lyra-border);border-radius:6px;padding:12px" readonly></textarea>
+      </div>
+    </div>
+
+    <!-- CONTROLS -->
+    <div style="margin-top:24px;display:flex;gap:12px;flex-wrap:wrap">
+      <button onclick="loadImage()" class="lyra-btn"><span class="material-icons">folder_open</span> 📂 Load Image</button>
+      <button onclick="interpretImage()" class="lyra-btn lyra-btn-primary"><span class="material-icons">psychology</span> 🧠 Interpret</button>
+      <button onclick="refreshModels()" class="lyra-btn"><span class="material-icons">refresh</span> 🔄 Refresh Models</button>
+      <button onclick="sendToAssembly()" class="lyra-btn"><span class="material-icons">send</span> ➡️ Send to Assembly</button>
+      <div id="status" style="margin-left:auto;padding:8px 16px;background:var(--lyra-void);border-radius:6px;font-family:monospace;color:var(--lyra-cyan)"></div>
+    </div>
+  </div>
+</main>
+
+<script>
+// ──────────────────────────────────────────────────────────────
+// Full JS wiring — talks to vision_switchboard_server.py on :8920
+// ──────────────────────────────────────────────────────────────
+let currentImageFile = null;
+const SERVER = 'http://127.0.0.1:8920';
+
+async function loadOllamaModels() {
+  try {
+    const res = await fetch(`${SERVER}/api/ollama_models`);
+    const models = await res.json();
+    const sel = document.getElementById('ollama-model');
+    sel.innerHTML = '';
+    models.forEach(m => {
+      const opt = document.createElement('option');
+      opt.value = m;
+      opt.textContent = m;
+      sel.appendChild(opt);
+    });
+  } catch(e) {
+    document.getElementById('status').innerHTML = '⚠️ Ollama not reachable';
+  }
+}
+
+function updateOllamaVisibility() {
+  const strat = document.getElementById('strategy').value;
+  const label = document.getElementById('ollama-label');
+  const sel = document.getElementById('ollama-model');
+  if (strat === 'OllamaVision') {
+    label.style.display = 'block';
+    sel.style.display = 'block';
+  } else {
+    label.style.display = 'none';
+    sel.style.display = 'none';
+  }
+}
+
+async function interpretImage() {
+  if (!currentImageFile) return alert("Load an image first");
+  const form = new FormData();
+  form.append('image', currentImageFile);
+  form.append('strategy', document.getElementById('strategy').value);
+  form.append('ollama_model', document.getElementById('ollama-model').value);
+  form.append('user_note', document.getElementById('user-note').value);
+
+  const status = document.getElementById('status');
+  status.textContent = '🧠 Processing…';
+  
+  try {
+    const res = await fetch(`${SERVER}/api/interpret`, { method:'POST', body:form });
+    const data = await res.json();
+    
+    document.getElementById('ocr-output').value = data.ocr || 'No OCR';
+    document.getElementById('final-output').value = data.results || data.error || 'No result';
+    status.innerHTML = '✅ Done';
+  } catch(e) {
+    status.textContent = '❌ Error';
+  }
+}
+
+function sendToAssembly() {
+  const final = document.getElementById('final-output').value;
+  if (!final) return;
+  // This would call your Navi console inject in a real integrated setup
+  alert('🚀 Sent to Assembly (Navi console hook ready when you wire it)');
+  console.log('🔗 Vision context injected:', final);
+}
+
+// Drag & drop + click
+const dropZone = document.getElementById('drop-zone');
+dropZone.addEventListener('click', () => document.getElementById('file-input').click());
+document.getElementById('file-input').addEventListener('change', e => {
+  if (e.target.files[0]) handleFile(e.target.files[0]);
+});
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.style.borderColor = 'var(--lyra-gold)'; });
+dropZone.addEventListener('dragleave', () => dropZone.style.borderColor = 'var(--lyra-crimson)');
+dropZone.addEventListener('drop', e => {
+  e.preventDefault();
+  if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
+});
+
+function handleFile(file) {
+  currentImageFile = file;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    document.getElementById('image-preview').src = ev.target.result;
+    document.getElementById('image-preview').style.display = 'block';
+  };
+  reader.readAsDataURL(file);
+  document.getElementById('status').textContent = `📸 ${file.name}`;
+}
+
+function loadImage() { document.getElementById('file-input').click(); }
+function refreshModels() { loadOllamaModels(); }
+
+// Init
+document.getElementById('strategy').addEventListener('change', updateOllamaVisibility);
+loadOllamaModels();
+updateOllamaVisibility();
+console.log('%c🧠 Vision Switchboard web UI ready — fully wired to your PyQt logic', 'color:#ff1464;font-family:monospace');
+</script>
+</body>
+</html>
+</FILE>

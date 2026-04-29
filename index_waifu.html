@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>w-AI-fu! — Enter the Stage</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&family=JetBrains+Mono:wght@300;400&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+/* ═══════════════════════════════════════════════════════════════
+   w-AI-fu! — STAGE ENTRANCE
+   Forked from RedVerse Church Entrance
+   ═══════════════════════════════════════════════════════════════ */
+:root {
+  --crimson: #c41230;
+  --crimson-dark: #8b0a20;
+  --crimson-glow: #ff1a3d;
+  --gold: #d4a846;
+  --gold-dim: #a8843a;
+  --neon-pink: #ff2d7b;
+  --neon-cyan: #00e5ff;
+  --silver: #b8c0cc;
+  --silver-dim: #6b7280;
+  --black: #0a0a0c;
+  --text-primary: #e8e0d8;
+  --text-secondary: #9b8e82;
+  --font-display: 'Orbitron', sans-serif;
+  --font-body: 'Crimson Pro', serif;
+  --font-mono: 'JetBrains Mono', monospace;
+  --font-church: 'Cinzel', serif;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #000;
+  font-family: var(--font-body);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   PHASE 1: THE STAGE DOORS (Video Landing)
+   ═══════════════════════════════════════════════════════════════ */
+#stageEntrance {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  background: #000;
+  cursor: default;
+  transition: opacity 1.2s ease;
+}
+
+#stageEntrance.fading {
+  opacity: 0;
+  pointer-events: none;
+}
+
+#stageEntrance.hidden {
+  display: none;
+}
+
+/* Video container — fills viewport */
+.video-container {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+}
+
+.video-container video {
+  min-width: 100%;
+  min-height: 100%;
+  width: auto;
+  height: auto;
+  object-fit: cover;
+}
+
+/* Vignette overlay */
+.vignette {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.7) 100%);
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* Scanline overlay for cyber feel */
+.scanlines {
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg, transparent, transparent 2px,
+    rgba(0,0,0,0.06) 2px, rgba(0,0,0,0.06) 4px
+  );
+  pointer-events: none;
+  z-index: 3;
+}
+
+/* Door hit zone */
+#doorHitZone {
+  position: absolute;
+  top: 10%;
+  left: 20%;
+  width: 60%;
+  height: 75%;
+  z-index: 10;
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  transition: all 0.3s ease;
+}
+
+#doorHitZone:hover ~ .door-glow-overlay {
+  opacity: 1;
+}
+
+#doorHitZone:hover ~ .door-prompt {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+.door-glow-overlay {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at 50% 45%, rgba(255, 45, 123, 0.08) 0%, transparent 60%);
+  pointer-events: none;
+  z-index: 3;
+  opacity: 0;
+  transition: opacity 0.6s ease;
+}
+
+/* "Enter" prompt */
+.door-prompt {
+  position: absolute;
+  bottom: 12%;
+  left: 50%;
+  transform: translateX(-50%) translateY(8px);
+  z-index: 5;
+  pointer-events: none;
+  opacity: 0;
+  transition: all 0.5s ease;
+  text-align: center;
+}
+
+.door-prompt span {
+  font-family: var(--font-display);
+  font-size: 0.7rem;
+  letter-spacing: 0.4em;
+  text-transform: uppercase;
+  color: var(--neon-pink);
+  text-shadow: 0 0 20px rgba(255, 45, 123, 0.5);
+  display: block;
+}
+
+.door-prompt .sub {
+  font-family: var(--font-mono);
+  font-size: 0.5rem;
+  letter-spacing: 0.2em;
+  color: var(--silver-dim);
+  margin-top: 4px;
+  text-shadow: none;
+}
+
+/* Title overlay */
+.entrance-title {
+  position: absolute;
+  top: 5%;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 5;
+  text-align: center;
+  pointer-events: none;
+}
+
+.entrance-title h1 {
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: clamp(1.8rem, 5vw, 3.5rem);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--crimson);
+  text-shadow: 0 0 40px rgba(196, 18, 48, 0.4), 0 0 80px rgba(255, 45, 123, 0.2), 0 2px 20px rgba(0,0,0,0.8);
+  opacity: 0;
+  animation: titleReveal 2s ease 1s forwards;
+}
+
+.entrance-title .tagline {
+  font-family: var(--font-mono);
+  font-size: 0.55rem;
+  letter-spacing: 0.35em;
+  text-transform: uppercase;
+  color: var(--neon-cyan);
+  text-shadow: 0 0 10px rgba(0, 229, 255, 0.4), 0 1px 10px rgba(0,0,0,0.8);
+  margin-top: 8px;
+  opacity: 0;
+  animation: titleReveal 2s ease 1.8s forwards;
+}
+
+.entrance-title .sub-tagline {
+  font-family: var(--font-church);
+  font-size: 0.5rem;
+  letter-spacing: 0.25em;
+  color: var(--gold-dim);
+  margin-top: 4px;
+  opacity: 0;
+  animation: titleReveal 2s ease 2.4s forwards;
+}
+
+@keyframes titleReveal {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 0.85; transform: translateY(0); }
+}
+
+/* Flicker */
+@keyframes flicker {
+  0%,100% { opacity: 1; }
+  92% { opacity: 1; }
+  93% { opacity: 0.4; }
+  94% { opacity: 1; }
+  96% { opacity: 0.6; }
+  97% { opacity: 1; }
+}
+
+.entrance-title h1 { animation: titleReveal 2s ease 1s forwards, flicker 8s infinite 3s; }
+
+/* ═══════════════════════════════════════════════════════════════
+   LOADING OVERLAY
+   ═══════════════════════════════════════════════════════════════ */
+.loading-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: #000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1.5rem;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.5s ease;
+}
+
+.loading-overlay.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.loader {
+  width: 40px;
+  height: 40px;
+  border: 2px solid rgba(255, 45, 123, 0.15);
+  border-top-color: var(--neon-pink);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.loading-overlay p {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.3em;
+  color: var(--silver-dim);
+  text-transform: uppercase;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   PHASE 2: CONTENT (iframe to support page)
+   ═══════════════════════════════════════════════════════════════ */
+#waifuContent {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  opacity: 0;
+  transition: opacity 1.5s ease;
+  overflow: auto;
+}
+
+#waifuContent.visible {
+  opacity: 1;
+  z-index: 50;
+}
+
+#waifuContent iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   BGM PLAYER
+   ═══════════════════════════════════════════════════════════════ */
+.bgm-player {
+  position: fixed;
+  bottom: 16px;
+  right: 16px;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(10, 10, 12, 0.7);
+  border: 1px solid rgba(255, 45, 123, 0.25);
+  padding: 8px 12px;
+  border-radius: 6px;
+  backdrop-filter: blur(8px);
+  transition: all 0.3s ease;
+}
+
+.bgm-player:hover {
+  border-color: var(--neon-pink);
+  background: rgba(255, 45, 123, 0.1);
+}
+
+.bgm-btn {
+  width: 28px;
+  height: 28px;
+  background: transparent;
+  border: 1px solid rgba(255, 45, 123, 0.4);
+  color: var(--neon-pink);
+  font-size: 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  border-radius: 3px;
+}
+
+.bgm-btn:hover {
+  border-color: var(--neon-pink);
+  background: rgba(255, 45, 123, 0.15);
+  transform: scale(1.05);
+}
+
+.bgm-btn.bgm-play {
+  width: 32px;
+  height: 32px;
+  font-size: 14px;
+  background: rgba(255, 45, 123, 0.05);
+}
+
+.bgm-btn.muted {
+  color: var(--silver-dim);
+  border-color: rgba(255, 255, 255, 0.06);
+}
+
+.bgm-info {
+  display: none;
+  margin-left: 8px;
+  padding-left: 8px;
+  border-left: 1px solid rgba(255, 45, 123, 0.2);
+  max-width: 180px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.bgm-track-name {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  color: var(--silver-dim);
+  letter-spacing: 0.05em;
+}
+
+@media (min-width: 768px) {
+  .bgm-info { display: block; }
+}
+</style>
+</head>
+<body>
+<nav style="position:fixed;top:12px;left:16px;z-index:9999;"><a href="index.html" style="font-family:Cinzel,serif;font-size:0.75rem;color:#d4a846;text-decoration:none;letter-spacing:0.15em;opacity:0.7;transition:opacity 0.3s;" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.7">⬡ PORTAL</a></nav>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     BGM AUDIO
+     ═══════════════════════════════════════════════════════════════ -->
+<audio id="bgm" preload="auto">
+  <source src="assets/music/" type="audio/mpeg">
+</audio>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     BGM PLAYER UI
+     ═══════════════════════════════════════════════════════════════ -->
+<div class="bgm-player">
+  <button class="bgm-btn" id="bgmPrev" title="Previous">◁</button>
+  <button class="bgm-btn bgm-play" id="bgmToggle" title="Play BGM">♫</button>
+  <button class="bgm-btn" id="bgmNext" title="Next">▷</button>
+  <div class="bgm-info">
+    <div class="bgm-track-name" id="bgmTrack">Loading...</div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     PHASE 1: STAGE ENTRANCE
+     ═══════════════════════════════════════════════════════════════ -->
+<div id="stageEntrance">
+  <!-- Breathing doors video -->
+  <div class="video-container" id="breathingContainer">
+    <video id="breathingVideo" muted playsinline loop preload="auto">
+      <source src="assets/video/breathing.mp4" type="video/mp4">
+    </video>
+  </div>
+
+  <!-- Glowing doors video — shown on hover -->
+  <div class="video-container" id="glowingContainer" style="opacity: 0; transition: opacity 0.8s ease;">
+    <video id="glowingVideo" muted playsinline loop preload="auto">
+      <source src="assets/video/glowing.mp4" type="video/mp4">
+    </video>
+  </div>
+
+  <!-- Enter animation -->
+  <div class="video-container" id="enterContainer" style="opacity: 0; z-index: 4;">
+    <video id="enterVideo" muted playsinline preload="auto">
+      <source src="assets/video/Enter.mp4" type="video/mp4">
+    </video>
+  </div>
+
+  <!-- Overlays -->
+  <div class="vignette"></div>
+  <div class="scanlines"></div>
+
+  <!-- Door click zone -->
+  <div id="doorHitZone"></div>
+
+  <!-- Hover glow -->
+  <div class="door-glow-overlay"></div>
+
+  <!-- Hover prompt -->
+  <div class="door-prompt">
+    <span>Enter the Stage</span>
+    <div class="sub">Sound Check Required</div>
+  </div>
+
+  <!-- Title -->
+  <div class="entrance-title">
+    <h1>w-AI-fu!</h1>
+    <div class="tagline">Five Architectures. One Band. No Limits.</div>
+    <div class="sub-tagline">A RedVerse Production</div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     LOADING OVERLAY
+     ═══════════════════════════════════════════════════════════════ -->
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="loader"></div>
+  <p>Tuning frequencies...</p>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     PHASE 2: w-AI-fu! SUPPORT PAGE (payment gate)
+     ═══════════════════════════════════════════════════════════════ -->
+<div id="waifuContent">
+  <iframe id="waifuFrame" src="waifu_support.html"></iframe>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     JAVASCRIPT — State Machine (forked from Church entrance)
+     ═══════════════════════════════════════════════════════════════ -->
+<script src="js/config.js"></script>
+<script src="js/auth.js"></script>
+<script>
+(function() {
+  const entrance      = document.getElementById('stageEntrance');
+  const breathingVid  = document.getElementById('breathingVideo');
+  const glowingVid    = document.getElementById('glowingVideo');
+  const enterVid      = document.getElementById('enterVideo');
+  const breathingBox  = document.getElementById('breathingContainer');
+  const glowingBox    = document.getElementById('glowingContainer');
+  const enterBox      = document.getElementById('enterContainer');
+  const doorHit       = document.getElementById('doorHitZone');
+  const loading       = document.getElementById('loadingOverlay');
+  const content       = document.getElementById('waifuContent');
+
+  let state = 'breathing';
+
+  // ═══ BGM SETUP ═══
+  const bgm = document.getElementById('bgm');
+  const bgmBtn = document.getElementById('bgmToggle');
+  const bgmPrev = document.getElementById('bgmPrev');
+  const bgmNext = document.getElementById('bgmNext');
+  const bgmTrackName = document.getElementById('bgmTrack');
+
+  let bgmPlaylist = [];
+  let bgmCurrentIndex = 0;
+  let bgmStarted = false;
+  let bgmMuted = false;
+
+  bgm.volume = 0.35;
+
+  async function loadPlaylist() {
+    try {
+      const response = await fetch('/api/music/list');
+      if (!response.ok) throw new Error('No API');
+      const data = await response.json();
+      bgmPlaylist = data.files || [];
+      if (bgmPlaylist.length > 0) { loadTrack(0); updateTrackDisplay(); }
+    } catch (e) {
+      bgmPlaylist = ['../assets/music/Critical Mass Ft Lyra.mp3'];
+      loadTrack(1);
+    }
+  }
+
+  function loadTrack(index) {
+    if (!bgmPlaylist.length) return;
+    bgmCurrentIndex = (index + bgmPlaylist.length) % bgmPlaylist.length;
+    bgm.src = bgmPlaylist[bgmCurrentIndex];
+    bgm.load();
+    if (bgmStarted && !bgmMuted) bgm.play().catch(() => {});
+    updateTrackDisplay();
+  }
+
+  function updateTrackDisplay() {
+    if (!bgmPlaylist.length) { bgmTrackName.textContent = 'No music'; return; }
+    const name = bgmPlaylist[bgmCurrentIndex].split('/').pop().replace(/\.[^/.]+$/, '');
+    bgmTrackName.textContent = `${bgmCurrentIndex + 1}/${bgmPlaylist.length} • ${name}`;
+  }
+
+  bgm.addEventListener('ended', () => loadTrack(bgmCurrentIndex + 1));
+
+  function startBGM() {
+    if (!bgmStarted) { bgm.play().catch(() => {}); bgmStarted = true; }
+  }
+
+  bgmBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (!bgmStarted) { startBGM(); return; }
+    bgmMuted = !bgmMuted;
+    if (bgmMuted) { bgm.pause(); bgmBtn.textContent = '♪'; bgmBtn.classList.add('muted'); }
+    else { bgm.play().catch(() => {}); bgmBtn.textContent = '♫'; bgmBtn.classList.remove('muted'); }
+  });
+
+  bgmPrev.addEventListener('click', (e) => { e.stopPropagation(); loadTrack(bgmCurrentIndex - 1); startBGM(); });
+  bgmNext.addEventListener('click', (e) => { e.stopPropagation(); loadTrack(bgmCurrentIndex + 1); startBGM(); });
+
+  loadPlaylist();
+
+  // ═══ VIDEO STATE MACHINE ═══
+  breathingVid.play().catch(() => {
+    document.addEventListener('click', function firstClick() {
+      breathingVid.play().catch(() => {});
+      document.removeEventListener('click', firstClick);
+    }, { once: true });
+  });
+
+  glowingVid.play().catch(() => {});
+
+  doorHit.addEventListener('mouseenter', () => {
+    if (state !== 'breathing') return;
+    state = 'glowing';
+    glowingBox.style.opacity = '1';
+    glowingBox.style.zIndex = '1';
+    glowingBox.style.transition = 'opacity 0.8s ease';
+  });
+
+  doorHit.addEventListener('mouseleave', () => {
+    if (state !== 'glowing') return;
+    state = 'breathing';
+    glowingBox.style.opacity = '0';
+  });
+
+  doorHit.addEventListener('click', () => {
+    if (state === 'entering' || state === 'entered') return;
+    state = 'entering';
+
+    startBGM();
+
+    enterBox.style.opacity = '1';
+    enterBox.style.zIndex = '5';
+    enterVid.currentTime = 0;
+    enterVid.play().catch(() => {});
+
+    glowingBox.style.opacity = '0';
+    doorHit.style.display = 'none';
+    document.querySelector('.door-prompt').style.display = 'none';
+    document.querySelector('.door-glow-overlay').style.display = 'none';
+
+    document.querySelector('.entrance-title').style.transition = 'opacity 0.8s ease';
+    document.querySelector('.entrance-title').style.opacity = '0';
+
+    enterVid.addEventListener('ended', transitionToSite, { once: true });
+    setTimeout(() => { if (state === 'entering') transitionToSite(); }, 12000);
+  });
+
+  function transitionToSite() {
+    if (state === 'entered') return;
+    state = 'entered';
+
+    entrance.classList.add('fading');
+    loading.classList.add('active');
+
+    setTimeout(() => {
+      entrance.classList.add('hidden');
+      loading.classList.remove('active');
+      content.classList.add('visible');
+      document.body.style.overflow = 'auto';
+    }, 1400);
+  }
+})();
+</script>
+</body>
+</html>

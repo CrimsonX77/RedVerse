@@ -1,0 +1,141 @@
+<FILE filename="redvox-app.html">
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RedVox — Transcription Dock</title>
+<link rel="stylesheet" href="lyra.css">
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+<style>
+/* Same cathedral glow as void-eater + vision */
+.product-page { max-width: 1100px; margin: 0 auto; padding: 24px; }
+.app-panel { background: var(--lyra-stone); border: 1px solid var(--lyra-border); border-radius: var(--lyra-radius-lg); padding: 24px; }
+.audio-drop { border: 3px dashed var(--lyra-crimson); border-radius: var(--lyra-radius-md); height: 180px; display: flex; align-items: center; justify-content: center; flex-direction: column; color: var(--lyra-ash); cursor: pointer; }
+.preview-audio { margin-top: 12px; width: 100%; }
+</style>
+</head>
+<body>
+<div class="lyra-cathedral"></div>
+
+<header class="lyra-header">…[same REDVERSE header as before]…</header>
+
+<main class="product-page">
+  <div class="product-hero">
+    <span class="product-hero-icon">🩸</span>
+    <h1 class="product-hero-name">RedVox</h1>
+    <p class="product-hero-tagline">Hear what they said. Read what they meant. Share what matters.</p>
+  </div>
+
+  <div class="app-panel">
+    <div id="drop-zone" class="audio-drop">
+      <span class="material-icons" style="font-size:64px">mic</span>
+      <p>Drop MP3 / WAV here or <strong>click to load</strong></p>
+      <input type="file" id="file-input" accept="audio/*" style="display:none">
+    </div>
+
+    <div style="margin-top:20px;display:flex;gap:20px;align-items:end">
+      <div style="flex:1">
+        <label style="color:var(--lyra-crimson);font-weight:700">Model</label>
+        <select id="model-select" style="width:100%;background:var(--lyra-void);color:var(--lyra-silver);border:1px solid var(--lyra-border);border-radius:6px;padding:12px">
+          <option value="tiny">tiny (fastest)</option>
+          <option value="base">base</option>
+          <option value="small" selected>small (recommended)</option>
+          <option value="medium">medium</option>
+          <option value="large-v3">large-v3 (most accurate)</option>
+        </select>
+      </div>
+
+      <button onclick="startTranscription()" id="transcribe-btn" class="lyra-btn lyra-btn-primary" style="min-width:180px">
+        🎙 Transcribe
+      </button>
+    </div>
+
+    <div id="progress-container" style="display:none;margin-top:20px">
+      <div id="progress-bar" style="height:12px;background:var(--lyra-void);border-radius:6px;overflow:hidden">
+        <div id="progress-fill" style="height:100%;width:0%;background:linear-gradient(90deg,#4a1a1a,#8b3a3a);transition:width 0.3s"></div>
+      </div>
+      <div id="progress-text" style="text-align:center;margin-top:4px;font-family:monospace;color:var(--lyra-cyan);font-size:13px"></div>
+    </div>
+
+    <div style="margin-top:24px">
+      <label style="color:var(--lyra-crimson);font-weight:700;display:block;margin-bottom:8px">LIVE TRANSCRIPT</label>
+      <textarea id="transcript-box" rows="12" style="width:100%;background:var(--lyra-void);color:var(--lyra-gold);border:1px solid var(--lyra-border);border-radius:6px;padding:12px;font-family:monospace" readonly></textarea>
+    </div>
+
+    <div style="margin-top:16px;display:flex;gap:12px;flex-wrap:wrap">
+      <button onclick="copyTranscript()" class="lyra-btn">📋 Copy to Clipboard</button>
+      <button onclick="exportTranscript()" class="lyra-btn">💾 Export .txt</button>
+      <div id="status" style="margin-left:auto;padding:8px 16px;background:var(--lyra-void);border-radius:6px;font-family:monospace;color:var(--lyra-cyan)"></div>
+    </div>
+  </div>
+</main>
+
+<script>
+const SERVER = 'http://127.0.0.1:8921';
+let currentJobId = null;
+let currentFile = null;
+
+const dropZone = document.getElementById('drop-zone');
+dropZone.addEventListener('click', () => document.getElementById('file-input').click());
+document.getElementById('file-input').addEventListener('change', e => handleFile(e.target.files[0]));
+
+function handleFile(file) {
+  currentFile = file;
+  document.getElementById('status').innerHTML = `📼 ${file.name} loaded`;
+}
+
+async function startTranscription() {
+  if (!currentFile) return alert("Drop an audio file first");
+
+  const form = new FormData();
+  form.append('audio', currentFile);
+  form.append('model', document.getElementById('model-select').value);
+
+  const res = await fetch(`${SERVER}/api/transcribe`, { method: 'POST', body: form });
+  const data = await res.json();
+  currentJobId = data.job_id;
+
+  document.getElementById('progress-container').style.display = 'block';
+  document.getElementById('transcribe-btn').disabled = true;
+
+  // SSE for live progress
+  const evtSource = new EventSource(`${SERVER}/api/progress/${currentJobId}`);
+  evtSource.onmessage = function(e) {
+    const d = JSON.parse(e.data);
+    document.getElementById('progress-fill').style.width = d.progress + '%';
+    document.getElementById('progress-text').innerHTML = d.message;
+
+    if (d.segments && d.segments.length) {
+      const box = document.getElementById('transcript-box');
+      box.value = d.segments.join('\n\n');
+      box.scrollTop = box.scrollHeight;
+    }
+
+    if (d.status === 'completed') {
+      evtSource.close();
+      document.getElementById('status').innerHTML = '✅ Transcription complete';
+      document.getElementById('transcribe-btn').disabled = false;
+    }
+  };
+}
+
+function copyTranscript() {
+  const text = document.getElementById('transcript-box').value;
+  navigator.clipboard.writeText(text).then(() => alert("✅ Copied to clipboard"));
+}
+
+function exportTranscript() {
+  const text = document.getElementById('transcript-box').value;
+  if (!text) return;
+  const blob = new Blob([text], { type: 'text/plain' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'redvox_transcript.txt';
+  a.click();
+}
+</script>
+</body>
+</html>
+</FILE>

@@ -1,0 +1,4234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RedVerse Art Generation Interface</title>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Rajdhani:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #0a0b10;
+            --bg-panel: #12141c;
+            --bg-input: #1a1d28;
+            --neon-gold: #FFD700;
+            --neon-cyan: #00F0FF;
+            --neon-pink: #FF0055;
+            --neon-purple: #BC13FE;
+            --neon-green: #00FF88;
+            --text-main: #e0e0e0;
+            --text-dim: #8892b0;
+            --border-color: #2a2e3d;
+            --border-active: #3d4255;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Rajdhani', sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .bg-grid {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-image:
+                linear-gradient(rgba(0, 240, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 240, 255, 0.03) 1px, transparent 1px);
+            background-size: 30px 30px;
+            z-index: -1; pointer-events: none;
+        }
+
+        /* ─── HEADER ─────────────────────────────────────── */
+        header {
+            background: linear-gradient(90deg, rgba(10,11,16,0.97) 0%, rgba(18,20,28,0.97) 100%);
+            padding: 0 25px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            height: 60px;
+            z-index: 100;
+            flex-shrink: 0;
+        }
+
+        .logo {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 24px;
+            font-weight: 900;
+            color: #fff;
+            letter-spacing: 2px;
+            text-shadow: 2px 2px 0px var(--neon-pink), -2px -2px 0px var(--neon-cyan);
+            animation: glitch-anim 4s infinite linear alternate-reverse;
+            display: flex; align-items: center; gap: 10px;
+        }
+        .logo span { color: var(--neon-gold); }
+
+        .header-right { display: flex; gap: 12px; align-items: center; }
+
+        .mode-toggle {
+            display: flex; background: var(--bg-input); border-radius: 20px;
+            padding: 3px; border: 1px solid var(--border-color);
+        }
+        .mode-btn {
+            background: transparent; border: none; color: var(--text-dim);
+            padding: 5px 16px; border-radius: 16px; cursor: pointer;
+            font-family: 'Rajdhani', sans-serif; font-weight: 600; font-size: 13px;
+            transition: all 0.3s ease;
+        }
+        .mode-btn.active { background: linear-gradient(90deg, var(--neon-pink), var(--neon-purple)); color: #fff; box-shadow: 0 0 10px rgba(255, 0, 85, 0.3); }
+        .mode-btn.nsfw.active { background: linear-gradient(90deg, var(--neon-gold), var(--neon-pink)); }
+
+        /* ─── BACKEND CONFIG BAR ─────────────────────────── */
+        .backend-bar {
+            background: rgba(10,11,16,0.9);
+            border-bottom: 1px solid var(--border-color);
+            padding: 6px 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-shrink: 0;
+        }
+        .backend-bar label { font-size: 12px; color: var(--text-dim); white-space: nowrap; }
+        .backend-bar input[type="text"] {
+            background: var(--bg-input); border: 1px solid var(--border-color);
+            border-radius: 4px; padding: 5px 10px; color: var(--text-main);
+            font-family: 'Rajdhani', sans-serif; font-size: 13px; width: 220px;
+        }
+        .backend-bar input:focus { outline: none; border-color: var(--neon-cyan); }
+        .btn-sm {
+            background: var(--bg-input); border: 1px solid var(--border-color);
+            border-radius: 4px; padding: 5px 12px; color: var(--text-main);
+            font-family: 'Rajdhani', sans-serif; font-weight: 600; font-size: 12px;
+            cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 4px;
+            white-space: nowrap;
+        }
+        .btn-sm:hover { border-color: var(--neon-cyan); color: var(--neon-cyan); }
+        .btn-sm .material-icons { font-size: 14px; }
+
+        .conn-indicator {
+            display: flex; align-items: center; gap: 6px;
+            font-size: 12px; color: var(--text-dim); white-space: nowrap;
+        }
+        .conn-dot {
+            width: 8px; height: 8px; border-radius: 50%;
+            background: #444; transition: background 0.3s;
+        }
+        .conn-dot.connected { background: var(--neon-green); box-shadow: 0 0 6px var(--neon-green); }
+        .conn-dot.connecting { background: var(--neon-gold); animation: pulse 1s infinite; }
+        .conn-dot.error { background: var(--neon-pink); }
+
+        /* ─── LAYOUT ─────────────────────────────────────── */
+        .main-container { display: flex; flex: 1; overflow: hidden; }
+
+        /* ─── SIDEBAR ────────────────────────────────────── */
+        .sidebar {
+            width: 400px; min-width: 380px;
+            background: var(--bg-panel);
+            border-right: 1px solid var(--border-color);
+            display: flex; flex-direction: column;
+            overflow-y: auto; overflow-x: hidden;
+            padding: 12px; gap: 10px;
+        }
+        .sidebar::-webkit-scrollbar { width: 5px; }
+        .sidebar::-webkit-scrollbar-track { background: var(--bg-dark); }
+        .sidebar::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 3px; }
+
+        /* ─── CONTROL SECTIONS ───────────────────────────── */
+        .control-section {
+            background: rgba(255,255,255,0.02);
+            border: 1px solid var(--border-color);
+            border-radius: 8px; padding: 12px;
+            position: relative;
+        }
+        .section-header {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 11px; font-weight: 700;
+            color: var(--neon-cyan);
+            margin-bottom: 10px;
+            display: flex; justify-content: space-between; align-items: center;
+            text-transform: uppercase; letter-spacing: 1px;
+        }
+        .section-header-actions { display: flex; gap: 6px; align-items: center; }
+        .icon-btn {
+            background: transparent; border: none;
+            color: var(--text-dim); cursor: pointer;
+            padding: 2px; border-radius: 4px; transition: color 0.2s;
+            display: flex; align-items: center;
+        }
+        .icon-btn:hover { color: var(--neon-cyan); }
+        .icon-btn .material-icons { font-size: 16px; }
+
+        /* ─── INPUTS ─────────────────────────────────────── */
+        .input-group { margin-bottom: 10px; }
+        .input-group:last-child { margin-bottom: 0; }
+        label { display: block; font-size: 12px; color: var(--text-dim); margin-bottom: 5px; font-weight: 500; }
+
+        input[type="text"], input[type="number"], textarea, select {
+            width: 100%; background: var(--bg-input);
+            border: 1px solid var(--border-color);
+            border-radius: 4px; padding: 8px 10px;
+            color: var(--text-main);
+            font-family: 'Rajdhani', sans-serif; font-size: 14px;
+            transition: border-color 0.2s;
+        }
+        textarea { resize: vertical; min-height: 70px; }
+        input:focus, textarea:focus, select:focus {
+            outline: none; border-color: var(--neon-cyan);
+            box-shadow: 0 0 0 2px rgba(0, 240, 255, 0.08);
+        }
+        select option { background: var(--bg-panel); }
+
+        /* ─── SLIDERS ────────────────────────────────────── */
+        .slider-group { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+        .slider-group label { width: 85px; margin-bottom: 0; flex-shrink: 0; }
+        .slider-group input[type="range"] {
+            flex: 1; -webkit-appearance: none;
+            height: 4px; background: var(--border-color);
+            border-radius: 2px; outline: none;
+        }
+        .slider-group input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none; width: 14px; height: 14px;
+            background: var(--neon-cyan); border-radius: 50%; cursor: pointer;
+            box-shadow: 0 0 8px rgba(0, 240, 255, 0.5);
+        }
+        .slider-value {
+            width: 42px; text-align: center;
+            background: var(--bg-input); border: 1px solid var(--border-color);
+            border-radius: 4px; padding: 3px; font-size: 12px; color: var(--text-main);
+            flex-shrink: 0;
+        }
+
+        /* ─── SEED ROW ───────────────────────────────────── */
+        .seed-row { display: flex; gap: 6px; align-items: center; margin-bottom: 10px; }
+        .seed-row label { width: 85px; flex-shrink: 0; font-size: 12px; color: var(--text-dim); }
+        .seed-row input[type="number"] { flex: 1; padding: 5px 8px; font-size: 13px; }
+        .seed-row .icon-btn { width: 30px; height: 30px; justify-content: center; border: 1px solid var(--border-color); border-radius: 4px; flex-shrink: 0; }
+        .seed-row .icon-btn:hover { border-color: var(--neon-cyan); }
+
+        /* ─── TOGGLE SWITCH ─────────────────────────────────── */
+        .toggle-row {
+            display: flex; align-items: center; gap: 10px; margin-bottom: 10px;
+            padding: 6px 0;
+        }
+        .toggle-row label { margin-bottom: 0; flex: 1; }
+        .toggle-switch {
+            position: relative; width: 38px; height: 20px; flex-shrink: 0;
+        }
+        .toggle-switch input {
+            position: absolute; width: 100%; height: 100%;
+            opacity: 0; margin: 0; cursor: pointer; z-index: 2;
+        }
+        .toggle-track {
+            position: absolute; inset: 0; background: var(--border-color);
+            border-radius: 10px; cursor: pointer; transition: background 0.3s;
+            z-index: 1;
+        }
+        .toggle-track::after {
+            content: ''; position: absolute; width: 16px; height: 16px;
+            left: 2px; top: 2px; background: var(--text-dim);
+            border-radius: 50%; transition: all 0.3s;
+        }
+        .toggle-switch input:checked + .toggle-track {
+            background: rgba(0, 240, 255, 0.4);
+        }
+        .toggle-switch input:checked + .toggle-track::after {
+            transform: translateX(18px); background: var(--neon-cyan);
+            box-shadow: 0 0 6px rgba(0, 240, 255, 0.5);
+        }
+        .collapsible-body { display: none; }
+        .collapsible-body.open { display: block; }
+
+        /* ─── LORA CHIPS ─────────────────────────────────── */
+        .lora-active-list { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+        .lora-chip {
+            display: flex; align-items: center; gap: 4px;
+            background: rgba(188, 19, 254, 0.15);
+            border: 1px solid rgba(188, 19, 254, 0.4);
+            border-radius: 20px; padding: 3px 8px 3px 10px;
+            font-size: 11px; color: #d088ff;
+        }
+        .lora-chip .chip-remove {
+            background: none; border: none; color: #d088ff;
+            cursor: pointer; padding: 0; line-height: 1;
+            display: flex; align-items: center; opacity: 0.7;
+        }
+        .lora-chip .chip-remove:hover { opacity: 1; }
+        .lora-chip .chip-remove .material-icons { font-size: 14px; }
+        .lora-add-row { display: flex; gap: 6px; align-items: center; margin-top: 8px; }
+        .lora-add-row select { flex: 1; font-size: 13px; padding: 5px 8px; }
+        .lora-weight-wrap { display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
+        .lora-weight-wrap input[type="number"] { width: 55px; font-size: 12px; padding: 5px 6px; }
+        .loading-placeholder { font-size: 12px; color: var(--text-dim); font-style: italic; padding: 4px 0; }
+
+        /* ─── PRESET TAGS ────────────────────────────────── */
+        .preset-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+        .preset-tag {
+            background: rgba(0,240,255,0.08); border: 1px solid rgba(0,240,255,0.25);
+            border-radius: 20px; padding: 3px 10px; font-size: 11px; color: var(--neon-cyan);
+            cursor: pointer; transition: all 0.2s;
+        }
+        .preset-tag:hover { background: rgba(0,240,255,0.18); border-color: var(--neon-cyan); }
+
+        /* ─── CONSISTENCY PROFILES ───────────────────────── */
+        .profile-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 8px; }
+        .profile-card {
+            background: var(--bg-input); border: 1px solid var(--border-color);
+            border-radius: 6px; padding: 8px 10px;
+            display: flex; align-items: center; justify-content: space-between;
+            transition: border-color 0.2s; cursor: pointer;
+        }
+        .profile-card:hover { border-color: var(--neon-cyan); }
+        .profile-card.active { border-color: var(--neon-pink); background: rgba(255,0,85,0.07); }
+        .profile-card-name { font-size: 13px; font-weight: 600; color: var(--text-main); }
+        .profile-card-meta { font-size: 11px; color: var(--text-dim); margin-top: 2px; }
+        .profile-card-actions { display: flex; gap: 4px; }
+        .no-profiles { font-size: 12px; color: var(--text-dim); text-align: center; padding: 10px 0; font-style: italic; }
+        .consistency-lock {
+            display: flex; align-items: center; gap: 8px;
+            font-size: 12px; color: var(--text-dim); margin-top: 8px;
+            padding: 6px 8px; border: 1px solid var(--border-color); border-radius: 4px;
+            background: rgba(255,255,255,0.02);
+        }
+        .consistency-lock input[type="checkbox"] { accent-color: var(--neon-pink); }
+        .lock-label { flex: 1; }
+
+        /* ─── GENERATE BUTTON ────────────────────────────── */
+        .btn-generate {
+            width: 100%; padding: 14px; font-size: 15px;
+            background: linear-gradient(90deg, var(--neon-pink), var(--neon-purple));
+            border: none; border-radius: 6px;
+            color: #fff; font-family: 'Orbitron', sans-serif; font-weight: 700;
+            cursor: pointer; letter-spacing: 1px; text-transform: uppercase;
+            transition: all 0.3s; position: relative; overflow: hidden;
+            display: flex; align-items: center; justify-content: center; gap: 8px;
+            margin-top: 4px;
+        }
+        .btn-generate:hover:not(:disabled) { box-shadow: 0 5px 20px rgba(255,0,85,0.4); transform: translateY(-2px); }
+        .btn-generate:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+        .btn-generate.connected-only { opacity: 0.5; }
+        .btn-interrupt {
+            width: 100%; padding: 10px; font-size: 13px;
+            background: rgba(255,0,85,0.15); border: 1px solid var(--neon-pink);
+            border-radius: 6px; color: var(--neon-pink);
+            font-family: 'Rajdhani', sans-serif; font-weight: 700;
+            cursor: pointer; transition: all 0.2s; display: none;
+            align-items: center; justify-content: center; gap: 6px; margin-top: 6px;
+        }
+        .btn-interrupt:hover { background: rgba(255,0,85,0.25); }
+        .btn-interrupt.visible { display: flex; }
+
+        /* ─── CONTENT AREA ───────────────────────────────── */
+        .content-area {
+            flex: 1; padding: 16px; display: flex;
+            flex-direction: column; overflow: hidden; gap: 12px;
+        }
+
+        .tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--border-color); padding-bottom: 8px; }
+        .tab {
+            background: transparent; border: none; color: var(--text-dim);
+            padding: 8px 18px; cursor: pointer;
+            font-family: 'Rajdhani', sans-serif; font-weight: 600; font-size: 14px;
+            text-transform: uppercase; position: relative; transition: color 0.2s;
+        }
+        .tab.active { color: var(--neon-cyan); }
+        .tab.active::after {
+            content: ''; position: absolute; bottom: -9px; left: 0;
+            width: 100%; height: 2px;
+            background: var(--neon-cyan); box-shadow: 0 0 8px var(--neon-cyan);
+        }
+
+        /* ─── PREVIEW AREA ───────────────────────────────── */
+        .preview-wrap { flex: 1; position: relative; overflow: hidden; border-radius: 8px; }
+
+        .preview-area {
+            width: 100%; height: 100%;
+            background: var(--bg-input);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            display: flex; justify-content: center; align-items: center;
+            position: relative; overflow: hidden;
+        }
+        .preview-placeholder { text-align: center; color: var(--text-dim); }
+        .preview-placeholder .material-icons { font-size: 56px; margin-bottom: 12px; opacity: 0.2; display: block; }
+
+        .preview-image {
+            max-width: 100%; max-height: 100%;
+            object-fit: contain; border-radius: 4px;
+            animation: fadeIn 0.4s ease;
+        }
+
+        .image-meta {
+            position: absolute; bottom: 0; left: 0; right: 0;
+            background: linear-gradient(transparent, rgba(0,0,0,0.85));
+            padding: 24px 14px 10px;
+            display: none; flex-direction: column; gap: 2px;
+        }
+        .preview-area:hover .image-meta { display: flex; }
+        .meta-row { display: flex; gap: 12px; flex-wrap: wrap; font-size: 11px; color: var(--text-dim); }
+        .meta-badge {
+            background: rgba(0,0,0,0.6); border: 1px solid var(--border-color);
+            border-radius: 3px; padding: 2px 6px; font-size: 11px;
+        }
+        .meta-badge span { color: var(--neon-cyan); }
+
+        .image-actions {
+            position: absolute; top: 10px; right: 10px;
+            display: none; gap: 6px;
+        }
+        .preview-area:hover .image-actions { display: flex; }
+        .img-action-btn {
+            background: rgba(0,0,0,0.7); border: 1px solid var(--border-color);
+            border-radius: 4px; padding: 5px 8px; color: var(--text-main);
+            cursor: pointer; font-size: 11px; font-family: 'Rajdhani', sans-serif;
+            font-weight: 600; display: flex; align-items: center; gap: 4px;
+            transition: all 0.2s;
+        }
+        .img-action-btn:hover { border-color: var(--neon-cyan); color: var(--neon-cyan); }
+        .img-action-btn .material-icons { font-size: 14px; }
+
+        /* ─── PROGRESS OVERLAY ───────────────────────────── */
+        .progress-overlay {
+            position: absolute; inset: 0; background: rgba(10,11,16,0.85);
+            display: none; flex-direction: column;
+            align-items: center; justify-content: center; gap: 16px;
+            border-radius: 8px; z-index: 10;
+            backdrop-filter: blur(4px);
+        }
+        .progress-overlay.active { display: flex; }
+        .progress-label { font-family: 'Orbitron', sans-serif; font-size: 13px; color: var(--neon-cyan); letter-spacing: 1px; }
+        .progress-bar-track {
+            width: 70%; height: 6px;
+            background: var(--border-color); border-radius: 3px; overflow: hidden;
+        }
+        .progress-bar-fill {
+            height: 100%; width: 0%;
+            background: linear-gradient(90deg, var(--neon-pink), var(--neon-purple));
+            border-radius: 3px; transition: width 0.4s ease;
+            box-shadow: 0 0 10px rgba(255,0,85,0.4);
+        }
+        .progress-stats { font-size: 12px; color: var(--text-dim); }
+        .progress-preview {
+            max-width: 200px; max-height: 200px;
+            object-fit: contain; border-radius: 4px;
+            border: 1px solid var(--border-color); opacity: 0.7;
+            display: none;
+        }
+
+        /* ─── GALLERY ────────────────────────────────────── */
+        .gallery-wrap { flex: 1; overflow-y: auto; padding-right: 4px; }
+        .gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            gap: 10px; padding: 4px 0;
+        }
+        .gallery-item {
+            aspect-ratio: 1; background: var(--bg-input);
+            border: 1px solid var(--border-color); border-radius: 6px;
+            overflow: hidden; cursor: pointer; transition: all 0.2s;
+            position: relative;
+        }
+        .gallery-item:hover { transform: scale(1.03); border-color: var(--neon-cyan); box-shadow: 0 0 12px rgba(0,240,255,0.15); }
+        .gallery-item img { width: 100%; height: 100%; object-fit: cover; display: block; }
+        .gallery-item-overlay {
+            position: absolute; inset: 0; background: rgba(0,0,0,0.7);
+            display: none; align-items: flex-end; padding: 8px;
+            font-size: 10px; color: var(--text-dim);
+        }
+        .gallery-item:hover .gallery-item-overlay { display: flex; }
+        .gallery-empty { color: var(--text-dim); text-align: center; padding: 40px; font-size: 14px; }
+
+        .gallery-toolbar {
+            display: flex; gap: 8px; align-items: center; padding: 8px 0;
+            border-bottom: 1px solid var(--border-color); margin-bottom: 8px; flex-wrap: wrap;
+        }
+        .gallery-toolbar .btn-sm { font-size: 12px; }
+        .gallery-toolbar .spacer { flex: 1; }
+        .gallery-toolbar .gallery-info { font-size: 12px; color: var(--text-dim); white-space: nowrap; }
+
+        .gallery-item.selected { border-color: var(--neon-pink); box-shadow: 0 0 12px rgba(255,0,85,0.3); }
+        .gallery-item .select-check {
+            position: absolute; top: 6px; left: 6px; width: 20px; height: 20px;
+            border-radius: 50%; border: 2px solid rgba(255,255,255,0.5);
+            background: rgba(0,0,0,0.5); display: none; align-items: center;
+            justify-content: center; z-index: 2; cursor: pointer;
+        }
+        .gallery-item .select-check .material-icons { font-size: 14px; color: transparent; }
+        .gallery-item.selected .select-check { display: flex; border-color: var(--neon-pink); background: var(--neon-pink); }
+        .gallery-item.selected .select-check .material-icons { color: #fff; }
+        .gallery-selecting .gallery-item .select-check { display: flex; }
+        .gallery-item .gallery-type-badge {
+            position: absolute; top: 6px; right: 6px; font-size: 9px; padding: 1px 5px;
+            border-radius: 3px; background: rgba(0,0,0,0.7); color: var(--neon-cyan);
+            border: 1px solid rgba(0,240,255,0.3); z-index: 2; text-transform: uppercase;
+            font-weight: 700; letter-spacing: 0.5px;
+        }
+        .gallery-item video {
+            width: 100%; height: 100%; object-fit: cover; display: block;
+        }
+
+        /* ─── STATUS BAR ─────────────────────────────────── */
+        .status-bar {
+            background: var(--bg-panel); border-top: 1px solid var(--border-color);
+            padding: 5px 18px; font-size: 11px; color: var(--text-dim);
+            display: flex; justify-content: space-between; align-items: center;
+            flex-shrink: 0; gap: 20px;
+        }
+        .status-dot {
+            width: 7px; height: 7px; background: var(--neon-green);
+            border-radius: 50%; display: inline-block; margin-right: 6px;
+            box-shadow: 0 0 6px var(--neon-green);
+        }
+        .status-segments { display: flex; gap: 20px; }
+
+        /* ─── ANIMATIONS ─────────────────────────────────── */
+        @keyframes glitch-anim {
+            0%   { text-shadow:  2px  2px 0px var(--neon-pink), -2px -2px 0px var(--neon-cyan); transform: skew(0deg); }
+            20%  { text-shadow: -2px  2px 0px var(--neon-pink),  2px -2px 0px var(--neon-cyan); transform: skew(-1deg); }
+            40%  { text-shadow:  2px -2px 0px var(--neon-pink), -2px  2px 0px var(--neon-cyan); transform: skew(1deg); }
+            60%  { text-shadow: -2px -2px 0px var(--neon-pink),  2px  2px 0px var(--neon-cyan); transform: skew(0deg); }
+            100% { text-shadow:  2px  2px 0px var(--neon-pink), -2px -2px 0px var(--neon-cyan); transform: skew(0deg); }
+        }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        .spinning { animation: spin 1s linear infinite; }
+
+        /* ─── LIGHTBOX ───────────────────────────────────── */
+        .lightbox {
+            position: fixed; inset: 0; z-index: 9999;
+            background: rgba(0,0,0,0.96);
+            display: none; flex-direction: column;
+            align-items: center; justify-content: center;
+            animation: fadeIn 0.15s ease;
+        }
+        .lightbox.open { display: flex; }
+        .lightbox-img-wrap {
+            flex: 1; display: flex; align-items: center; justify-content: center;
+            width: 100%; position: relative; overflow: hidden;
+            cursor: zoom-in;
+        }
+        .lightbox-img-wrap.zoomed { cursor: zoom-out; overflow: auto; align-items: flex-start; justify-content: flex-start; }
+        .lightbox-img {
+            max-width: 100%; max-height: calc(100vh - 110px);
+            object-fit: contain; border-radius: 4px;
+            transition: transform 0.2s ease;
+            user-select: none;
+        }
+        .lightbox-img.zoomed { max-width: none; max-height: none; }
+        .lightbox-nav {
+            position: absolute; top: 50%; transform: translateY(-50%);
+            background: rgba(0,0,0,0.6); border: 1px solid var(--border-color);
+            border-radius: 50%; width: 44px; height: 44px;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; color: var(--text-main); transition: all 0.2s;
+            z-index: 2;
+        }
+        .lightbox-nav:hover { border-color: var(--neon-cyan); color: var(--neon-cyan); background: rgba(0,0,0,0.85); }
+        .lightbox-nav.prev { left: 16px; }
+        .lightbox-nav.next { right: 16px; }
+        .lightbox-nav.hidden { opacity: 0; pointer-events: none; }
+        .lightbox-bar {
+            width: 100%; padding: 10px 20px;
+            display: flex; align-items: center; justify-content: space-between;
+            background: rgba(10,11,16,0.9); border-top: 1px solid var(--border-color);
+            flex-shrink: 0; gap: 12px;
+        }
+        .lightbox-meta { display: flex; gap: 8px; flex-wrap: wrap; }
+        .lightbox-badge {
+            background: rgba(0,0,0,0.6); border: 1px solid var(--border-color);
+            border-radius: 3px; padding: 3px 8px; font-size: 11px; color: var(--text-dim);
+        }
+        .lightbox-badge span { color: var(--neon-cyan); }
+        .lightbox-actions { display: flex; gap: 8px; }
+        .lightbox-counter {
+            font-family: 'Orbitron', sans-serif; font-size: 11px;
+            color: var(--text-dim); white-space: nowrap;
+        }
+        .lightbox-keys {
+            font-size: 11px; color: var(--text-dim);
+            display: flex; gap: 10px; align-items: center;
+        }
+        .key-hint {
+            background: rgba(255,255,255,0.07); border: 1px solid var(--border-color);
+            border-radius: 3px; padding: 2px 6px; font-size: 10px; font-family: monospace;
+        }
+
+        /* ─── SVD TAB ────────────────────────────────────── */
+        .svd-panel {
+            display: flex; flex-direction: column; gap: 12px;
+            padding: 4px 0; flex: 1; overflow-y: auto;
+        }
+        .svd-drop-zone {
+            border: 2px dashed var(--border-color); border-radius: 8px;
+            min-height: 140px; display: flex; flex-direction: column;
+            align-items: center; justify-content: center; gap: 8px;
+            cursor: pointer; transition: all 0.2s; position: relative;
+            background: rgba(255,255,255,0.01);
+        }
+        .svd-drop-zone:hover, .svd-drop-zone.dragover {
+            border-color: var(--neon-cyan); background: rgba(0,240,255,0.04);
+        }
+        .svd-drop-zone .material-icons { font-size: 36px; color: var(--text-dim); }
+        .svd-drop-zone p { font-size: 13px; color: var(--text-dim); }
+        .svd-drop-zone input[type="file"] {
+            position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
+        }
+        .svd-input-preview {
+            max-width: 100%; max-height: 120px; object-fit: contain;
+            border-radius: 4px; display: none; border: 1px solid var(--border-color);
+        }
+        .svd-status {
+            font-size: 12px; padding: 8px 10px;
+            background: rgba(255,215,0,0.08); border: 1px solid rgba(255,215,0,0.25);
+            border-radius: 4px; color: var(--neon-gold); text-align: center;
+        }
+        .svd-status.svd-ok { background: rgba(0,255,136,0.08); border-color: rgba(0,255,136,0.25); color: var(--neon-green); }
+        .svd-status.svd-err { background: rgba(255,0,85,0.08); border-color: rgba(255,0,85,0.25); color: var(--neon-pink); }
+        .svd-status.svd-busy { animation: pulse 1.5s infinite; }
+        .svd-server-row {
+            display: flex; gap: 6px; align-items: center; margin-bottom: 8px;
+        }
+        .svd-server-row input[type="text"] { flex: 1; font-size: 12px; padding: 5px 8px; }
+        .svd-server-row .btn-sm { white-space: nowrap; }
+        .tab-svd { color: var(--neon-gold) !important; }
+        .tab-svd.active { color: var(--neon-gold) !important; }
+        .tab-svd.active::after { background: var(--neon-gold) !important; box-shadow: 0 0 8px var(--neon-gold) !important; }
+
+        /* ─── NSFW INDICATOR ─────────────────────────────── */
+        .nsfw-tag-indicator {
+            font-size: 10px; padding: 2px 8px;
+            background: rgba(255,0,85,0.15); border: 1px solid rgba(255,0,85,0.3);
+            border-radius: 10px; color: var(--neon-pink); display: none;
+        }
+        .nsfw-tag-indicator.visible { display: inline-block; }
+
+        /* ─── XAI CLOUD VIDEO TAB ────────────────────────── */
+        .tab-xai { color: #7df9ff !important; }
+        .tab-xai.active::after { background: #7df9ff !important; box-shadow: 0 0 8px #7df9ff !important; }
+
+        .tab-stability { color: #a78bfa !important; }
+        .tab-stability.active::after { background: #a78bfa !important; box-shadow: 0 0 8px #a78bfa !important; }
+
+        .tab-fal { color: #34d399 !important; }
+        .tab-fal.active::after { background: #34d399 !important; box-shadow: 0 0 8px #34d399 !important; }
+
+        .tab-openrouter { color: #f97316 !important; }
+        .tab-openrouter.active::after { background: #f97316 !important; box-shadow: 0 0 8px #f97316 !important; }
+
+        /* ─── CLOUD PANEL (shared) ──────────────────────────── */
+        .cloud-panel {
+            display: flex; flex-direction: column; gap: 12px;
+            padding: 4px 0; flex: 1; overflow-y: auto;
+        }
+        .cloud-result-img {
+            width: 100%; border-radius: 6px; border: 1px solid var(--border-color);
+            display: none; max-height: 400px; object-fit: contain; background: #000;
+        }
+        .cloud-result-img.visible { display: block; }
+        .cloud-status {
+            font-size: 12px; padding: 8px 10px;
+            background: rgba(255,255,255,0.03); border: 1px solid var(--border-color);
+            border-radius: 4px; color: var(--text-dim); display: none;
+        }
+        .cloud-status.visible { display: block; }
+        .cloud-status.ok { color: var(--neon-green); border-color: rgba(0,255,136,0.25); }
+        .cloud-status.err { color: var(--neon-pink); border-color: rgba(255,0,85,0.25); }
+        .cloud-status.busy { animation: pulse 1.5s infinite; color: var(--neon-gold); }
+
+        .xai-panel {
+            display: flex; flex-direction: column; gap: 12px;
+            padding: 4px 0; flex: 1; overflow-y: auto;
+        }
+        .xai-key-row {
+            display: flex; gap: 8px; align-items: center;
+        }
+        .xai-key-row input[type="password"],
+        .xai-key-row input[type="text"] {
+            flex: 1; font-size: 13px; padding: 7px 10px;
+            letter-spacing: 0.05em;
+        }
+        .xai-mode-tabs {
+            display: flex; gap: 4px; margin-bottom: 4px;
+        }
+        .xai-mode-btn {
+            flex: 1; padding: 7px; background: var(--bg-input);
+            border: 1px solid var(--border-color); border-radius: 4px;
+            color: var(--text-dim); font-family: 'Rajdhani', sans-serif;
+            font-weight: 600; font-size: 13px; cursor: pointer; transition: all 0.2s;
+            text-align: center;
+        }
+        .xai-mode-btn.active {
+            background: rgba(0,240,255,0.1); border-color: var(--neon-cyan);
+            color: var(--neon-cyan);
+        }
+        .xai-img-drop {
+            border: 2px dashed var(--border-color); border-radius: 8px;
+            min-height: 100px; display: flex; flex-direction: column;
+            align-items: center; justify-content: center; gap: 6px;
+            cursor: pointer; transition: all 0.2s; position: relative;
+            background: rgba(255,255,255,0.01);
+        }
+        .xai-img-drop:hover, .xai-img-drop.dragover {
+            border-color: var(--neon-cyan); background: rgba(0,240,255,0.04);
+        }
+        .xai-img-drop input[type="file"] {
+            position: absolute; inset: 0; opacity: 0; cursor: pointer;
+        }
+        .xai-img-drop .material-icons { font-size: 28px; color: var(--text-dim); }
+        .xai-img-drop p { font-size: 12px; color: var(--text-dim); }
+        .xai-input-preview {
+            max-width: 100%; max-height: 100px; object-fit: contain;
+            border-radius: 4px; display: none; border: 1px solid var(--border-color);
+            margin-top: 6px;
+        }
+        .xai-status-box {
+            background: var(--bg-input); border: 1px solid var(--border-color);
+            border-radius: 6px; padding: 12px; font-size: 13px;
+            display: none; flex-direction: column; gap: 8px;
+        }
+        .xai-status-box.visible { display: flex; }
+        .xai-status-label {
+            font-family: 'Orbitron', sans-serif; font-size: 11px;
+            letter-spacing: 1px; display: flex; align-items: center; gap: 8px;
+        }
+        .xai-progress-track {
+            height: 4px; background: var(--border-color); border-radius: 2px; overflow: hidden;
+        }
+        .xai-progress-fill {
+            height: 100%; width: 0%;
+            background: linear-gradient(90deg, #7df9ff, var(--neon-purple));
+            border-radius: 2px; transition: width 0.5s ease;
+            animation: xai-pulse-bar 2s ease-in-out infinite;
+        }
+        @keyframes xai-pulse-bar {
+            0%, 100% { opacity: 1; } 50% { opacity: 0.5; }
+        }
+        .xai-result-video {
+            width: 100%; border-radius: 6px; border: 1px solid var(--border-color);
+            display: none; max-height: 300px; background: #000;
+        }
+        .xai-result-video.visible { display: block; }
+        .xai-result-actions {
+            display: flex; gap: 8px; flex-wrap: wrap;
+        }
+        .xai-elapsed {
+            font-size: 11px; color: var(--text-dim); font-family: monospace;
+        }
+        .xai-requests-log {
+            max-height: 120px; overflow-y: auto; font-size: 11px;
+            color: var(--text-dim); font-family: monospace;
+            background: rgba(0,0,0,0.3); border-radius: 4px; padding: 6px 8px;
+        }
+        .xai-requests-log .log-done { color: var(--neon-green); }
+        .xai-requests-log .log-pending { color: var(--neon-gold); }
+        .xai-requests-log .log-error { color: var(--neon-pink); }
+
+        /* ─── CLOUD API TABS SHARED ─────────────────────────── */
+        .cloud-panel {
+            display: flex; flex-direction: column; gap: 12px;
+            padding: 4px 0; flex: 1; overflow-y: auto;
+        }
+        .cloud-key-row {
+            display: flex; gap: 8px; align-items: center;
+        }
+        .cloud-key-row input[type="password"],
+        .cloud-key-row input[type="text"] {
+            flex: 1; font-size: 13px; padding: 7px 10px;
+            letter-spacing: 0.05em;
+        }
+        .cloud-result-img {
+            width: 100%; border-radius: 6px; border: 1px solid var(--border-color);
+            display: none; max-height: 400px; object-fit: contain; background: #000;
+        }
+        .cloud-result-img.visible { display: block; }
+        .cloud-status-box {
+            background: var(--bg-input); border: 1px solid var(--border-color);
+            border-radius: 6px; padding: 12px; font-size: 13px;
+            display: none; flex-direction: column; gap: 8px;
+        }
+        .cloud-status-box.visible { display: flex; }
+        .cloud-status-label {
+            font-family: 'Orbitron', sans-serif; font-size: 11px;
+            letter-spacing: 1px; display: flex; align-items: center; gap: 8px;
+        }
+
+        /* Tab colors */
+        .tab-stab { color: #a78bfa !important; }
+        .tab-stab.active::after { background: #a78bfa !important; box-shadow: 0 0 8px #a78bfa !important; }
+        .tab-fal { color: #34d399 !important; }
+        .tab-fal.active::after { background: #34d399 !important; box-shadow: 0 0 8px #34d399 !important; }
+        .tab-or { color: #fb923c !important; }
+        .tab-or.active::after { background: #fb923c !important; box-shadow: 0 0 8px #fb923c !important; }
+
+        /* Overflow scroll for many tabs */
+        .tabs { overflow-x: auto; flex-wrap: nowrap; -webkit-overflow-scrolling: touch; }
+        .tabs::-webkit-scrollbar { height: 3px; }
+        .tabs::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 2px; }
+    </style>
+</head>
+<body>
+<div class="bg-grid"></div>
+
+<!-- ─── HEADER ────────────────────────────────────────────── -->
+<header>
+    <div class="logo">
+        RED<span>VERSE</span>
+        <i class="material-icons" style="color: var(--neon-pink); font-size: 20px;">blur_on</i>
+    </div>
+    <div class="header-right">
+        <div class="mode-toggle">
+            <button class="mode-btn active" id="sfwMode">SFW</button>
+            <button class="mode-btn nsfw" id="nsfwMode">NSFW</button>
+        </div>
+        <i class="material-icons" style="color: var(--text-dim); cursor: pointer; font-size: 20px;" title="Settings">settings</i>
+    </div>
+</header>
+
+<!-- ─── BACKEND CONFIG BAR ────────────────────────────────── -->
+<div class="backend-bar">
+    <label>Backend URL</label>
+    <input type="text" id="backendUrl" value="http://localhost:7860" placeholder="http://localhost:7860">
+    <label style="margin-left:4px;">API Key</label>
+    <input type="password" id="backendApiKey" placeholder="(optional)" style="width:160px;">
+    <button class="btn-sm" id="toggleApiKey" title="Show/hide key">
+        <i class="material-icons" style="font-size:14px;">visibility</i>
+    </button>
+    <button class="btn-sm" id="connectBtn">
+        <i class="material-icons" id="connectIcon">power_settings_new</i>
+        <span id="connectLabel">Connect</span>
+    </button>
+    <button class="btn-sm" id="refreshModelsBtn" title="Refresh models/samplers/LoRAs/VAE" style="display:none;">
+        <i class="material-icons">refresh</i> Refresh
+    </button>
+    <div class="conn-indicator">
+        <div class="conn-dot" id="connDot"></div>
+        <span id="connStatus">Disconnected</span>
+    </div>
+</div>
+
+<!-- ─── MAIN ──────────────────────────────────────────────── -->
+<div class="main-container">
+
+    <!-- ─── SIDEBAR ──────────────────────────────────────── -->
+    <div class="sidebar">
+
+        <!-- Core Parameters -->
+        <div class="control-section">
+            <div class="section-header">
+                <span>Core Parameters</span>
+                <i class="material-icons" style="font-size: 15px;">tune</i>
+            </div>
+
+            <div class="input-group">
+                <label>Checkpoint Model</label>
+                <select id="modelSelect">
+                    <option value="">— Connect to load models —</option>
+                </select>
+            </div>
+
+            <div class="input-group">
+                <label>Sampler</label>
+                <select id="samplerSelect">
+                    <option value="DPM++ 2M Karras">DPM++ 2M Karras</option>
+                    <option value="DPM++ SDE Karras">DPM++ SDE Karras</option>
+                    <option value="Euler a">Euler a</option>
+                    <option value="DDIM">DDIM</option>
+                    <option value="UniPC">UniPC</option>
+                </select>
+            </div>
+
+            <div class="input-group">
+                <label>Schedule Type</label>
+                <select id="schedulerSelect">
+                    <option value="Automatic">Automatic</option>
+                    <option value="Uniform">Uniform</option>
+                    <option value="Karras">Karras</option>
+                    <option value="Exponential">Exponential</option>
+                    <option value="Polyexponential">Polyexponential</option>
+                    <option value="SGM Uniform">SGM Uniform</option>
+                </select>
+            </div>
+
+            <div class="input-group">
+                <label>VAE</label>
+                <select id="vaeSelect">
+                    <option value="Automatic">Automatic</option>
+                    <option value="None">None</option>
+                </select>
+            </div>
+
+            <div class="slider-group">
+                <label>Clip Skip</label>
+                <input type="range" min="1" max="12" value="1" id="clipSkipRange">
+                <div class="slider-value" id="clipSkipValue">1</div>
+            </div>
+            <div style="font-size:11px; color:var(--text-dim); margin:-8px 0 10px 93px;">1 = default · 2 = common for anime models</div>
+
+            <div class="slider-group">
+                <label>Steps</label>
+                <input type="range" min="10" max="150" value="30" id="stepsRange">
+                <div class="slider-value" id="stepsValue">30</div>
+            </div>
+
+            <div class="slider-group">
+                <label>CFG Scale</label>
+                <input type="range" min="1" max="30" value="7" step="0.5" id="cfgRange">
+                <div class="slider-value" id="cfgValue">7.0</div>
+            </div>
+
+            <div class="seed-row">
+                <label>Seed</label>
+                <input type="number" id="seedInput" value="-1" min="-1" max="4294967295" placeholder="-1 = random">
+                <button class="icon-btn" id="randomSeedBtn" title="Randomize seed">
+                    <i class="material-icons">casino</i>
+                </button>
+                <button class="icon-btn" id="lockSeedBtn" title="Lock seed from last generation" style="display:none;">
+                    <i class="material-icons">lock_open</i>
+                </button>
+            </div>
+
+            <div class="input-group">
+                <label>Resolution</label>
+                <select id="aspectRatio">
+                    <option value="896x512">16:9 Landscape — 896×512</option>
+                    <option value="512x896">9:16 Portrait — 512×896</option>
+                    <option value="768x768">1:1 Square — 768×768</option>
+                    <option value="768x576">4:3 Standard — 768×576</option>
+                    <option value="1024x512">2:1 Widescreen — 1024×512</option>
+                    <option value="1024x1024">1:1 SDXL — 1024×1024</option>
+                    <option value="1216x832">3:2 SDXL — 1216×832</option>
+                    <option value="832x1216">2:3 SDXL Portrait — 832×1216</option>
+                </select>
+            </div>
+
+            <div class="slider-group">
+                <label>Batch Size</label>
+                <input type="range" min="1" max="4" value="1" id="batchSizeRange">
+                <div class="slider-value" id="batchSizeValue">1</div>
+            </div>
+
+            <div class="slider-group">
+                <label>Batch Count</label>
+                <input type="range" min="1" max="10" value="1" id="batchCountRange">
+                <div class="slider-value" id="batchCountValue">1</div>
+            </div>
+        </div>
+
+        <!-- Hi-Res Fix -->
+        <div class="control-section">
+            <div class="section-header">
+                <span>Hi-Res Fix</span>
+                <div class="section-header-actions">
+                    <div class="toggle-switch">
+                        <input type="checkbox" id="hiresEnable">
+                        <label class="toggle-track" for="hiresEnable"></label>
+                    </div>
+                </div>
+            </div>
+            <div class="collapsible-body" id="hiresBody">
+                <div class="input-group">
+                    <label>Upscaler</label>
+                    <select id="hiresUpscaler">
+                        <option value="Latent">Latent</option>
+                        <option value="Latent (antialiased)">Latent (antialiased)</option>
+                        <option value="Latent (nearest)">Latent (nearest)</option>
+                        <option value="Latent (nearest-exact)">Latent (nearest-exact)</option>
+                        <option value="R-ESRGAN 4x+">R-ESRGAN 4x+</option>
+                        <option value="R-ESRGAN 4x+ Anime6B" selected>R-ESRGAN 4x+ Anime6B</option>
+                        <option value="SwinIR_4x">SwinIR 4x</option>
+                        <option value="LDSR">LDSR</option>
+                    </select>
+                </div>
+
+                <div class="slider-group">
+                    <label>Scale Factor</label>
+                    <input type="range" min="1" max="4" value="2" step="0.25" id="hiresScale">
+                    <div class="slider-value" id="hiresScaleVal">2.0x</div>
+                </div>
+
+                <div class="slider-group">
+                    <label>Hi-Res Steps</label>
+                    <input type="range" min="0" max="100" value="15" id="hiresSteps">
+                    <div class="slider-value" id="hiresStepsVal">15</div>
+                </div>
+                <div style="font-size:11px; color:var(--text-dim); margin:-8px 0 10px 93px;">0 = use same as main steps</div>
+
+                <div class="slider-group">
+                    <label>Denoise</label>
+                    <input type="range" min="0" max="1" value="0.55" step="0.01" id="hiresDenoise">
+                    <div class="slider-value" id="hiresDenoiseVal">0.55</div>
+                </div>
+                <div style="font-size:11px; color:var(--text-dim); margin:-8px 0 4px 93px;">Lower = closer to original · Higher = more detail added</div>
+            </div>
+        </div>
+
+        <!-- Refiner (SDXL) -->
+        <div class="control-section">
+            <div class="section-header">
+                <span>Refiner (SDXL)</span>
+                <div class="section-header-actions">
+                    <div class="toggle-switch">
+                        <input type="checkbox" id="refinerEnable">
+                        <label class="toggle-track" for="refinerEnable"></label>
+                    </div>
+                </div>
+            </div>
+            <div class="collapsible-body" id="refinerBody">
+                <div class="input-group">
+                    <label>Refiner Model</label>
+                    <select id="refinerModel">
+                        <option value="">— Connect to load models —</option>
+                    </select>
+                </div>
+                <div style="font-size:11px; color:var(--text-dim); margin:-4px 0 10px 0;">
+                    Select an SDXL refiner checkpoint (e.g. sd_xl_refiner_1.0)
+                </div>
+
+                <div class="slider-group">
+                    <label>Switch At</label>
+                    <input type="range" min="0" max="1" value="0.8" step="0.05" id="refinerSwitchAt">
+                    <div class="slider-value" id="refinerSwitchAtVal">0.80</div>
+                </div>
+                <div style="font-size:11px; color:var(--text-dim); margin:-8px 0 4px 93px;">Fraction of steps before switching to refiner (0.8 = refiner gets last 20%)</div>
+            </div>
+        </div>
+
+        <!-- LoRA Section -->
+        <div class="control-section">
+            <div class="section-header">
+                <span>LoRA / Embeddings</span>
+                <div class="section-header-actions">
+                    <button class="icon-btn" id="refreshLoraBtn" title="Refresh LoRAs">
+                        <i class="material-icons">refresh</i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="lora-add-row">
+                <select id="loraSelect">
+                    <option value="">— Connect to load LoRAs —</option>
+                </select>
+                <div class="lora-weight-wrap">
+                    <span style="font-size:11px; color: var(--text-dim);">W:</span>
+                    <input type="number" id="loraWeight" value="0.8" min="0" max="2" step="0.05" title="LoRA weight">
+                </div>
+                <button class="btn-sm" id="addLoraBtn">
+                    <i class="material-icons" style="font-size:14px;">add</i>
+                </button>
+            </div>
+
+            <div class="lora-active-list" id="loraActiveList">
+                <span class="loading-placeholder">No LoRAs active</span>
+            </div>
+        </div>
+
+        <!-- Prompt -->
+        <div class="control-section">
+            <div class="section-header">
+                <span>Prompt</span>
+                <i class="material-icons" style="font-size: 15px;">edit</i>
+            </div>
+
+            <div class="input-group">
+                <label>Quick Tags</label>
+                <div class="preset-tags">
+                    <div class="preset-tag">Cel-Shaded</div>
+                    <div class="preset-tag">Masterpiece</div>
+                    <div class="preset-tag">8K</div>
+                    <div class="preset-tag">Neon Gothic</div>
+                    <div class="preset-tag">Glitch FX</div>
+                    <div class="preset-tag">Crimson</div>
+                    <div class="preset-tag">Sable</div>
+                    <div class="preset-tag">Lyra</div>
+                    <div class="preset-tag">Anime</div>
+                    <div class="preset-tag">Hyper-Detail</div>
+                </div>
+            </div>
+
+            <div class="input-group">
+                <label>Positive Prompt</label>
+                <textarea id="promptInput" placeholder="(Anime, Semi-Realistic, Hyper-Detailed, 8k, Cel-Shaded:1.4), (Masterpiece:1.5)..." rows="4"></textarea>
+            </div>
+
+            <div class="input-group">
+                <label>Negative Prompt</label>
+                <textarea id="negPromptInput" rows="3">lowres, bad anatomy, bad hands, text, error, missing fingers, extra digit, fewer digits, cropped, worst quality, low quality, jpeg artifacts, signature, watermark, blurry, deformed</textarea>
+            </div>
+        </div>
+
+        <!-- Style Presets -->
+        <div class="control-section">
+            <div class="section-header">
+                <span>Style Presets</span>
+                <i class="material-icons" style="font-size: 15px;">palette</i>
+            </div>
+
+            <div class="input-group">
+                <label>Scene</label>
+                <select id="stylePreset">
+                    <option value="">— None —</option>
+                    <option value="Standard RedVerse">Standard RedVerse</option>
+                    <option value="Cyberpunk Cathedral">Cyberpunk Cathedral</option>
+                    <option value="Suburban Daydream">Suburban Daydream</option>
+                    <option value="High-Intensity Shred">High-Intensity Shred</option>
+                    <option value="Walk Away Explosion">Walk Away Explosion</option>
+                    <option value="Intimate Embrace">Intimate Embrace</option>
+                    <option value="Character Portrait">Character Portrait</option>
+                </select>
+            </div>
+
+            <div class="slider-group">
+                <label>Style Strength</label>
+                <input type="range" min="0" max="100" value="75" id="styleStrengthRange">
+                <div class="slider-value" id="styleStrengthValue">75%</div>
+            </div>
+        </div>
+
+        <!-- Consistency Profiles -->
+        <div class="control-section">
+            <div class="section-header">
+                <span>Consistency Profiles</span>
+                <div class="section-header-actions">
+                    <button class="icon-btn" id="saveProfileBtn" title="Save current settings as profile">
+                        <i class="material-icons">save</i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="profile-list" id="profileList">
+                <div class="no-profiles">No profiles saved. Click 💾 to save current settings.</div>
+            </div>
+
+            <div class="consistency-lock">
+                <input type="checkbox" id="lockSeedConsistency">
+                <div class="lock-label">
+                    <div style="font-size:12px; color: var(--text-main); font-weight:600;">Lock Seed</div>
+                    <div style="font-size:11px; color: var(--text-dim);">Same seed = same base composition</div>
+                </div>
+            </div>
+            <div class="consistency-lock" style="margin-top: 5px;">
+                <input type="checkbox" id="lockCharTokens">
+                <div class="lock-label">
+                    <div style="font-size:12px; color: var(--text-main); font-weight:600;">Lock Character Tokens</div>
+                    <div style="font-size:11px; color: var(--text-dim);">Prepend profile's character tags to every prompt</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Generate -->
+        <button class="btn-generate" id="generateBtn">
+            <i class="material-icons" id="genIcon">auto_awesome</i>
+            <span id="genLabel">Generate Art</span>
+        </button>
+        <button class="btn-interrupt" id="interruptBtn">
+            <i class="material-icons">stop</i> Interrupt
+        </button>
+
+    </div><!-- /sidebar -->
+
+    <!-- ─── CONTENT AREA ──────────────────────────────────── -->
+    <div class="content-area">
+        <div class="tabs" style="flex-wrap:wrap;">
+            <button class="tab active" data-tab="preview">Preview</button>
+            <button class="tab" data-tab="gallery">Gallery (<span id="galleryCount">0</span>)</button>
+            <button class="tab tab-svd" data-tab="svd">⚡ SVD</button>
+            <button class="tab tab-xai" data-tab="xai">☁ Grok</button>
+            <button class="tab tab-stability" data-tab="stability">🎨 Stability</button>
+            <button class="tab tab-fal" data-tab="fal">⚡ FAL</button>
+            <button class="tab tab-openrouter" data-tab="openrouter">🔀 OpenRouter</button>
+        </div>
+
+        <!-- Preview Tab -->
+        <div class="preview-wrap" id="tabPreview">
+            <div class="preview-area" id="previewArea">
+                <!-- Progress Overlay -->
+                <div class="progress-overlay" id="progressOverlay">
+                    <img class="progress-preview" id="progressPreview" src="" alt="live preview">
+                    <div class="progress-label" id="progressLabel">Initializing...</div>
+                    <div class="progress-bar-track">
+                        <div class="progress-bar-fill" id="progressFill"></div>
+                    </div>
+                    <div class="progress-stats" id="progressStats">Step 0 / 0 · ETA —</div>
+                </div>
+
+                <!-- Placeholder -->
+                <div class="preview-placeholder" id="previewPlaceholder">
+                    <i class="material-icons">image</i>
+                    <h3 style="font-family:'Orbitron',sans-serif; font-size:14px; margin-bottom:8px;">No Image Generated Yet</h3>
+                    <p style="font-size:13px;">Connect backend and hit Generate</p>
+                </div>
+
+                <!-- Generated Image -->
+                <img class="preview-image" id="previewImg" src="" alt="Generated" style="display:none; cursor:zoom-in;" onclick="openLightbox('preview')" title="Click to fullscreen">
+
+                <!-- Image metadata overlay -->
+                <div class="image-meta" id="imageMeta">
+                    <div class="meta-row" id="metaRow"></div>
+                </div>
+
+                <!-- Image actions -->
+                <div class="image-actions" id="imageActions">
+                    <button class="img-action-btn" id="downloadBtn">
+                        <i class="material-icons">download</i> Save
+                    </button>
+                    <button class="img-action-btn" id="sendToGalleryBtn">
+                        <i class="material-icons">collections</i> View Gallery
+                    </button>
+                    <button class="img-action-btn" id="useAsSeedBtn">
+                        <i class="material-icons">lock</i> Lock Seed
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Gallery Tab -->
+        <div class="gallery-wrap" id="tabGallery" style="display:none;">
+            <div class="gallery-toolbar" id="galleryToolbar">
+                <button class="btn-sm" id="gallerySelectToggle" title="Toggle selection mode">
+                    <i class="material-icons" style="font-size:14px;">check_box_outline_blank</i> Select
+                </button>
+                <button class="btn-sm" id="gallerySelectAll" style="display:none;" title="Select all">
+                    <i class="material-icons" style="font-size:14px;">select_all</i> All
+                </button>
+                <button class="btn-sm" id="galleryRemoveSelected" style="display:none;" title="Remove selected">
+                    <i class="material-icons" style="font-size:14px;color:var(--neon-pink);">delete</i> Remove
+                </button>
+                <button class="btn-sm" id="galleryClearAll" title="Clear entire gallery">
+                    <i class="material-icons" style="font-size:14px;color:var(--neon-pink);">delete_sweep</i> Clear All
+                </button>
+                <div class="spacer"></div>
+                <button class="btn-sm" id="galleryDownloadAll" title="Download all as ZIP">
+                    <i class="material-icons" style="font-size:14px;">download</i> Download All
+                </button>
+                <span class="gallery-info" id="galleryInfo">0 items</span>
+            </div>
+            <div class="gallery" id="galleryGrid">
+                <div class="gallery-empty" style="grid-column:1/-1;">Gallery is empty — generate some art!</div>
+            </div>
+        </div>
+
+        <!-- SVD Tab -->
+        <div class="svd-panel" id="tabSvd" style="display:none;">
+            <div class="svd-status" id="svdStatus">
+                ⚡ Stable Video Diffusion — checking setup...
+            </div>
+
+            <!-- SVD Server Config -->
+            <div class="control-section">
+                <div class="section-header">
+                    <span>SVD Server</span>
+                    <div class="section-header-actions">
+                        <button class="icon-btn" id="svdAutoSetup" title="Auto-detect and setup SVD">
+                            <i class="material-icons">build</i>
+                        </button>
+                    </div>
+                </div>
+                <div class="svd-server-row">
+                    <label style="width:70px;flex-shrink:0;">URL</label>
+                    <input type="text" id="svdServerUrl" value="http://localhost:7870" placeholder="http://localhost:7870">
+                    <button class="btn-sm" id="svdConnectBtn">
+                        <i class="material-icons" style="font-size:14px;" id="svdConnIcon">power_settings_new</i> Connect
+                    </button>
+                </div>
+                <div style="font-size:11px; color:var(--text-dim);">
+                    Isolated SVD server (avoids ML crossover with SD). Click ⚙ Auto-Setup to detect & configure.
+                </div>
+                <div class="conn-indicator" style="margin-top:6px;">
+                    <div class="conn-dot" id="svdConnDot"></div>
+                    <span id="svdConnStatus" style="font-size:12px;">Not connected</span>
+                </div>
+            </div>
+
+            <div class="control-section">
+                <div class="section-header"><span>Input Image</span><i class="material-icons" style="font-size:15px;">image</i></div>
+                <div class="svd-drop-zone" id="svdDropZone">
+                    <input type="file" id="svdFileInput" accept="image/*">
+                    <i class="material-icons">upload_file</i>
+                    <p>Drop image here or click to browse</p>
+                    <p style="font-size:11px;">Use current preview → <button class="btn-sm" onclick="event.stopPropagation();svdUsePreview()" style="display:inline-flex;">Use Preview</button></p>
+                </div>
+                <img class="svd-input-preview" id="svdInputPreview" src="" alt="SVD input">
+            </div>
+
+            <div class="control-section">
+                <div class="section-header"><span>Motion Parameters</span><i class="material-icons" style="font-size:15px;">animation</i></div>
+
+                <div class="slider-group">
+                    <label>Motion Bucket</label>
+                    <input type="range" min="1" max="255" value="127" id="svdMotionBucket">
+                    <div class="slider-value" id="svdMotionBucketVal">127</div>
+                </div>
+                <div style="font-size:11px; color:var(--text-dim); margin:-8px 0 10px 93px;">Low=subtle drift · High=intense motion</div>
+
+                <div class="slider-group">
+                    <label>FPS</label>
+                    <input type="range" min="1" max="30" value="6" id="svdFps">
+                    <div class="slider-value" id="svdFpsVal">6</div>
+                </div>
+
+                <div class="slider-group">
+                    <label>Frames</label>
+                    <input type="range" min="2" max="50" value="25" id="svdFrames">
+                    <div class="slider-value" id="svdFramesVal">25</div>
+                </div>
+
+                <div class="slider-group">
+                    <label>Noise Aug</label>
+                    <input type="range" min="0" max="1" value="0.02" step="0.01" id="svdNoiseAug">
+                    <div class="slider-value" id="svdNoiseAugVal">0.02</div>
+                </div>
+                <div style="font-size:11px; color:var(--text-dim); margin:-8px 0 10px 93px;">Augmentation noise — higher = more variation but less faithful</div>
+
+                <div class="slider-group">
+                    <label>Decode Chunk</label>
+                    <input type="range" min="1" max="25" value="8" id="svdDecodeChunk">
+                    <div class="slider-value" id="svdDecodeChunkVal">8</div>
+                </div>
+                <div style="font-size:11px; color:var(--text-dim); margin:-8px 0 10px 93px;">Frames decoded at once — lower = less VRAM</div>
+            </div>
+
+            <div class="control-section">
+                <div class="section-header"><span>Diffusion</span><i class="material-icons" style="font-size:15px;">tune</i></div>
+
+                <div class="slider-group">
+                    <label>Steps</label>
+                    <input type="range" min="4" max="50" value="25" id="svdSteps">
+                    <div class="slider-value" id="svdStepsVal">25</div>
+                </div>
+
+                <div class="slider-group">
+                    <label>CFG Scale</label>
+                    <input type="range" min="1" max="15" value="2.5" step="0.5" id="svdCfg">
+                    <div class="slider-value" id="svdCfgVal">2.5</div>
+                </div>
+
+                <div class="slider-group">
+                    <label>Min CFG</label>
+                    <input type="range" min="0" max="5" value="1" step="0.1" id="svdMinCfg">
+                    <div class="slider-value" id="svdMinCfgVal">1.0</div>
+                </div>
+
+                <div class="seed-row" style="margin-bottom:10px;">
+                    <label>Seed</label>
+                    <input type="number" id="svdSeed" value="-1" min="-1" max="4294967295">
+                    <button class="icon-btn" onclick="document.getElementById('svdSeed').value = Math.floor(Math.random()*4294967295)" title="Randomize">
+                        <i class="material-icons">casino</i>
+                    </button>
+                </div>
+
+                <div class="input-group">
+                    <label>Output Resolution</label>
+                    <select id="svdResolution">
+                        <option value="1024x576">1024×576 (SVD default)</option>
+                        <option value="576x1024">576×1024 (Portrait)</option>
+                        <option value="768x768">768×768 (Square)</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="control-section">
+                <div class="section-header"><span>Output</span><i class="material-icons" style="font-size:15px;">movie</i></div>
+                <div class="input-group">
+                    <label>Format</label>
+                    <select id="svdFormat">
+                        <option value="gif">Animated GIF</option>
+                        <option value="mp4">MP4 Video</option>
+                        <option value="webp">Animated WebP</option>
+                        <option value="frames">Individual Frames (ZIP)</option>
+                    </select>
+                </div>
+            </div>
+
+            <button class="btn-generate" id="svdGenerateBtn" style="background:linear-gradient(90deg,var(--neon-gold),var(--neon-pink));">
+                <i class="material-icons">movie_filter</i>
+                <span>Generate Video</span>
+            </button>
+        </div>
+
+        <!-- xAI Grok Video Tab -->
+        <div class="xai-panel" id="tabXai" style="display:none;">
+
+            <!-- API Key -->
+            <div class="control-section">
+                <div class="section-header">
+                    <span>xAI API Key</span>
+                    <i class="material-icons" style="font-size:15px;">vpn_key</i>
+                </div>
+                <div class="xai-key-row">
+                    <input type="password" id="xaiApiKey" placeholder="xai-...">
+                    <button class="btn-sm" id="xaiToggleKey" title="Show/hide key">
+                        <i class="material-icons" style="font-size:14px;">visibility</i>
+                    </button>
+                    <button class="btn-sm" id="xaiSaveKey">
+                        <i class="material-icons" style="font-size:14px;">save</i> Save
+                    </button>
+                </div>
+                <div style="font-size:11px; color:var(--text-dim); margin-top:6px;">
+                    Key stored in localStorage only. Get yours at <span style="color:var(--neon-cyan);">console.x.ai</span>
+                </div>
+            </div>
+
+            <!-- Mode: txt2vid / img2vid -->
+            <div class="control-section">
+                <div class="section-header">
+                    <span>Generation Mode</span>
+                    <i class="material-icons" style="font-size:15px;">tune</i>
+                </div>
+                <div class="xai-mode-tabs">
+                    <button class="xai-mode-btn active" id="xaiModeTxt">📝 Text → Video</button>
+                    <button class="xai-mode-btn" id="xaiModeImg">🖼 Image → Video</button>
+                </div>
+
+                <!-- Image input (hidden in txt mode) -->
+                <div id="xaiImgSection" style="display:none; margin-top:10px;">
+                    <label style="font-size:12px; color:var(--text-dim); margin-bottom:5px; display:block;">Source Image</label>
+                    <div class="xai-img-drop" id="xaiImgDrop">
+                        <input type="file" id="xaiFileInput" accept="image/*">
+                        <i class="material-icons">upload_file</i>
+                        <p>Drop image or click · or <button class="btn-sm" style="display:inline-flex;" onclick="event.stopPropagation();xaiUsePreview()">Use Preview</button></p>
+                    </div>
+                    <img class="xai-input-preview" id="xaiInputPreview" src="" alt="source">
+                </div>
+            </div>
+
+            <!-- Prompt -->
+            <div class="control-section">
+                <div class="section-header"><span>Prompt</span><i class="material-icons" style="font-size:15px;">edit</i></div>
+                <div class="input-group" style="margin-bottom:0;">
+                    <textarea id="xaiPrompt" rows="4" placeholder="Describe the video you want to generate..."></textarea>
+                </div>
+            </div>
+
+            <!-- Parameters -->
+            <div class="control-section">
+                <div class="section-header"><span>Parameters</span><i class="material-icons" style="font-size:15px;">settings</i></div>
+
+                <div class="slider-group">
+                    <label>Duration</label>
+                    <input type="range" min="1" max="15" value="8" id="xaiDuration">
+                    <div class="slider-value" id="xaiDurationVal">8s</div>
+                </div>
+                <div style="font-size:11px;color:var(--text-dim);margin:-8px 0 10px 93px;">1–15 s · editing mode locks to source duration</div>
+
+                <div class="input-group">
+                    <label>Aspect Ratio</label>
+                    <select id="xaiAspect">
+                        <option value="16:9">16:9 — Widescreen</option>
+                        <option value="9:16">9:16 — Portrait / Stories</option>
+                        <option value="1:1">1:1 — Square</option>
+                        <option value="4:3">4:3 — Presentation</option>
+                        <option value="3:4">3:4 — Portrait Photo</option>
+                        <option value="3:2">3:2 — Photography</option>
+                        <option value="2:3">2:3 — Portrait Photography</option>
+                    </select>
+                </div>
+
+                <div class="input-group">
+                    <label>Resolution</label>
+                    <select id="xaiResolution">
+                        <option value="720p">720p — HD (slower)</option>
+                        <option value="480p" selected>480p — Standard (faster)</option>
+                    </select>
+                </div>
+
+                <div class="input-group">
+                    <label>Model</label>
+                    <select id="xaiModel">
+                        <option value="grok-imagine-video">grok-imagine-video</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Generate -->
+            <button class="btn-generate" id="xaiGenerateBtn"
+                style="background:linear-gradient(90deg,#7df9ff,var(--neon-purple)); color:#000;">
+                <i class="material-icons" id="xaiGenIcon">cloud</i>
+                <span id="xaiGenLabel">Generate with Grok</span>
+            </button>
+
+            <!-- Status / Result -->
+            <div class="xai-status-box" id="xaiStatusBox">
+                <div class="xai-status-label">
+                    <i class="material-icons spinning" id="xaiStatusIcon" style="font-size:16px;">sync</i>
+                    <span id="xaiStatusText">Submitting request...</span>
+                    <span class="xai-elapsed" id="xaiElapsed"></span>
+                </div>
+                <div class="xai-progress-track">
+                    <div class="xai-progress-fill" id="xaiProgressFill" style="width:100%;"></div>
+                </div>
+                <div class="xai-requests-log" id="xaiLog"></div>
+                <video class="xai-result-video" id="xaiResultVideo" controls loop></video>
+                <div class="xai-result-actions" id="xaiResultActions" style="display:none;">
+                    <button class="img-action-btn" id="xaiDownloadBtn">
+                        <i class="material-icons">download</i> Download MP4
+                    </button>
+                    <button class="img-action-btn" id="xaiSendPreviewBtn">
+                        <i class="material-icons">open_in_browser</i> Open URL
+                    </button>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- ═══ STABILITY AI PANEL ═══════════════════════════════ -->
+        <div class="cloud-panel" id="tabStability" style="display:none;">
+            <div class="control-section">
+                <div class="section-header"><span>Stability AI Key</span><i class="material-icons" style="font-size:15px;">vpn_key</i></div>
+                <div class="xai-key-row">
+                    <input type="password" id="stabilityApiKey" placeholder="sk-...">
+                    <button class="btn-sm" id="stabilityToggleKey"><i class="material-icons" style="font-size:14px;">visibility</i></button>
+                    <button class="btn-sm" id="stabilitySaveKey"><i class="material-icons" style="font-size:14px;">save</i> Save</button>
+                </div>
+                <div style="font-size:11px;color:var(--text-dim);margin-top:6px;">Get key at <span style="color:#a78bfa;">platform.stability.ai</span></div>
+            </div>
+            <div class="control-section">
+                <div class="section-header"><span>Model</span><i class="material-icons" style="font-size:15px;">auto_awesome</i></div>
+                <div class="input-group">
+                    <select id="stabilityModel">
+                        <option value="sd3.5-large">SD 3.5 Large</option>
+                        <option value="sd3.5-large-turbo">SD 3.5 Large Turbo</option>
+                        <option value="sd3.5-medium">SD 3.5 Medium</option>
+                        <option value="sd3-large">SD3 Large</option>
+                        <option value="sd3-large-turbo">SD3 Large Turbo</option>
+                        <option value="sd3-medium">SD3 Medium</option>
+                    </select>
+                </div>
+            </div>
+            <div class="control-section">
+                <div class="section-header"><span>Prompt</span><i class="material-icons" style="font-size:15px;">edit</i></div>
+                <div class="input-group"><textarea id="stabilityPrompt" rows="3" placeholder="Describe your image..."></textarea></div>
+                <div class="input-group"><label>Negative Prompt</label><textarea id="stabilityNeg" rows="2" placeholder="(optional)"></textarea></div>
+            </div>
+            <div class="control-section">
+                <div class="section-header"><span>Parameters</span><i class="material-icons" style="font-size:15px;">settings</i></div>
+                <div class="input-group">
+                    <label>Aspect Ratio</label>
+                    <select id="stabilityAspect">
+                        <option value="1:1">1:1 Square</option>
+                        <option value="16:9" selected>16:9 Widescreen</option>
+                        <option value="9:16">9:16 Portrait</option>
+                        <option value="4:3">4:3 Standard</option>
+                        <option value="3:2">3:2 Photo</option>
+                        <option value="2:3">2:3 Portrait Photo</option>
+                        <option value="21:9">21:9 Ultrawide</option>
+                    </select>
+                </div>
+                <div class="seed-row">
+                    <label>Seed</label>
+                    <input type="number" id="stabilitySeed" value="0" min="0" max="4294967295" placeholder="0 = random">
+                </div>
+            </div>
+            <button class="btn-generate" id="stabilityGenBtn" style="background:linear-gradient(90deg,#a78bfa,#7c3aed);">
+                <i class="material-icons" id="stabilityGenIcon">auto_awesome</i>
+                <span id="stabilityGenLabel">Generate with Stability</span>
+            </button>
+            <div class="cloud-status" id="stabilityStatus"></div>
+            <img class="cloud-result-img" id="stabilityResult" src="" alt="Stability result">
+            <div class="xai-result-actions" id="stabilityActions" style="display:none;">
+                <button class="img-action-btn" id="stabilityDownload"><i class="material-icons">download</i> Save</button>
+            </div>
+        </div>
+
+        <!-- ═══ FAL.AI PANEL ═════════════════════════════════════ -->
+        <div class="cloud-panel" id="tabFal" style="display:none;">
+            <div class="control-section">
+                <div class="section-header"><span>FAL.ai Key</span><i class="material-icons" style="font-size:15px;">vpn_key</i></div>
+                <div class="xai-key-row">
+                    <input type="password" id="falApiKey" placeholder="fal-...">
+                    <button class="btn-sm" id="falToggleKey"><i class="material-icons" style="font-size:14px;">visibility</i></button>
+                    <button class="btn-sm" id="falSaveKey"><i class="material-icons" style="font-size:14px;">save</i> Save</button>
+                </div>
+                <div style="font-size:11px;color:var(--text-dim);margin-top:6px;">Get key at <span style="color:#34d399;">fal.ai/dashboard/keys</span></div>
+            </div>
+            <div class="control-section">
+                <div class="section-header"><span>Model</span><i class="material-icons" style="font-size:15px;">auto_awesome</i></div>
+                <div class="input-group">
+                    <select id="falModel">
+                        <option value="fal-ai/flux-pro/v1.1">Flux Pro 1.1</option>
+                        <option value="fal-ai/flux/dev" selected>Flux Dev</option>
+                        <option value="fal-ai/flux/schnell">Flux Schnell (fast)</option>
+                        <option value="fal-ai/flux-pro/v1.1-ultra">Flux Pro Ultra</option>
+                        <option value="fal-ai/stable-diffusion-v3-medium">SD3 Medium</option>
+                        <option value="fal-ai/aura-flow">AuraFlow</option>
+                    </select>
+                </div>
+            </div>
+            <div class="control-section">
+                <div class="section-header"><span>Prompt</span><i class="material-icons" style="font-size:15px;">edit</i></div>
+                <div class="input-group"><textarea id="falPrompt" rows="3" placeholder="Describe your image..."></textarea></div>
+            </div>
+            <div class="control-section">
+                <div class="section-header"><span>Parameters</span><i class="material-icons" style="font-size:15px;">settings</i></div>
+                <div class="input-group">
+                    <label>Image Size</label>
+                    <select id="falSize">
+                        <option value="landscape_16_9">16:9 Landscape</option>
+                        <option value="portrait_9_16">9:16 Portrait</option>
+                        <option value="square">1:1 Square</option>
+                        <option value="landscape_4_3">4:3 Standard</option>
+                        <option value="portrait_3_4">3:4 Portrait</option>
+                    </select>
+                </div>
+                <div class="slider-group">
+                    <label>Steps</label>
+                    <input type="range" min="1" max="50" value="28" id="falSteps">
+                    <div class="slider-value" id="falStepsVal">28</div>
+                </div>
+                <div class="slider-group">
+                    <label>Guidance</label>
+                    <input type="range" min="1" max="20" value="3.5" step="0.5" id="falGuidance">
+                    <div class="slider-value" id="falGuidanceVal">3.5</div>
+                </div>
+                <div class="slider-group">
+                    <label>Num Images</label>
+                    <input type="range" min="1" max="4" value="1" id="falNumImages">
+                    <div class="slider-value" id="falNumImagesVal">1</div>
+                </div>
+                <div class="seed-row">
+                    <label>Seed</label>
+                    <input type="number" id="falSeed" value="-1" min="-1" max="4294967295" placeholder="-1 = random">
+                </div>
+            </div>
+            <button class="btn-generate" id="falGenBtn" style="background:linear-gradient(90deg,#34d399,#059669);">
+                <i class="material-icons" id="falGenIcon">bolt</i>
+                <span id="falGenLabel">Generate with FAL</span>
+            </button>
+            <div class="cloud-status" id="falStatus"></div>
+            <img class="cloud-result-img" id="falResult" src="" alt="FAL result">
+            <div class="xai-result-actions" id="falActions" style="display:none;">
+                <button class="img-action-btn" id="falDownload"><i class="material-icons">download</i> Save</button>
+            </div>
+        </div>
+
+        <!-- ═══ OPENROUTER PANEL ═════════════════════════════════ -->
+        <div class="cloud-panel" id="tabOpenrouter" style="display:none;">
+            <div class="control-section">
+                <div class="section-header"><span>OpenRouter Key</span><i class="material-icons" style="font-size:15px;">vpn_key</i></div>
+                <div class="xai-key-row">
+                    <input type="password" id="orApiKey" placeholder="sk-or-...">
+                    <button class="btn-sm" id="orToggleKey"><i class="material-icons" style="font-size:14px;">visibility</i></button>
+                    <button class="btn-sm" id="orSaveKey"><i class="material-icons" style="font-size:14px;">save</i> Save</button>
+                </div>
+                <div style="font-size:11px;color:var(--text-dim);margin-top:6px;">Get key at <span style="color:#f97316;">openrouter.ai/keys</span></div>
+            </div>
+            <div class="control-section">
+                <div class="section-header"><span>Model</span><i class="material-icons" style="font-size:15px;">auto_awesome</i></div>
+                <div class="input-group">
+                    <select id="orModel">
+                        <option value="openai/dall-e-3">DALL·E 3</option>
+                        <option value="openai/dall-e-2">DALL·E 2</option>
+                        <option value="stabilityai/stable-diffusion-3">SD3</option>
+                        <option value="black-forest-labs/flux-1.1-pro">Flux 1.1 Pro</option>
+                        <option value="black-forest-labs/flux-schnell">Flux Schnell</option>
+                        <option value="black-forest-labs/flux-dev">Flux Dev</option>
+                    </select>
+                </div>
+            </div>
+            <div class="control-section">
+                <div class="section-header"><span>Prompt</span><i class="material-icons" style="font-size:15px;">edit</i></div>
+                <div class="input-group"><textarea id="orPrompt" rows="3" placeholder="Describe your image..."></textarea></div>
+            </div>
+            <div class="control-section">
+                <div class="section-header"><span>Parameters</span><i class="material-icons" style="font-size:15px;">settings</i></div>
+                <div class="input-group">
+                    <label>Size</label>
+                    <select id="orSize">
+                        <option value="1024x1024" selected>1024×1024</option>
+                        <option value="1792x1024">1792×1024 (Wide)</option>
+                        <option value="1024x1792">1024×1792 (Tall)</option>
+                        <option value="512x512">512×512</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label>Quality</label>
+                    <select id="orQuality">
+                        <option value="standard">Standard</option>
+                        <option value="hd">HD</option>
+                    </select>
+                </div>
+                <div class="slider-group">
+                    <label>Num Images</label>
+                    <input type="range" min="1" max="4" value="1" id="orNumImages">
+                    <div class="slider-value" id="orNumImagesVal">1</div>
+                </div>
+            </div>
+            <button class="btn-generate" id="orGenBtn" style="background:linear-gradient(90deg,#f97316,#ea580c);">
+                <i class="material-icons" id="orGenIcon">hub</i>
+                <span id="orGenLabel">Generate with OpenRouter</span>
+            </button>
+            <div class="cloud-status" id="orStatus"></div>
+            <img class="cloud-result-img" id="orResult" src="" alt="OpenRouter result">
+            <div class="xai-result-actions" id="orActions" style="display:none;">
+                <button class="img-action-btn" id="orDownload"><i class="material-icons">download</i> Save</button>
+            </div>
+        </div>
+
+    </div>
+
+</div><!-- /main-container -->
+
+<!-- ─── STATUS BAR ────────────────────────────────────────── -->
+<div class="status-bar">
+    <div class="status-segments">
+        <div><span class="status-dot" id="statusDot"></span><span id="statusText">Offline</span></div>
+        <div id="gpuStatus">GPU: —</div>
+        <div id="vramStatus">VRAM: —</div>
+    </div>
+    <div>RedVerse v2.3.0 · A1111/Forge + Cloud APIs</div>
+</div>
+
+<!-- ─── LIGHTBOX ──────────────────────────────────────────── -->
+<div class="lightbox" id="lightbox">
+    <div class="lightbox-img-wrap" id="lightboxImgWrap">
+        <button class="lightbox-nav prev" id="lbPrev"><i class="material-icons">chevron_left</i></button>
+        <img class="lightbox-img" id="lightboxImg" src="" alt="Fullscreen">
+        <video class="lightbox-img" id="lightboxVid" src="" controls loop autoplay style="display:none;"></video>
+        <button class="lightbox-nav next" id="lbNext"><i class="material-icons">chevron_right</i></button>
+    </div>
+    <div class="lightbox-bar">
+        <div class="lightbox-meta" id="lbMeta"></div>
+        <div class="lightbox-counter" id="lbCounter"></div>
+        <div class="lightbox-keys">
+            <span class="key-hint">←→</span> Navigate
+            <span class="key-hint">F2</span> Save
+            <span class="key-hint">F5</span> Reload
+            <span class="key-hint">Esc</span> Close
+        </div>
+        <div class="lightbox-actions">
+            <button class="img-action-btn" id="lbDownload"><i class="material-icons">download</i> F2 Save</button>
+            <button class="img-action-btn" id="lbReload"><i class="material-icons">refresh</i> F5 Regen</button>
+            <button class="img-action-btn" id="lbLockSeed"><i class="material-icons">lock</i> Lock Seed</button>
+            <button class="img-action-btn" id="lbClose" style="border-color:var(--neon-pink);color:var(--neon-pink);">
+                <i class="material-icons">close</i> Esc
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════════════════════════
+const state = {
+    connected: false,
+    generating: false,
+    nsfwMode: false,
+    models: [],
+    samplers: [],
+    loras: [],
+    upscalers: [],
+    activeLoRAs: [],
+    gallery: [],         // in-memory mirror of IndexedDB
+    selectedItems: new Set(),
+    selectMode: false,
+    profiles: [],
+    lastSeed: -1,
+    lastMeta: null,
+    activeProfile: null,
+    progressInterval: null,
+    memoryInterval: null,
+    lightboxIndex: -1,
+    svdConnected: false,
+    svdServerUrl: 'http://localhost:7870',
+};
+
+// Load profiles from localStorage
+try { state.profiles = JSON.parse(localStorage.getItem('rv_profiles') || '[]'); } catch(e) { state.profiles = []; }
+try { state.svdServerUrl = localStorage.getItem('rv_svd_url') || 'http://localhost:7870'; } catch(e) {}
+
+// ═══════════════════════════════════════════════════════════
+//  INDEXEDDB — PERSISTENT GALLERY
+// ═══════════════════════════════════════════════════════════
+const GALLERY_DB_NAME = 'RedVerseGallery';
+const GALLERY_DB_VER  = 1;
+const GALLERY_STORE   = 'items';
+let galleryDB = null;
+
+function openGalleryDB() {
+    return new Promise((resolve, reject) => {
+        const req = indexedDB.open(GALLERY_DB_NAME, GALLERY_DB_VER);
+        req.onupgradeneeded = e => {
+            const db = e.target.result;
+            if (!db.objectStoreNames.contains(GALLERY_STORE)) {
+                const store = db.createObjectStore(GALLERY_STORE, { keyPath: 'id' });
+                store.createIndex('timestamp', 'timestamp', { unique: false });
+                store.createIndex('type', 'type', { unique: false });
+            }
+        };
+        req.onsuccess = e => { galleryDB = e.target.result; resolve(galleryDB); };
+        req.onerror = e => { console.error('IndexedDB error:', e); reject(e); };
+    });
+}
+
+async function dbPutItem(item) {
+    return new Promise((resolve, reject) => {
+        const tx = galleryDB.transaction(GALLERY_STORE, 'readwrite');
+        tx.objectStore(GALLERY_STORE).put(item);
+        tx.oncomplete = () => resolve();
+        tx.onerror = e => reject(e);
+    });
+}
+
+async function dbDeleteItem(id) {
+    return new Promise((resolve, reject) => {
+        const tx = galleryDB.transaction(GALLERY_STORE, 'readwrite');
+        tx.objectStore(GALLERY_STORE).delete(id);
+        tx.oncomplete = () => resolve();
+        tx.onerror = e => reject(e);
+    });
+}
+
+async function dbClearAll() {
+    return new Promise((resolve, reject) => {
+        const tx = galleryDB.transaction(GALLERY_STORE, 'readwrite');
+        tx.objectStore(GALLERY_STORE).clear();
+        tx.oncomplete = () => resolve();
+        tx.onerror = e => reject(e);
+    });
+}
+
+async function dbLoadAll() {
+    return new Promise((resolve, reject) => {
+        const tx = galleryDB.transaction(GALLERY_STORE, 'readonly');
+        const store = tx.objectStore(GALLERY_STORE);
+        const idx = store.index('timestamp');
+        const req = idx.openCursor(null, 'prev'); // newest first
+        const results = [];
+        req.onsuccess = e => {
+            const cursor = e.target.result;
+            if (cursor) { results.push(cursor.value); cursor.continue(); }
+            else resolve(results);
+        };
+        req.onerror = e => reject(e);
+    });
+}
+
+// Boot gallery from IndexedDB
+async function initGallery() {
+    try {
+        await openGalleryDB();
+        state.gallery = await dbLoadAll();
+        updateGalleryCount();
+        renderGallery();
+    } catch(e) {
+        console.warn('Gallery DB init failed, using in-memory:', e);
+    }
+}
+
+// ═══════════════════════════════════════════════════════════
+//  DOM REFS
+// ═══════════════════════════════════════════════════════════
+const $ = id => document.getElementById(id);
+const el = {
+    backendUrl:     $('backendUrl'),
+    backendApiKey:  $('backendApiKey'),
+    connectBtn:     $('connectBtn'),
+    connectIcon:    $('connectIcon'),
+    connectLabel:   $('connectLabel'),
+    connDot:        $('connDot'),
+    connStatus:     $('connStatus'),
+    refreshModels:  $('refreshModelsBtn'),
+    modelSelect:    $('modelSelect'),
+    samplerSelect:  $('samplerSelect'),
+    schedulerSelect:$('schedulerSelect'),
+    vaeSelect:      $('vaeSelect'),
+    clipSkipRange:  $('clipSkipRange'),
+    clipSkipValue:  $('clipSkipValue'),
+    stepsRange:     $('stepsRange'),
+    stepsValue:     $('stepsValue'),
+    cfgRange:       $('cfgRange'),
+    cfgValue:       $('cfgValue'),
+    seedInput:      $('seedInput'),
+    randomSeedBtn:  $('randomSeedBtn'),
+    lockSeedBtn:    $('lockSeedBtn'),
+    aspectRatio:    $('aspectRatio'),
+    batchSizeRange: $('batchSizeRange'),
+    batchSizeValue: $('batchSizeValue'),
+    batchCountRange:$('batchCountRange'),
+    batchCountValue:$('batchCountValue'),
+    loraSelect:     $('loraSelect'),
+    loraWeight:     $('loraWeight'),
+    addLoraBtn:     $('addLoraBtn'),
+    loraActiveList: $('loraActiveList'),
+    promptInput:    $('promptInput'),
+    negPromptInput: $('negPromptInput'),
+    stylePreset:    $('stylePreset'),
+    styleStrengthRange: $('styleStrengthRange'),
+    styleStrengthValue: $('styleStrengthValue'),
+    generateBtn:    $('generateBtn'),
+    interruptBtn:   $('interruptBtn'),
+    genIcon:        $('genIcon'),
+    genLabel:       $('genLabel'),
+    progressOverlay:$('progressOverlay'),
+    progressLabel:  $('progressLabel'),
+    progressFill:   $('progressFill'),
+    progressStats:  $('progressStats'),
+    progressPreview:$('progressPreview'),
+    previewPlaceholder: $('previewPlaceholder'),
+    previewImg:     $('previewImg'),
+    imageMeta:      $('imageMeta'),
+    metaRow:        $('metaRow'),
+    imageActions:   $('imageActions'),
+    downloadBtn:    $('downloadBtn'),
+    sendToGalleryBtn: $('sendToGalleryBtn'),
+    useAsSeedBtn:   $('useAsSeedBtn'),
+    galleryGrid:    $('galleryGrid'),
+    galleryCount:   $('galleryCount'),
+    profileList:    $('profileList'),
+    saveProfileBtn: $('saveProfileBtn'),
+    lockSeedConsistency: $('lockSeedConsistency'),
+    lockCharTokens: $('lockCharTokens'),
+    statusDot:      $('statusDot'),
+    statusText:     $('statusText'),
+    gpuStatus:      $('gpuStatus'),
+    vramStatus:     $('vramStatus'),
+    // Hi-Res Fix
+    hiresEnable:    $('hiresEnable'),
+    hiresBody:      $('hiresBody'),
+    hiresUpscaler:  $('hiresUpscaler'),
+    hiresScale:     $('hiresScale'),
+    hiresScaleVal:  $('hiresScaleVal'),
+    hiresSteps:     $('hiresSteps'),
+    hiresStepsVal:  $('hiresStepsVal'),
+    hiresDenoise:   $('hiresDenoise'),
+    hiresDenoiseVal:$('hiresDenoiseVal'),
+    // Refiner
+    refinerEnable:  $('refinerEnable'),
+    refinerBody:    $('refinerBody'),
+    refinerModel:   $('refinerModel'),
+    refinerSwitchAt:$('refinerSwitchAt'),
+    refinerSwitchAtVal: $('refinerSwitchAtVal'),
+};
+
+// ═══════════════════════════════════════════════════════════
+//  API LAYER
+// ═══════════════════════════════════════════════════════════
+function getBase() { return el.backendUrl.value.replace(/\/$/, ''); }
+
+function getApiHeaders() {
+    const headers = { 'Content-Type': 'application/json' };
+    const key = el.backendApiKey.value.trim();
+    if (key) {
+        headers['Authorization'] = `Bearer ${key}`;
+    }
+    return headers;
+}
+
+async function apiGet(path) {
+    const r = await fetch(getBase() + path, {
+        headers: getApiHeaders()
+    });
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    return r.json();
+}
+
+async function apiPost(path, body) {
+    const r = await fetch(getBase() + path, {
+        method: 'POST',
+        headers: getApiHeaders(),
+        body: JSON.stringify(body)
+    });
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    return r.json();
+}
+
+// API key show/hide + persist
+$('toggleApiKey').addEventListener('click', () => {
+    const inp = el.backendApiKey;
+    inp.type = inp.type === 'password' ? 'text' : 'password';
+    $('toggleApiKey').querySelector('.material-icons').textContent = inp.type === 'password' ? 'visibility' : 'visibility_off';
+});
+// Load saved key + URL
+try {
+    const savedKey = localStorage.getItem('rv_backend_key');
+    if (savedKey) el.backendApiKey.value = savedKey;
+    const savedUrl = localStorage.getItem('rv_backend_url');
+    if (savedUrl) el.backendUrl.value = savedUrl;
+} catch(e) {}
+// Save on connect
+function saveBackendConfig() {
+    try {
+        localStorage.setItem('rv_backend_key', el.backendApiKey.value.trim());
+        localStorage.setItem('rv_backend_url', el.backendUrl.value.trim());
+    } catch(e) {}
+}
+
+// ═══════════════════════════════════════════════════════════
+//  CONNECTION
+// ═══════════════════════════════════════════════════════════
+function setConnStatus(status) {
+    // status: 'disconnected' | 'connecting' | 'connected' | 'error'
+    el.connDot.className = 'conn-dot ' + (status === 'connected' ? 'connected' : status === 'connecting' ? 'connecting' : status === 'error' ? 'error' : '');
+    const labels = {
+        disconnected: 'Disconnected',
+        connecting:   'Connecting...',
+        connected:    'Connected',
+        error:        'Connection Failed'
+    };
+    el.connStatus.textContent = labels[status] || status;
+    state.connected = status === 'connected';
+    el.statusDot.style.background = status === 'connected' ? 'var(--neon-green)' : status === 'error' ? 'var(--neon-pink)' : '#444';
+    el.statusText.textContent = status === 'connected' ? 'Backend Online' : 'Offline';
+}
+
+async function connect() {
+    setConnStatus('connecting');
+    el.connectIcon.className = 'material-icons spinning';
+    el.connectLabel.textContent = 'Connecting';
+    saveBackendConfig();
+    try {
+        await apiGet('/sdapi/v1/memory'); // ping
+        setConnStatus('connected');
+        el.connectIcon.className = 'material-icons';
+        el.connectIcon.textContent = 'check_circle';
+        el.connectLabel.textContent = 'Connected';
+        el.refreshModels.style.display = 'flex';
+        await fetchAll();
+        startMemoryPoll();
+    } catch(e) {
+        setConnStatus('error');
+        el.connectIcon.className = 'material-icons';
+        el.connectIcon.textContent = 'power_settings_new';
+        el.connectLabel.textContent = 'Retry';
+        const hint = e.message.includes('Failed to fetch')
+            ? 'CORS or offline — launch Forge with --api --cors-allow-origins=*'
+            : 'Failed — ' + e.message;
+        el.connStatus.textContent = hint;
+    }
+}
+
+async function fetchAll() {
+    await Promise.all([fetchModels(), fetchSamplers(), fetchSchedulers(), fetchVAE(), fetchLoRAs(), fetchUpscalers()]);
+}
+
+async function fetchModels() {
+    try {
+        const models = await apiGet('/sdapi/v1/sd-models');
+        state.models = models;
+        el.modelSelect.innerHTML = models.map(m =>
+            `<option value="${m.title}">${m.model_name}</option>`
+        ).join('');
+
+        // Populate refiner dropdown with same models
+        el.refinerModel.innerHTML = '<option value="">— None (disabled) —</option>' +
+            models.map(m => `<option value="${m.title}">${m.model_name}</option>`).join('');
+
+        // Get current options (model, VAE, clip skip, etc.)
+        try {
+            const opts = await apiGet('/sdapi/v1/options');
+            // Current model
+            if (opts.sd_model_checkpoint) {
+                const opt = [...el.modelSelect.options].find(o => o.value === opts.sd_model_checkpoint);
+                if (opt) opt.selected = true;
+            }
+            // Current VAE
+            if (opts.sd_vae) {
+                const vopt = [...el.vaeSelect.options].find(o => o.value === opts.sd_vae);
+                if (vopt) vopt.selected = true;
+            }
+            // Clip skip
+            if (opts.CLIP_stop_at_last_layers) {
+                el.clipSkipRange.value = opts.CLIP_stop_at_last_layers;
+                el.clipSkipValue.textContent = opts.CLIP_stop_at_last_layers;
+            }
+        } catch(e) {}
+    } catch(e) {
+        console.warn('Could not fetch models:', e);
+    }
+}
+
+async function fetchSamplers() {
+    try {
+        const samplers = await apiGet('/sdapi/v1/samplers');
+        state.samplers = samplers;
+        const curVal = el.samplerSelect.value;
+        el.samplerSelect.innerHTML = samplers.map(s =>
+            `<option value="${s.name}">${s.name}</option>`
+        ).join('');
+        const opt = [...el.samplerSelect.options].find(o => o.value === curVal);
+        if (opt) opt.selected = true;
+    } catch(e) {
+        console.warn('Could not fetch samplers:', e);
+    }
+}
+
+async function fetchLoRAs() {
+    try {
+        // Force A1111/Forge to rescan LoRA folder before fetching
+        try { await apiPost('/sdapi/v1/refresh-loras', {}); } catch(e) { /* older versions may not support */ }
+        const loras = await apiGet('/sdapi/v1/loras');
+        state.loras = loras;
+        if (loras.length === 0) {
+            el.loraSelect.innerHTML = '<option value="">— No LoRAs found (check models/Lora folder) —</option>';
+            return;
+        }
+        el.loraSelect.innerHTML = '<option value="">— Select LoRA —</option>' +
+            loras.map(l => `<option value="${l.name}" title="${l.path || ''}">${l.alias || l.name}</option>`).join('');
+        console.log(`Loaded ${loras.length} LoRA(s)`);
+    } catch(e) {
+        console.warn('Could not fetch LoRAs:', e);
+        el.loraSelect.innerHTML = '<option value="">— LoRAs unavailable —</option>';
+    }
+}
+
+async function fetchUpscalers() {
+    try {
+        const upscalers = await apiGet('/sdapi/v1/upscalers');
+        state.upscalers = upscalers;
+        if (upscalers.length > 0) {
+            const curVal = el.hiresUpscaler.value;
+            el.hiresUpscaler.innerHTML = upscalers.map(u =>
+                `<option value="${u.name}">${u.name}</option>`
+            ).join('');
+            // Try to reselect previous or default to anime upscaler
+            const preferred = [...el.hiresUpscaler.options].find(o =>
+                o.value === curVal || o.value.includes('Anime6B') || o.value.includes('R-ESRGAN')
+            );
+            if (preferred) preferred.selected = true;
+            console.log(`Loaded ${upscalers.length} upscaler(s)`);
+        }
+    } catch(e) {
+        console.warn('Could not fetch upscalers:', e);
+    }
+}
+
+async function fetchVAE() {
+    try {
+        const vaes = await apiGet('/sdapi/v1/sd-vae');
+        const curVal = el.vaeSelect.value;
+        el.vaeSelect.innerHTML = '<option value="Automatic">Automatic</option><option value="None">None</option>';
+        if (vaes && vaes.length > 0) {
+            el.vaeSelect.innerHTML += vaes.map(v =>
+                `<option value="${v.model_name}">${v.model_name}</option>`
+            ).join('');
+        }
+        // Reselect
+        const opt = [...el.vaeSelect.options].find(o => o.value === curVal);
+        if (opt) opt.selected = true;
+        console.log(`Loaded ${vaes?.length || 0} VAE(s)`);
+    } catch(e) {
+        console.warn('Could not fetch VAEs:', e);
+    }
+}
+
+async function fetchSchedulers() {
+    try {
+        const schedulers = await apiGet('/sdapi/v1/schedulers');
+        if (schedulers && schedulers.length > 0) {
+            const curVal = el.schedulerSelect.value;
+            el.schedulerSelect.innerHTML = schedulers.map(s =>
+                `<option value="${s.name}">${s.label || s.name}</option>`
+            ).join('');
+            const opt = [...el.schedulerSelect.options].find(o => o.value === curVal);
+            if (opt) opt.selected = true;
+            console.log(`Loaded ${schedulers.length} scheduler(s)`);
+        }
+    } catch(e) {
+        // Older A1111 versions don't have this endpoint — keep defaults
+        console.warn('Could not fetch schedulers (may not be supported):', e);
+    }
+}
+
+// ═══════════════════════════════════════════════════════════
+//  MEMORY POLL
+// ═══════════════════════════════════════════════════════════
+function startMemoryPoll() {
+    clearInterval(state.memoryInterval);
+    fetchMemory();
+    state.memoryInterval = setInterval(fetchMemory, 6000);
+}
+
+async function fetchMemory() {
+    if (!state.connected) return;
+    try {
+        const mem = await apiGet('/sdapi/v1/memory');
+        if (mem.cuda && mem.cuda.system) {
+            const used = (mem.cuda.system.used / 1024**3).toFixed(1);
+            const total = (mem.cuda.system.total / 1024**3).toFixed(1);
+            el.vramStatus.textContent = `VRAM: ${used}/${total} GB`;
+        }
+        if (mem.ram) {
+            const usedRam = (mem.ram.used / 1024**3).toFixed(1);
+            el.gpuStatus.textContent = `RAM: ${usedRam} GB`;
+        }
+    } catch(e) {}
+}
+
+// ═══════════════════════════════════════════════════════════
+//  LORA MANAGEMENT
+// ═══════════════════════════════════════════════════════════
+function addLoRA() {
+    const name = el.loraSelect.value;
+    if (!name) return;
+    const weight = parseFloat(el.loraWeight.value) || 0.8;
+    const existing = state.activeLoRAs.find(l => l.name === name);
+    if (existing) { existing.weight = weight; }
+    else { state.activeLoRAs.push({name, weight}); }
+    renderActiveLoRAs();
+}
+
+function removeLoRA(name) {
+    state.activeLoRAs = state.activeLoRAs.filter(l => l.name !== name);
+    renderActiveLoRAs();
+}
+
+function renderActiveLoRAs() {
+    if (state.activeLoRAs.length === 0) {
+        el.loraActiveList.innerHTML = '<span class="loading-placeholder">No LoRAs active</span>';
+        return;
+    }
+    el.loraActiveList.innerHTML = state.activeLoRAs.map(l =>
+        `<div class="lora-chip">
+            <i class="material-icons" style="font-size:12px;">layers</i>
+            ${l.name} <span style="opacity:0.7">(${l.weight})</span>
+            <button class="chip-remove" onclick="removeLoRA('${l.name}')">
+                <i class="material-icons">close</i>
+            </button>
+        </div>`
+    ).join('');
+}
+
+function buildLoRAString() {
+    return state.activeLoRAs.map(l => `<lora:${l.name}:${l.weight}>`).join(' ');
+}
+
+// ═══════════════════════════════════════════════════════════
+//  GENERATION
+// ═══════════════════════════════════════════════════════════
+function getParams() {
+    const res = el.aspectRatio.value.split('x');
+    let prompt = el.promptInput.value.trim();
+    const loraStr = buildLoRAString();
+    if (loraStr) prompt = prompt ? prompt + ', ' + loraStr : loraStr;
+
+    // Consistency: prepend character tokens
+    if (el.lockCharTokens.checked && state.activeProfile?.characterTokens) {
+        prompt = state.activeProfile.characterTokens + ', ' + prompt;
+    }
+
+    const seed = el.lockSeedConsistency.checked && state.lastSeed !== -1
+        ? state.lastSeed
+        : parseInt(el.seedInput.value) || -1;
+
+    const params = {
+        prompt,
+        negative_prompt: el.negPromptInput.value.trim(),
+        steps: parseInt(el.stepsRange.value),
+        cfg_scale: parseFloat(el.cfgRange.value),
+        seed,
+        width: parseInt(res[0]) || 512,
+        height: parseInt(res[1]) || 512,
+        batch_size: parseInt(el.batchSizeRange.value),
+        n_iter: parseInt(el.batchCountRange.value),
+        sampler_name: el.samplerSelect.value,
+        scheduler: el.schedulerSelect.value,
+        override_settings: {
+            sd_model_checkpoint: el.modelSelect.value,
+            sd_vae: el.vaeSelect.value,
+            CLIP_stop_at_last_layers: parseInt(el.clipSkipRange.value),
+        },
+        override_settings_restore_afterwards: true,
+        send_images: true,
+        save_images: false,
+    };
+
+    // Hi-Res Fix
+    if (el.hiresEnable.checked) {
+        params.enable_hr = true;
+        params.hr_upscaler = el.hiresUpscaler.value;
+        params.hr_scale = parseFloat(el.hiresScale.value);
+        params.hr_second_pass_steps = parseInt(el.hiresSteps.value);
+        params.denoising_strength = parseFloat(el.hiresDenoise.value);
+    }
+
+    // Refiner (SDXL)
+    if (el.refinerEnable.checked && el.refinerModel.value) {
+        params.refiner_checkpoint = el.refinerModel.value;
+        params.refiner_switch_at = parseFloat(el.refinerSwitchAt.value);
+    }
+
+    return params;
+}
+
+async function generate() {
+    if (state.generating) return;
+    if (!state.connected) {
+        el.connStatus.textContent = 'Connect first!';
+        return;
+    }
+
+    state.generating = true;
+    el.generateBtn.disabled = true;
+    el.genIcon.textContent = 'sync';
+    el.genIcon.className = 'material-icons spinning';
+    el.genLabel.textContent = 'Generating...';
+    el.interruptBtn.classList.add('visible');
+
+    showProgressOverlay(true);
+    startProgressPoll();
+
+    try {
+        const params = getParams();
+        const result = await apiPost('/sdapi/v1/txt2img', params);
+
+        stopProgressPoll();
+
+        if (result.images && result.images.length > 0) {
+            const imgSrc = 'data:image/png;base64,' + result.images[0];
+
+            // Parse info for seed etc
+            let info = {};
+            try { info = JSON.parse(result.info); } catch(e) {}
+            state.lastSeed = info.seed ?? -1;
+
+            state.lastMeta = {
+                seed: info.seed ?? -1,
+                steps: params.steps,
+                cfg: params.cfg_scale,
+                sampler: params.sampler_name,
+                scheduler: params.scheduler !== 'Automatic' ? params.scheduler : null,
+                vae: params.override_settings.sd_vae !== 'Automatic' ? params.override_settings.sd_vae : null,
+                clipSkip: params.override_settings.CLIP_stop_at_last_layers > 1 ? params.override_settings.CLIP_stop_at_last_layers : null,
+                resolution: `${params.width}×${params.height}`,
+                model: el.modelSelect.selectedOptions[0]?.text || 'Unknown',
+                hires: params.enable_hr ? `${params.hr_upscaler} ${params.hr_scale}x` : null,
+                refiner: params.refiner_checkpoint ? el.refinerModel.selectedOptions[0]?.text : null,
+            };
+
+            displayImage(imgSrc, state.lastMeta);
+
+            // Auto-add to gallery
+            addToGallery(imgSrc, state.lastMeta, 'image');
+
+            // Store actual seed used (for lock button) but DON'T overwrite seed input
+            // so next generation stays random (-1) unless user explicitly locks
+            if (state.lastSeed !== -1) {
+                el.lockSeedBtn.style.display = 'flex';
+                el.lockSeedBtn.title = `Last seed: ${state.lastSeed} — click to lock`;
+            }
+        }
+    } catch(e) {
+        console.error('Generation error:', e);
+        el.progressLabel.textContent = 'Error: ' + e.message;
+        el.progressLabel.style.color = 'var(--neon-pink)';
+        setTimeout(() => showProgressOverlay(false), 3000);
+    } finally {
+        state.generating = false;
+        el.generateBtn.disabled = false;
+        el.genIcon.className = 'material-icons';
+        el.genIcon.textContent = 'auto_awesome';
+        el.genLabel.textContent = 'Generate Art';
+        el.interruptBtn.classList.remove('visible');
+        stopProgressPoll();
+        showProgressOverlay(false);
+    }
+}
+
+async function interrupt() {
+    try { await apiPost('/sdapi/v1/interrupt', {}); } catch(e) {}
+}
+
+// ─── PROGRESS POLLING ────────────────────────────────────
+function startProgressPoll() {
+    stopProgressPoll();
+    state.progressInterval = setInterval(pollProgress, 800);
+}
+
+function stopProgressPoll() {
+    clearInterval(state.progressInterval);
+    state.progressInterval = null;
+}
+
+async function pollProgress() {
+    if (!state.connected) return;
+    try {
+        const prog = await apiGet('/sdapi/v1/progress');
+        const pct = Math.round((prog.progress || 0) * 100);
+        const step = prog.state?.sampling_step || 0;
+        const total = prog.state?.sampling_steps || 0;
+        const eta = prog.eta_relative > 0 ? prog.eta_relative.toFixed(1) + 's' : '—';
+
+        el.progressFill.style.width = pct + '%';
+        el.progressLabel.textContent = pct > 0 ? `Generating... ${pct}%` : 'Waiting for backend...';
+        el.progressStats.textContent = `Step ${step} / ${total} · ETA ${eta}`;
+
+        // Live preview if available
+        if (prog.current_image) {
+            el.progressPreview.src = 'data:image/png;base64,' + prog.current_image;
+            el.progressPreview.style.display = 'block';
+        }
+    } catch(e) {}
+}
+
+function showProgressOverlay(show) {
+    el.progressOverlay.classList.toggle('active', show);
+    if (!show) {
+        el.progressFill.style.width = '0%';
+        el.progressLabel.textContent = 'Initializing...';
+        el.progressLabel.style.color = 'var(--neon-cyan)';
+        el.progressPreview.style.display = 'none';
+    }
+}
+
+// ─── IMAGE DISPLAY ───────────────────────────────────────
+function displayImage(src, meta) {
+    el.previewPlaceholder.style.display = 'none';
+    el.previewImg.src = src;
+    el.previewImg.style.display = 'block';
+    el.imageMeta.style.display = '';  // let CSS hover handle it
+
+    const badges = [
+        `<span class="meta-badge">Seed <span>${meta.seed}</span></span>`,
+        `<span class="meta-badge">Steps <span>${meta.steps}</span></span>`,
+        `<span class="meta-badge">CFG <span>${meta.cfg}</span></span>`,
+        `<span class="meta-badge">Sampler <span>${meta.sampler}</span></span>`,
+        `<span class="meta-badge">Res <span>${meta.resolution}</span></span>`,
+    ];
+    if (meta.scheduler) badges.push(`<span class="meta-badge">Sched <span>${meta.scheduler}</span></span>`);
+    if (meta.vae) badges.push(`<span class="meta-badge">VAE <span>${meta.vae}</span></span>`);
+    if (meta.clipSkip) badges.push(`<span class="meta-badge">Clip <span>${meta.clipSkip}</span></span>`);
+    if (meta.hires) badges.push(`<span class="meta-badge">HiRes <span>${meta.hires}</span></span>`);
+    if (meta.refiner) badges.push(`<span class="meta-badge">Refiner <span>${meta.refiner}</span></span>`);
+    el.metaRow.innerHTML = badges.join('');
+}
+
+// ═══════════════════════════════════════════════════════════
+//  GALLERY — PERSISTENT + MANAGED
+// ═══════════════════════════════════════════════════════════
+function updateGalleryCount() {
+    el.galleryCount.textContent = state.gallery.length;
+    const info = $('galleryInfo');
+    if (info) info.textContent = `${state.gallery.length} item${state.gallery.length !== 1 ? 's' : ''}`;
+}
+
+async function addToGallery(src, meta, type = 'image') {
+    // type: 'image' | 'video-grok' | 'video-svd'
+    const item = {
+        id: Date.now() + '_' + Math.random().toString(36).slice(2, 8),
+        src,          // base64 data URI or remote URL
+        meta,
+        type,
+        timestamp: Date.now(),
+    };
+    state.gallery.unshift(item);
+    updateGalleryCount();
+    renderGallery();
+    // Persist
+    if (galleryDB) {
+        try { await dbPutItem(item); } catch(e) { console.warn('Gallery save error:', e); }
+    }
+}
+
+function renderGallery() {
+    if (state.gallery.length === 0) {
+        el.galleryGrid.innerHTML = '<div class="gallery-empty" style="grid-column:1/-1;">Gallery is empty — generate some art!</div>';
+        return;
+    }
+    el.galleryGrid.className = 'gallery' + (state.selectMode ? ' gallery-selecting' : '');
+    el.galleryGrid.innerHTML = state.gallery.map((item, i) => {
+        const selected = state.selectedItems.has(item.id);
+        const isVideo = item.type && item.type.startsWith('video');
+        const badge = item.type === 'video-grok' ? 'GROK' : item.type === 'video-svd' ? 'SVD' : '';
+        return `<div class="gallery-item ${selected ? 'selected' : ''}" data-id="${item.id}" data-idx="${i}"
+                    onclick="galleryItemClick(event, '${item.id}', ${i})" title="Seed: ${item.meta?.seed || '—'}">
+            <div class="select-check"><i class="material-icons">check</i></div>
+            ${badge ? `<span class="gallery-type-badge">${badge}</span>` : ''}
+            ${isVideo
+                ? `<video src="${item.src}" muted loop onmouseover="this.play()" onmouseout="this.pause();this.currentTime=0;"></video>`
+                : `<img src="${item.src}" alt="Generated ${i+1}">`
+            }
+            <div class="gallery-item-overlay">
+                ${item.meta?.seed ? `Seed ${item.meta.seed}` : ''}
+                ${item.meta?.model ? ` · ${item.meta.model}` : ''}
+            </div>
+        </div>`;
+    }).join('');
+}
+
+function galleryItemClick(event, id, idx) {
+    if (state.selectMode) {
+        event.stopPropagation();
+        if (state.selectedItems.has(id)) state.selectedItems.delete(id);
+        else state.selectedItems.add(id);
+        renderGallery();
+        return;
+    }
+    openLightbox(idx);
+}
+
+// ─── GALLERY TOOLBAR ACTIONS ────────────────────────────
+function toggleSelectMode() {
+    state.selectMode = !state.selectMode;
+    state.selectedItems.clear();
+    $('gallerySelectToggle').innerHTML = state.selectMode
+        ? '<i class="material-icons" style="font-size:14px;">check_box</i> Done'
+        : '<i class="material-icons" style="font-size:14px;">check_box_outline_blank</i> Select';
+    $('gallerySelectAll').style.display = state.selectMode ? 'flex' : 'none';
+    $('galleryRemoveSelected').style.display = state.selectMode ? 'flex' : 'none';
+    renderGallery();
+}
+
+function gallerySelectAll() {
+    if (state.selectedItems.size === state.gallery.length) {
+        state.selectedItems.clear();
+    } else {
+        state.gallery.forEach(item => state.selectedItems.add(item.id));
+    }
+    renderGallery();
+}
+
+async function galleryRemoveSelected() {
+    if (state.selectedItems.size === 0) return;
+    if (!confirm(`Remove ${state.selectedItems.size} selected item(s)?`)) return;
+    const toRemove = new Set(state.selectedItems);
+    state.gallery = state.gallery.filter(item => !toRemove.has(item.id));
+    if (galleryDB) {
+        for (const id of toRemove) {
+            try { await dbDeleteItem(id); } catch(e) {}
+        }
+    }
+    state.selectedItems.clear();
+    updateGalleryCount();
+    renderGallery();
+}
+
+async function galleryClearAll() {
+    if (state.gallery.length === 0) return;
+    if (!confirm(`Clear all ${state.gallery.length} gallery items? This cannot be undone.`)) return;
+    state.gallery = [];
+    state.selectedItems.clear();
+    if (galleryDB) {
+        try { await dbClearAll(); } catch(e) {}
+    }
+    updateGalleryCount();
+    renderGallery();
+}
+
+async function galleryDownloadAll() {
+    if (state.gallery.length === 0) return;
+    // Use JSZip if available, otherwise fallback to individual downloads
+    try {
+        // Dynamically load JSZip
+        if (typeof JSZip === 'undefined') {
+            const script = document.createElement('script');
+            script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js';
+            document.head.appendChild(script);
+            await new Promise((res, rej) => { script.onload = res; script.onerror = rej; });
+        }
+        const zip = new JSZip();
+        const statusEl = $('galleryInfo');
+        const origText = statusEl.textContent;
+
+        for (let i = 0; i < state.gallery.length; i++) {
+            const item = state.gallery[i];
+            statusEl.textContent = `Packing ${i+1}/${state.gallery.length}...`;
+            const src = item.src;
+
+            if (src.startsWith('data:')) {
+                const parts = src.split(',');
+                const mimeMatch = parts[0].match(/data:(.*?);/);
+                const mime = mimeMatch ? mimeMatch[1] : 'image/png';
+                const ext = mime.includes('mp4') ? 'mp4' : mime.includes('webp') ? 'webp' : mime.includes('gif') ? 'gif' : 'png';
+                const b64 = parts[1];
+                zip.file(`redverse_${i+1}_${item.meta?.seed || 'noseed'}.${ext}`, b64, { base64: true });
+            } else {
+                // Remote URL — try to fetch as blob
+                try {
+                    const resp = await fetch(src);
+                    const blob = await resp.blob();
+                    const ext = blob.type.includes('mp4') ? 'mp4' : 'png';
+                    zip.file(`redverse_${i+1}_${item.meta?.seed || 'noseed'}.${ext}`, blob);
+                } catch(e) {
+                    console.warn('Could not fetch remote item for ZIP:', e);
+                }
+            }
+        }
+
+        statusEl.textContent = 'Compressing ZIP...';
+        const content = await zip.generateAsync({ type: 'blob' }, metadata => {
+            statusEl.textContent = `ZIP ${Math.round(metadata.percent)}%...`;
+        });
+        const url = URL.createObjectURL(content);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `redverse_gallery_${Date.now()}.zip`;
+        a.click();
+        URL.revokeObjectURL(url);
+        statusEl.textContent = origText;
+
+    } catch(e) {
+        console.warn('ZIP download failed, falling back to individual downloads:', e);
+        // Fallback: download individually
+        state.gallery.forEach((item, i) => {
+            setTimeout(() => {
+                const a = document.createElement('a');
+                a.href = item.src;
+                const isVideo = item.type?.startsWith('video');
+                a.download = `redverse_${i+1}_${item.meta?.seed || Date.now()}.${isVideo ? 'mp4' : 'png'}`;
+                a.click();
+            }, i * 300);
+        });
+    }
+}
+
+function viewGalleryItem(i) {
+    const item = state.gallery[i];
+    if (!item) return;
+    switchTab('preview');
+    displayImage(item.src, item.meta);
+    state.lastMeta = item.meta;
+    state.lastSeed = item.meta?.seed ?? -1;
+}
+
+// ═══════════════════════════════════════════════════════════
+//  CONSISTENCY PROFILES
+// ═══════════════════════════════════════════════════════════
+function saveProfile() {
+    const name = prompt('Profile name:', `Profile ${state.profiles.length + 1}`);
+    if (!name) return;
+
+    const profile = {
+        id: Date.now(),
+        name,
+        model: el.modelSelect.value,
+        sampler: el.samplerSelect.value,
+        scheduler: el.schedulerSelect.value,
+        vae: el.vaeSelect.value,
+        clipSkip: parseInt(el.clipSkipRange.value),
+        steps: parseInt(el.stepsRange.value),
+        cfg: parseFloat(el.cfgRange.value),
+        seed: parseInt(el.seedInput.value) || -1,
+        resolution: el.aspectRatio.value,
+        characterTokens: el.promptInput.value.trim(),
+        negativeTokens: el.negPromptInput.value.trim(),
+        loRAs: JSON.parse(JSON.stringify(state.activeLoRAs)),
+        // Hi-Res Fix
+        hiresEnabled: el.hiresEnable.checked,
+        hiresUpscaler: el.hiresUpscaler.value,
+        hiresScale: parseFloat(el.hiresScale.value),
+        hiresSteps: parseInt(el.hiresSteps.value),
+        hiresDenoise: parseFloat(el.hiresDenoise.value),
+        // Refiner
+        refinerEnabled: el.refinerEnable.checked,
+        refinerModel: el.refinerModel.value,
+        refinerSwitchAt: parseFloat(el.refinerSwitchAt.value),
+    };
+
+    state.profiles.unshift(profile);
+    try { localStorage.setItem('rv_profiles', JSON.stringify(state.profiles)); } catch(e) {}
+    renderProfiles();
+}
+
+function loadProfile(id) {
+    const profile = state.profiles.find(p => p.id === id);
+    if (!profile) return;
+
+    state.activeProfile = profile;
+
+    // Set model
+    const mopt = [...el.modelSelect.options].find(o => o.value === profile.model);
+    if (mopt) mopt.selected = true;
+
+    // Set sampler
+    const sopt = [...el.samplerSelect.options].find(o => o.value === profile.sampler);
+    if (sopt) sopt.selected = true;
+
+    // Set scheduler
+    if (profile.scheduler) {
+        const schopt = [...el.schedulerSelect.options].find(o => o.value === profile.scheduler);
+        if (schopt) schopt.selected = true;
+    }
+
+    // Set VAE
+    if (profile.vae) {
+        const vopt = [...el.vaeSelect.options].find(o => o.value === profile.vae);
+        if (vopt) vopt.selected = true;
+    }
+
+    // Set clip skip
+    if (profile.clipSkip != null) {
+        el.clipSkipRange.value = profile.clipSkip;
+        el.clipSkipValue.textContent = profile.clipSkip;
+    }
+
+    el.stepsRange.value = profile.steps;
+    el.stepsValue.textContent = profile.steps;
+    el.cfgRange.value = profile.cfg;
+    el.cfgValue.textContent = parseFloat(profile.cfg).toFixed(1);
+    el.seedInput.value = profile.seed;
+    el.aspectRatio.value = profile.resolution;
+    el.promptInput.value = profile.characterTokens;
+    el.negPromptInput.value = profile.negativeTokens;
+    state.activeLoRAs = JSON.parse(JSON.stringify(profile.loRAs || []));
+    renderActiveLoRAs();
+
+    // Hi-Res Fix
+    el.hiresEnable.checked = profile.hiresEnabled || false;
+    el.hiresBody.classList.toggle('open', el.hiresEnable.checked);
+    if (profile.hiresUpscaler) {
+        const hopt = [...el.hiresUpscaler.options].find(o => o.value === profile.hiresUpscaler);
+        if (hopt) hopt.selected = true;
+    }
+    if (profile.hiresScale != null) { el.hiresScale.value = profile.hiresScale; el.hiresScaleVal.textContent = profile.hiresScale.toFixed(2) + 'x'; }
+    if (profile.hiresSteps != null) { el.hiresSteps.value = profile.hiresSteps; el.hiresStepsVal.textContent = profile.hiresSteps; }
+    if (profile.hiresDenoise != null) { el.hiresDenoise.value = profile.hiresDenoise; el.hiresDenoiseVal.textContent = profile.hiresDenoise.toFixed(2); }
+
+    // Refiner
+    el.refinerEnable.checked = profile.refinerEnabled || false;
+    el.refinerBody.classList.toggle('open', el.refinerEnable.checked);
+    if (profile.refinerModel) {
+        const ropt = [...el.refinerModel.options].find(o => o.value === profile.refinerModel);
+        if (ropt) ropt.selected = true;
+    }
+    if (profile.refinerSwitchAt != null) { el.refinerSwitchAt.value = profile.refinerSwitchAt; el.refinerSwitchAtVal.textContent = profile.refinerSwitchAt.toFixed(2); }
+
+    renderProfiles();
+}
+
+function deleteProfile(id) {
+    if (!confirm('Delete this profile?')) return;
+    state.profiles = state.profiles.filter(p => p.id !== id);
+    if (state.activeProfile?.id === id) state.activeProfile = null;
+    try { localStorage.setItem('rv_profiles', JSON.stringify(state.profiles)); } catch(e) {}
+    renderProfiles();
+}
+
+function renderProfiles() {
+    if (state.profiles.length === 0) {
+        el.profileList.innerHTML = '<div class="no-profiles">No profiles saved. Click 💾 to save current settings.</div>';
+        return;
+    }
+    el.profileList.innerHTML = state.profiles.map(p =>
+        `<div class="profile-card ${state.activeProfile?.id === p.id ? 'active' : ''}" onclick="loadProfile(${p.id})">
+            <div>
+                <div class="profile-card-name">${p.name}</div>
+                <div class="profile-card-meta">${p.resolution} · ${p.steps} steps · CFG ${p.cfg}${p.clipSkip > 1 ? ' · Clip ' + p.clipSkip : ''}${p.vae && p.vae !== 'Automatic' ? ' · VAE' : ''} · ${p.loRAs?.length || 0} LoRA(s)${p.hiresEnabled ? ' · HiRes' : ''}${p.refinerEnabled ? ' · Refiner' : ''}</div>
+            </div>
+            <div class="profile-card-actions">
+                <button class="icon-btn" onclick="event.stopPropagation(); deleteProfile(${p.id})" title="Delete profile">
+                    <i class="material-icons" style="color:var(--neon-pink);">delete</i>
+                </button>
+            </div>
+        </div>`
+    ).join('');
+}
+
+// ═══════════════════════════════════════════════════════════
+//  TABS
+// ═══════════════════════════════════════════════════════════
+function switchTab(name) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === name));
+    $('tabPreview').style.display    = name === 'preview'    ? 'flex'  : 'none';
+    $('tabGallery').style.display    = name === 'gallery'    ? 'block' : 'none';
+    $('tabSvd').style.display        = name === 'svd'        ? 'flex'  : 'none';
+    $('tabXai').style.display        = name === 'xai'        ? 'flex'  : 'none';
+    $('tabStability').style.display  = name === 'stability'  ? 'flex'  : 'none';
+    $('tabFal').style.display        = name === 'fal'        ? 'flex'  : 'none';
+    $('tabOpenrouter').style.display = name === 'openrouter' ? 'flex'  : 'none';
+    if (name === 'gallery') renderGallery();
+}
+
+// ═══════════════════════════════════════════════════════════
+//  STYLE PRESETS
+// ═══════════════════════════════════════════════════════════
+const STYLE_PRESETS = {
+    'Standard RedVerse':    '(Anime, Semi-Realistic, Hyper-Detailed, 8k, Cel-Shaded:1.4), (Masterpiece:1.5), Crimson and Sable in RedVerse aesthetic',
+    'Cyberpunk Cathedral':  '(Anime, Semi-Realistic, Hyper-Detailed, 8k, Cel-Shaded:1.4), (Masterpiece:1.5), performing in neon gothic cathedral with glitch effects and crimson lightning',
+    'Suburban Daydream':    '(Anime, Semi-Realistic, Hyper-Detailed, 8k, Cel-Shaded:1.4), (Masterpiece:1.5), suburban cul-de-sac at golden hour, quiet tension, RedVerse aesthetic',
+    'High-Intensity Shred': '(Anime, Semi-Realistic, Hyper-Detailed, 8k, Cel-Shaded:1.4), (Masterpiece:1.5), shredding guitar on stage, high intensity, motion blur, spark trails',
+    'Walk Away Explosion':  '(Anime, Semi-Realistic, Hyper-Detailed, 8k, Cel-Shaded:1.4), (Masterpiece:1.5), walking away from massive explosion, cool unbothered expressions, dust and fire',
+    'Intimate Embrace':     '(Anime, Semi-Realistic, Hyper-Detailed, 8k, Cel-Shaded:1.4), (Masterpiece:1.5), intimate embrace, cinematic lighting, emotional depth, crimson and shadow',
+    'Character Portrait':   '(Anime, Semi-Realistic, Hyper-Detailed, 8k, Cel-Shaded:1.4), (Masterpiece:1.5), detailed character portrait, emotional intensity, piercing gaze, RedVerse aesthetic',
+};
+
+// ═══════════════════════════════════════════════════════════
+//  IMAGE ACTIONS
+// ═══════════════════════════════════════════════════════════
+el.downloadBtn.addEventListener('click', () => {
+    if (!el.previewImg.src || el.previewImg.style.display === 'none') return;
+    const a = document.createElement('a');
+    a.href = el.previewImg.src;
+    a.download = `redverse_${Date.now()}.png`;
+    a.click();
+});
+
+el.sendToGalleryBtn.addEventListener('click', () => {
+    if (!el.previewImg.src || el.previewImg.style.display === 'none') return;
+    // Switch to gallery tab to view
+    switchTab('gallery');
+});
+
+el.useAsSeedBtn.addEventListener('click', () => {
+    if (state.lastSeed !== -1) {
+        el.seedInput.value = state.lastSeed;
+        el.lockSeedConsistency.checked = true;
+    }
+});
+
+el.lockSeedBtn.addEventListener('click', () => {
+    if (state.lastSeed !== -1) el.seedInput.value = state.lastSeed;
+});
+
+// ═══════════════════════════════════════════════════════════
+//  EVENT LISTENERS
+// ═══════════════════════════════════════════════════════════
+
+// Connect
+el.connectBtn.addEventListener('click', connect);
+el.backendUrl.addEventListener('keydown', e => { if (e.key === 'Enter') connect(); });
+
+// Refresh
+el.refreshModels.addEventListener('click', fetchAll);
+$('refreshLoraBtn').addEventListener('click', fetchLoRAs);
+
+// Sliders
+el.stepsRange.addEventListener('input', e => el.stepsValue.textContent = e.target.value);
+el.cfgRange.addEventListener('input', e => el.cfgValue.textContent = parseFloat(e.target.value).toFixed(1));
+el.batchSizeRange.addEventListener('input', e => el.batchSizeValue.textContent = e.target.value);
+el.batchCountRange.addEventListener('input', e => el.batchCountValue.textContent = e.target.value);
+el.styleStrengthRange.addEventListener('input', e => el.styleStrengthValue.textContent = e.target.value + '%');
+el.clipSkipRange.addEventListener('input', e => el.clipSkipValue.textContent = e.target.value);
+
+// Hi-Res Fix toggle + sliders
+el.hiresEnable.addEventListener('change', () => {
+    el.hiresBody.classList.toggle('open', el.hiresEnable.checked);
+});
+el.hiresScale.addEventListener('input', e => el.hiresScaleVal.textContent = parseFloat(e.target.value).toFixed(2) + 'x');
+el.hiresSteps.addEventListener('input', e => el.hiresStepsVal.textContent = e.target.value);
+el.hiresDenoise.addEventListener('input', e => el.hiresDenoiseVal.textContent = parseFloat(e.target.value).toFixed(2));
+
+// Refiner toggle + slider
+el.refinerEnable.addEventListener('change', () => {
+    el.refinerBody.classList.toggle('open', el.refinerEnable.checked);
+});
+el.refinerSwitchAt.addEventListener('input', e => el.refinerSwitchAtVal.textContent = parseFloat(e.target.value).toFixed(2));
+
+// Seed
+el.randomSeedBtn.addEventListener('click', () => { el.seedInput.value = Math.floor(Math.random() * 4294967295); });
+
+// LoRA
+el.addLoraBtn.addEventListener('click', addLoRA);
+
+// Style preset
+el.stylePreset.addEventListener('change', e => {
+    const v = e.target.value;
+    if (STYLE_PRESETS[v]) {
+        const current = el.promptInput.value.trim();
+        // Prepend style preset, keeping existing prompt content
+        if (current) {
+            el.promptInput.value = STYLE_PRESETS[v] + ', ' + current;
+        } else {
+            el.promptInput.value = STYLE_PRESETS[v];
+        }
+    }
+});
+
+// Preset tags
+document.querySelectorAll('.preset-tag').forEach(tag => {
+    tag.addEventListener('click', () => {
+        const cur = el.promptInput.value;
+        el.promptInput.value = cur ? cur + ', ' + tag.textContent : tag.textContent;
+    });
+});
+
+// Tabs
+document.querySelectorAll('.tab').forEach(tab => {
+    tab.addEventListener('click', () => switchTab(tab.dataset.tab));
+});
+
+// Generate
+el.generateBtn.addEventListener('click', generate);
+el.interruptBtn.addEventListener('click', interrupt);
+
+// Save profile
+el.saveProfileBtn.addEventListener('click', saveProfile);
+
+// ═══════════════════════════════════════════════════════════
+//  NSFW TAG INJECTION
+// ═══════════════════════════════════════════════════════════
+const NSFW_POSITIVE_TAGS = [
+    'nsfw', 'explicit', 'nude', 'naked', 'bare', 'uncensored',
+    'adult content', 'hentai', '(extremely detailed:1.2)'
+];
+const NSFW_NEGATIVE_REMOVE = [
+    'nsfw', 'nude', 'naked', 'explicit', 'sexual', 'adult'
+];
+// SFW negative tags to ADD when in SFW mode
+const SFW_NEGATIVE_EXTRA = 'nsfw, nude, naked, explicit, sexual, adult content, genitalia';
+
+function setMode(isNsfw) {
+    state.nsfwMode = isNsfw;
+    $('sfwMode').classList.toggle('active', !isNsfw);
+    $('nsfwMode').classList.toggle('active', isNsfw);
+
+    const prompt = el.promptInput.value;
+    const negPrompt = el.negPromptInput.value;
+
+    if (isNsfw) {
+        // Strip SFW safety tags from negative, inject NSFW positive tags
+        let newNeg = negPrompt.split(',').map(t => t.trim())
+            .filter(t => !NSFW_NEGATIVE_REMOVE.some(bad => t.toLowerCase().includes(bad)))
+            .join(', ');
+        el.negPromptInput.value = newNeg;
+
+        // Append NSFW tags to positive if not already there
+        const nsfwStr = NSFW_POSITIVE_TAGS.join(', ');
+        const alreadyHas = NSFW_POSITIVE_TAGS.some(t => prompt.toLowerCase().includes(t));
+        if (!alreadyHas) {
+            el.promptInput.value = prompt ? nsfwStr + ', ' + prompt : nsfwStr;
+        }
+    } else {
+        // Remove NSFW positive tags
+        let cleaned = prompt.split(',').map(t => t.trim())
+            .filter(t => !NSFW_POSITIVE_TAGS.some(bad => t.toLowerCase().includes(bad.toLowerCase())))
+            .join(', ');
+        el.promptInput.value = cleaned;
+
+        // Add SFW safety to negative if not present
+        if (!negPrompt.toLowerCase().includes('nsfw')) {
+            el.negPromptInput.value = negPrompt
+                ? negPrompt + ', ' + SFW_NEGATIVE_EXTRA
+                : SFW_NEGATIVE_EXTRA;
+        }
+    }
+}
+
+$('sfwMode').addEventListener('click',  () => setMode(false));
+$('nsfwMode').addEventListener('click', () => setMode(true));
+
+// ═══════════════════════════════════════════════════════════
+//  LIGHTBOX
+// ═══════════════════════════════════════════════════════════
+const lb = {
+    box:     $('lightbox'),
+    img:     $('lightboxImg'),
+    vid:     $('lightboxVid'),
+    wrap:    $('lightboxImgWrap'),
+    prev:    $('lbPrev'),
+    next:    $('lbNext'),
+    meta:    $('lbMeta'),
+    counter: $('lbCounter'),
+};
+
+function openLightbox(indexOrMode) {
+    // indexOrMode: 'preview' for current preview, or gallery index (number)
+    let isVideo = false;
+    if (indexOrMode === 'preview') {
+        if (!el.previewImg.src || el.previewImg.style.display === 'none') return;
+        state.lightboxIndex = -1;
+        lb.img.src = el.previewImg.src;
+        renderLbMeta(state.lastMeta);
+        lb.counter.textContent = 'Preview';
+    } else {
+        const i = parseInt(indexOrMode);
+        if (isNaN(i) || i < 0 || i >= state.gallery.length) return;
+        state.lightboxIndex = i;
+        const item = state.gallery[i];
+        isVideo = item.type && item.type.startsWith('video');
+        if (isVideo) {
+            lb.vid.src = item.src;
+            lb.vid.style.display = 'block';
+            lb.img.style.display = 'none';
+            lb.img.src = '';
+            try { lb.vid.play(); } catch(e) {}
+        } else {
+            lb.img.src = item.src;
+            lb.img.style.display = 'block';
+            lb.vid.style.display = 'none';
+            lb.vid.src = '';
+        }
+        renderLbMeta(item.meta);
+        lb.counter.textContent = `${i + 1} / ${state.gallery.length}`;
+    }
+    if (!isVideo) {
+        lb.img.style.display = 'block';
+        lb.vid.style.display = 'none';
+        lb.vid.src = '';
+    }
+    lb.prev.classList.toggle('hidden', state.lightboxIndex <= 0);
+    lb.next.classList.toggle('hidden', state.lightboxIndex < 0 || state.lightboxIndex >= state.gallery.length - 1);
+    lb.box.classList.add('open');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeLightbox() {
+    lb.box.classList.remove('open');
+    lb.img.src = '';
+    lb.img.style.display = 'block';
+    lb.vid.pause();
+    lb.vid.src = '';
+    lb.vid.style.display = 'none';
+    lb.wrap.classList.remove('zoomed');
+    lb.img.classList.remove('zoomed');
+    document.body.style.overflow = '';
+}
+
+function lbNavigate(dir) {
+    if (state.lightboxIndex < 0) return; // in preview mode, nothing to nav
+    const newIdx = state.lightboxIndex + dir;
+    if (newIdx < 0 || newIdx >= state.gallery.length) return;
+    openLightbox(newIdx);
+}
+
+function renderLbMeta(meta) {
+    if (!meta) { lb.meta.innerHTML = ''; return; }
+    const badges = [
+        `<span class="lightbox-badge">Seed <span>${meta.seed ?? '—'}</span></span>`,
+        `<span class="lightbox-badge">Steps <span>${meta.steps ?? '—'}</span></span>`,
+        `<span class="lightbox-badge">CFG <span>${meta.cfg ?? '—'}</span></span>`,
+        `<span class="lightbox-badge">Sampler <span>${meta.sampler ?? '—'}</span></span>`,
+        `<span class="lightbox-badge">Res <span>${meta.resolution ?? '—'}</span></span>`,
+    ];
+    if (meta.scheduler) badges.push(`<span class="lightbox-badge">Sched <span>${meta.scheduler}</span></span>`);
+    if (meta.vae) badges.push(`<span class="lightbox-badge">VAE <span>${meta.vae}</span></span>`);
+    if (meta.clipSkip) badges.push(`<span class="lightbox-badge">Clip <span>${meta.clipSkip}</span></span>`);
+    if (meta.hires) badges.push(`<span class="lightbox-badge">HiRes <span>${meta.hires}</span></span>`);
+    if (meta.refiner) badges.push(`<span class="lightbox-badge">Refiner <span>${meta.refiner}</span></span>`);
+    if (meta.duration) badges.push(`<span class="lightbox-badge">Dur <span>${meta.duration}</span></span>`);
+    if (meta.fps) badges.push(`<span class="lightbox-badge">FPS <span>${meta.fps}</span></span>`);
+    lb.meta.innerHTML = badges.join('');
+}
+
+function lbSave() {
+    const idx = state.lightboxIndex;
+    const item = idx >= 0 ? state.gallery[idx] : null;
+    const isVideo = item?.type?.startsWith('video');
+    const activeSrc = isVideo ? lb.vid.src : lb.img.src;
+    if (!activeSrc) return;
+    const a = document.createElement('a');
+    a.href = activeSrc;
+    a.download = `redverse_${Date.now()}.${isVideo ? 'mp4' : 'png'}`;
+    // For remote URLs (Grok), fetch as blob first
+    if (activeSrc.startsWith('http') && !activeSrc.startsWith('data:')) {
+        fetch(activeSrc).then(r => r.blob()).then(blob => {
+            const url = URL.createObjectURL(blob);
+            a.href = url;
+            a.click();
+            URL.revokeObjectURL(url);
+        }).catch(() => { window.open(activeSrc, '_blank'); });
+    } else {
+        a.click();
+    }
+}
+
+function lbRegen() {
+    // Lock the seed from current lightbox image and regenerate
+    const idx = state.lightboxIndex;
+    const meta = idx >= 0 ? state.gallery[idx]?.meta : state.lastMeta;
+    if (meta?.seed && meta.seed !== -1) {
+        el.seedInput.value = meta.seed;
+        el.lockSeedConsistency.checked = true;
+    }
+    closeLightbox();
+    switchTab('preview');
+    generate();
+}
+
+// Lightbox zoom toggle (images only)
+lb.wrap.addEventListener('click', e => {
+    if (e.target === lb.prev || lb.prev.contains(e.target)) return;
+    if (e.target === lb.next || lb.next.contains(e.target)) return;
+    // Don't zoom if viewing video
+    if (lb.vid.style.display !== 'none') return;
+    lb.wrap.classList.toggle('zoomed');
+    lb.img.classList.toggle('zoomed');
+});
+
+lb.prev.addEventListener('click', e => { e.stopPropagation(); lbNavigate(-1); });
+lb.next.addEventListener('click', e => { e.stopPropagation(); lbNavigate(1); });
+$('lbClose').addEventListener('click', closeLightbox);
+$('lbDownload').addEventListener('click', lbSave);
+$('lbReload').addEventListener('click', lbRegen);
+$('lbLockSeed').addEventListener('click', () => {
+    const idx = state.lightboxIndex;
+    const meta = idx >= 0 ? state.gallery[idx]?.meta : state.lastMeta;
+    if (meta?.seed && meta.seed !== -1) {
+        el.seedInput.value = meta.seed;
+        el.lockSeedConsistency.checked = true;
+    }
+});
+
+// ─── KEYBOARD HANDLER ───────────────────────────────────
+document.addEventListener('keydown', e => {
+    const lbOpen = lb.box.classList.contains('open');
+
+    if (lbOpen) {
+        if (e.key === 'Escape')      { e.preventDefault(); closeLightbox(); }
+        if (e.key === 'ArrowLeft')   { e.preventDefault(); lbNavigate(-1); }
+        if (e.key === 'ArrowRight')  { e.preventDefault(); lbNavigate(1); }
+        if (e.key === 'F2')          { e.preventDefault(); lbSave(); }
+        if (e.key === 'F5')          { e.preventDefault(); lbRegen(); }
+    } else {
+        if (e.key === 'F5') { e.preventDefault(); generate(); }
+        if (e.key === 'F2') {
+            e.preventDefault();
+            if (el.previewImg.src && el.previewImg.style.display !== 'none') {
+                const a = document.createElement('a');
+                a.href = el.previewImg.src;
+                a.download = `redverse_${Date.now()}.png`;
+                a.click();
+            }
+        }
+    }
+});
+
+// ═══════════════════════════════════════════════════════════
+//  SVD CONTROLS — ISOLATED SERVER + AUTODETECT
+// ═══════════════════════════════════════════════════════════
+function svdUsePreview() {
+    if (!el.previewImg.src || el.previewImg.style.display === 'none') return;
+    $('svdInputPreview').src = el.previewImg.src;
+    $('svdInputPreview').style.display = 'block';
+    $('svdDropZone').querySelector('p').style.display = 'none';
+    switchTab('svd');
+}
+
+$('svdFileInput').addEventListener('change', e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+        $('svdInputPreview').src = ev.target.result;
+        $('svdInputPreview').style.display = 'block';
+    };
+    reader.readAsDataURL(file);
+});
+
+const svdDropZone = $('svdDropZone');
+svdDropZone.addEventListener('dragover', e => { e.preventDefault(); svdDropZone.classList.add('dragover'); });
+svdDropZone.addEventListener('dragleave', () => svdDropZone.classList.remove('dragover'));
+svdDropZone.addEventListener('drop', e => {
+    e.preventDefault(); svdDropZone.classList.remove('dragover');
+    const file = e.dataTransfer.files[0];
+    if (!file || !file.type.startsWith('image/')) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+        $('svdInputPreview').src = ev.target.result;
+        $('svdInputPreview').style.display = 'block';
+    };
+    reader.readAsDataURL(file);
+});
+
+// SVD Sliders
+[
+    ['svdMotionBucket', 'svdMotionBucketVal', v => v],
+    ['svdFps',          'svdFpsVal',          v => v],
+    ['svdFrames',       'svdFramesVal',        v => v],
+    ['svdNoiseAug',     'svdNoiseAugVal',      v => parseFloat(v).toFixed(2)],
+    ['svdDecodeChunk',  'svdDecodeChunkVal',   v => v],
+    ['svdSteps',        'svdStepsVal',         v => v],
+    ['svdCfg',          'svdCfgVal',           v => parseFloat(v).toFixed(1)],
+    ['svdMinCfg',       'svdMinCfgVal',        v => parseFloat(v).toFixed(1)],
+].forEach(([rangeId, valId, fmt]) => {
+    $(rangeId).addEventListener('input', e => $(valId).textContent = fmt(e.target.value));
+});
+
+// ─── SVD SERVER LAYER ───────────────────────────────────
+function getSvdBase() { return ($('svdServerUrl')?.value || state.svdServerUrl).replace(/\/$/, ''); }
+
+async function svdApiGet(path) {
+    const r = await fetch(getSvdBase() + path, { headers: { 'Content-Type': 'application/json' } });
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    return r.json();
+}
+
+async function svdApiPost(path, body) {
+    const r = await fetch(getSvdBase() + path, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+    });
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    return r.json();
+}
+
+function setSvdStatus(msg, cls = '') {
+    const el = $('svdStatus');
+    el.textContent = msg;
+    el.className = 'svd-status' + (cls ? ' ' + cls : '');
+}
+
+function setSvdConnStatus(status) {
+    const dot = $('svdConnDot');
+    const label = $('svdConnStatus');
+    dot.className = 'conn-dot ' + (status === 'connected' ? 'connected' : status === 'connecting' ? 'connecting' : status === 'error' ? 'error' : '');
+    const labels = { disconnected: 'Not connected', connecting: 'Connecting...', connected: 'SVD Server Online', error: 'Connection Failed' };
+    label.textContent = labels[status] || status;
+    state.svdConnected = status === 'connected';
+}
+
+async function svdConnect() {
+    setSvdConnStatus('connecting');
+    $('svdConnIcon').className = 'material-icons spinning';
+    try {
+        const resp = await svdApiGet('/health');
+        setSvdConnStatus('connected');
+        $('svdConnIcon').className = 'material-icons';
+        $('svdConnIcon').textContent = 'check_circle';
+
+        // Check model status
+        if (resp.model_loaded) {
+            setSvdStatus(`✓ SVD Ready — ${resp.model_name || 'anime model loaded'}`, 'svd-ok');
+        } else {
+            setSvdStatus('⚠ SVD server running but no model loaded. Click Auto-Setup to pull model.', '');
+        }
+        // Save URL
+        try { localStorage.setItem('rv_svd_url', getSvdBase()); } catch(e) {}
+    } catch(e) {
+        setSvdConnStatus('error');
+        $('svdConnIcon').className = 'material-icons';
+        $('svdConnIcon').textContent = 'power_settings_new';
+
+        // Try falling back to main backend SVD extension
+        try {
+            const extResp = await apiGet('/svd/v1/health');
+            setSvdConnStatus('connected');
+            setSvdStatus('✓ Connected via main backend SVD extension', 'svd-ok');
+            state.svdServerUrl = getBase(); // use main backend
+            $('svdServerUrl').value = getBase();
+        } catch(e2) {
+            setSvdStatus('✗ SVD server not found. Run Auto-Setup to create isolated SVD server.', 'svd-err');
+        }
+    }
+}
+
+async function svdAutoSetup() {
+    setSvdStatus('🔧 Auto-Setup: Detecting SVD environment...', 'svd-busy');
+
+    // Step 1: Try connecting to isolated SVD server
+    try {
+        const health = await svdApiGet('/health');
+        if (health.model_loaded) {
+            setSvdStatus('✓ SVD server already running with model loaded!', 'svd-ok');
+            setSvdConnStatus('connected');
+            return;
+        }
+    } catch(e) { /* Server not running, continue */ }
+
+    // Step 2: Try main backend SVD extension
+    if (state.connected) {
+        try {
+            const extHealth = await apiGet('/svd/v1/health');
+            if (extHealth) {
+                setSvdStatus('✓ Found SVD extension on main backend!', 'svd-ok');
+                state.svdServerUrl = getBase();
+                $('svdServerUrl').value = getBase();
+                setSvdConnStatus('connected');
+                return;
+            }
+        } catch(e) { /* No extension, continue */ }
+
+        // Step 3: Check if extension folder exists via backend
+        try {
+            const extList = await apiGet('/sdapi/v1/extensions');
+            const svdExt = extList?.find(ext =>
+                ext.name?.toLowerCase().includes('svd') ||
+                ext.name?.toLowerCase().includes('stable-video') ||
+                ext.remote?.toLowerCase().includes('svd')
+            );
+            if (svdExt) {
+                setSvdStatus(`✓ Found SVD extension: ${svdExt.name} — but it needs activation. Restart your WebUI with the extension enabled.`, '');
+                return;
+            }
+        } catch(e) {}
+    }
+
+    // Step 4: Provide setup script for isolated SVD server
+    setSvdStatus(
+        '⚙ No SVD detected. Launch the isolated SVD server:\n\n' +
+        '1) Copy the setup script from the Auto-Setup guide below\n' +
+        '2) Run it in a terminal — it creates an isolated venv + downloads an anime SVD model\n' +
+        '3) Server starts on port 7870 (no ML crossover with Stable Diffusion)\n\n' +
+        'The script auto-pulls: stabilityai/stable-video-diffusion-img2vid-xt\n' +
+        'with anime-optimized defaults.', ''
+    );
+
+    // Show the setup script in a prompt/dialog
+    const setupScript = generateSvdSetupScript();
+    const scriptArea = document.createElement('textarea');
+    scriptArea.value = setupScript;
+    scriptArea.style.cssText = 'width:100%;height:200px;background:var(--bg-input);color:var(--text-main);border:1px solid var(--border-color);border-radius:4px;padding:8px;font-family:monospace;font-size:11px;margin-top:8px;resize:vertical;';
+    scriptArea.readOnly = true;
+    const statusEl = $('svdStatus');
+    // Remove old script area if present
+    const old = statusEl.parentElement.querySelector('.svd-setup-script');
+    if (old) old.remove();
+    scriptArea.className = 'svd-setup-script';
+    statusEl.after(scriptArea);
+}
+
+function generateSvdSetupScript() {
+    return `#!/bin/bash
+# ═══════════════════════════════════════════════════════
+#  RedVerse SVD Isolated Server Setup
+#  Anime-optimized Stable Video Diffusion
+#  Runs on port 7870 in its own venv
+# ═══════════════════════════════════════════════════════
+set -e
+
+SVD_DIR="$HOME/redverse-svd-server"
+SVD_PORT=7870
+MODEL_REPO="stabilityai/stable-video-diffusion-img2vid-xt"
+
+echo "═══ RedVerse SVD Server Setup ═══"
+echo "Directory: $SVD_DIR"
+echo "Port: $SVD_PORT"
+echo ""
+
+# Create directory
+mkdir -p "$SVD_DIR"
+cd "$SVD_DIR"
+
+# Create isolated venv
+if [ ! -d "venv" ]; then
+    echo "Creating isolated Python venv..."
+    python3 -m venv venv
+fi
+source venv/bin/activate
+
+# Install dependencies
+echo "Installing dependencies..."
+pip install --upgrade pip
+pip install torch torchvision --index-url https://download.pytorch.org/whl/cu121
+pip install diffusers transformers accelerate safetensors
+pip install flask flask-cors pillow imageio imageio-ffmpeg
+
+# Download model if not cached
+echo "Checking model cache..."
+python3 -c "
+from diffusers import StableVideoDiffusionPipeline
+import torch
+print('Downloading/verifying SVD model: $MODEL_REPO')
+pipe = StableVideoDiffusionPipeline.from_pretrained(
+    '$MODEL_REPO',
+    torch_dtype=torch.float16,
+    variant='fp16'
+)
+print('Model cached successfully!')
+del pipe
+"
+
+# Create server script
+cat > server.py << 'SVDSERVER'
+#!/usr/bin/env python3
+"""RedVerse SVD Isolated Server — Anime-optimized"""
+import io, base64, json, time, os, sys
+from flask import Flask, request, jsonify
+from flask_cors import CORS
+from PIL import Image
+import torch
+import imageio
+
+app = Flask(__name__)
+CORS(app)
+
+MODEL_REPO = "stabilityai/stable-video-diffusion-img2vid-xt"
+pipe = None
+model_loaded = False
+
+def load_model():
+    global pipe, model_loaded
+    from diffusers import StableVideoDiffusionPipeline
+    print(f"Loading SVD model: {MODEL_REPO}")
+    pipe = StableVideoDiffusionPipeline.from_pretrained(
+        MODEL_REPO,
+        torch_dtype=torch.float16,
+        variant="fp16"
+    )
+    pipe.to("cuda")
+    # Anime-friendly defaults: enable memory optimizations
+    pipe.enable_model_cpu_offload()
+    try:
+        pipe.enable_vae_slicing()
+        pipe.enable_vae_tiling()
+    except Exception:
+        pass
+    model_loaded = True
+    print("SVD model loaded and ready!")
+
+@app.route("/health", methods=["GET"])
+def health():
+    return jsonify({
+        "status": "ok",
+        "model_loaded": model_loaded,
+        "model_name": MODEL_REPO if model_loaded else None,
+        "device": str(pipe.device) if pipe else None,
+    })
+
+@app.route("/svd/v1/health", methods=["GET"])
+def svd_health():
+    return health()
+
+@app.route("/svd/v1/video", methods=["POST"])
+def generate_video():
+    if not model_loaded:
+        return jsonify({"error": "Model not loaded"}), 503
+
+    data = request.json
+    image_b64 = data.get("image", "")
+    if not image_b64:
+        return jsonify({"error": "No input image provided"}), 400
+
+    # Decode input image
+    img_bytes = base64.b64decode(image_b64)
+    image = Image.open(io.BytesIO(img_bytes)).convert("RGB")
+
+    # Parse parameters with anime-friendly defaults
+    width = data.get("width", 1024)
+    height = data.get("height", 576)
+    image = image.resize((width, height), Image.LANCZOS)
+
+    num_frames = data.get("num_frames", 25)
+    fps = data.get("fps", 8)
+    motion_bucket_id = data.get("motion_bucket_id", 127)
+    noise_aug_strength = data.get("noise_aug_strength", 0.02)
+    decode_chunk_size = data.get("decode_chunk_size", 8)
+    num_inference_steps = data.get("num_inference_steps", 25)
+    min_guidance_scale = data.get("min_guidance_scale", 1.0)
+    max_guidance_scale = data.get("max_guidance_scale", 3.0)
+    seed = data.get("seed", -1)
+
+    generator = torch.manual_seed(seed) if seed >= 0 else None
+
+    print(f"Generating {num_frames} frames @ {width}x{height}, motion={motion_bucket_id}")
+    start = time.time()
+
+    frames = pipe(
+        image,
+        num_frames=num_frames,
+        decode_chunk_size=decode_chunk_size,
+        motion_bucket_id=motion_bucket_id,
+        noise_aug_strength=noise_aug_strength,
+        num_inference_steps=num_inference_steps,
+        min_guidance_scale=min_guidance_scale,
+        max_guidance_scale=max_guidance_scale,
+        generator=generator,
+    ).frames[0]
+
+    elapsed = time.time() - start
+    print(f"Generated in {elapsed:.1f}s")
+
+    # Encode output
+    output_format = data.get("output_format", "mp4")
+    buf = io.BytesIO()
+
+    if output_format == "gif":
+        imageio.mimsave(buf, [f for f in frames], format="GIF", fps=fps, loop=0)
+        mime = "image/gif"
+    elif output_format == "webp":
+        frames[0].save(buf, format="WEBP", save_all=True, append_images=frames[1:],
+                       duration=int(1000/fps), loop=0)
+        mime = "image/webp"
+    else:  # mp4
+        imageio.mimsave(buf, [f for f in frames], format="mp4", fps=fps)
+        mime = "video/mp4"
+
+    buf.seek(0)
+    video_b64 = base64.b64encode(buf.read()).decode()
+
+    return jsonify({
+        "video": video_b64,
+        "format": output_format,
+        "mime": mime,
+        "frames": num_frames,
+        "fps": fps,
+        "elapsed": round(elapsed, 1),
+    })
+
+if __name__ == "__main__":
+    load_model()
+    app.run(host="0.0.0.0", port=int(os.environ.get("SVD_PORT", 7870)), debug=False)
+SVDSERVER
+
+echo ""
+echo "═══ Setup Complete ═══"
+echo "To start the SVD server:"
+echo "  cd $SVD_DIR && source venv/bin/activate && python server.py"
+echo ""
+echo "Starting server now..."
+python3 server.py
+`;
+}
+
+// ─── SVD GENERATE (updated to use isolated server + gallery) ───
+$('svdGenerateBtn').addEventListener('click', async () => {
+    const preview = $('svdInputPreview');
+    if (!preview.src || preview.style.display === 'none') {
+        alert('Drop or select an input image first.');
+        return;
+    }
+
+    // Extract base64 without prefix
+    const base64 = preview.src.split(',')[1];
+    const res = $('svdResolution').value.split('x');
+
+    const payload = {
+        image: base64,
+        motion_bucket_id:   parseInt($('svdMotionBucket').value),
+        fps:                parseInt($('svdFps').value),
+        num_frames:         parseInt($('svdFrames').value),
+        noise_aug_strength: parseFloat($('svdNoiseAug').value),
+        decode_chunk_size:  parseInt($('svdDecodeChunk').value),
+        num_inference_steps:parseInt($('svdSteps').value),
+        min_guidance_scale: parseFloat($('svdMinCfg').value),
+        max_guidance_scale: parseFloat($('svdCfg').value),
+        width:              parseInt(res[0]),
+        height:             parseInt(res[1]),
+        seed:               parseInt($('svdSeed').value) || -1,
+        output_format:      $('svdFormat').value,
+    };
+
+    $('svdGenerateBtn').disabled = true;
+    $('svdGenerateBtn').innerHTML = '<i class="material-icons spinning">sync</i> Generating Video...';
+    setSvdStatus('⏳ Generating video — this may take a while...', 'svd-busy');
+
+    try {
+        // Try isolated server first, fallback to main backend
+        let result;
+        try {
+            result = await svdApiPost('/svd/v1/video', payload);
+        } catch(e) {
+            // Fallback to main backend
+            result = await apiPost('/svd/v1/video', payload);
+        }
+
+        if (result.video) {
+            const fmt = $('svdFormat').value;
+            const mime = fmt === 'mp4' ? 'video/mp4' : fmt === 'webp' ? 'image/webp' : 'image/gif';
+            const dataUri = `data:${mime};base64,${result.video}`;
+
+            // Download
+            const a = document.createElement('a');
+            a.href = dataUri;
+            a.download = `redverse_svd_${Date.now()}.${fmt}`;
+            a.click();
+
+            // Add to gallery
+            const meta = {
+                seed: payload.seed,
+                steps: payload.num_inference_steps,
+                cfg: payload.max_guidance_scale,
+                fps: payload.fps,
+                frames: payload.num_frames,
+                resolution: `${payload.width}×${payload.height}`,
+                model: 'SVD-xt (anime)',
+                elapsed: result.elapsed ? `${result.elapsed}s` : '—',
+            };
+            addToGallery(dataUri, meta, 'video-svd');
+            setSvdStatus(`✓ Video generated! ${result.elapsed ? result.elapsed + 's' : ''} — ${payload.num_frames} frames · Added to gallery`, 'svd-ok');
+        } else {
+            setSvdStatus('SVD complete — check your backend output folder.', 'svd-ok');
+        }
+    } catch(err) {
+        setSvdStatus('✗ SVD error: ' + err.message, 'svd-err');
+        alert('SVD error: ' + err.message);
+    } finally {
+        $('svdGenerateBtn').disabled = false;
+        $('svdGenerateBtn').innerHTML = '<i class="material-icons">movie_filter</i> Generate Video';
+    }
+});
+
+// ─── SVD EVENT LISTENERS ────────────────────────────────
+$('svdConnectBtn').addEventListener('click', svdConnect);
+$('svdAutoSetup').addEventListener('click', svdAutoSetup);
+$('svdServerUrl').value = state.svdServerUrl;
+$('svdServerUrl').addEventListener('keydown', e => { if (e.key === 'Enter') svdConnect(); });
+
+// ═══════════════════════════════════════════════════════════
+//  XAI GROK VIDEO
+// ═══════════════════════════════════════════════════════════
+const XAI_BASE = 'https://api.x.ai/v1';
+let xaiMode = 'txt'; // 'txt' | 'img'
+let xaiPollInterval = null;
+let xaiStartTime = null;
+let xaiElapsedTimer = null;
+let xaiInputBase64 = null;
+let xaiCurrentRequestId = null;
+let xaiCurrentVideoUrl = null;
+
+// Load saved key
+try {
+    const saved = localStorage.getItem('rv_xai_key');
+    if (saved) $('xaiApiKey').value = saved;
+} catch(e) {}
+
+// API key save/toggle
+$('xaiSaveKey').addEventListener('click', () => {
+    const key = $('xaiApiKey').value.trim();
+    try { localStorage.setItem('rv_xai_key', key); } catch(e) {}
+    $('xaiSaveKey').innerHTML = '<i class="material-icons" style="font-size:14px;">check</i> Saved';
+    setTimeout(() => { $('xaiSaveKey').innerHTML = '<i class="material-icons" style="font-size:14px;">save</i> Save'; }, 1500);
+});
+$('xaiToggleKey').addEventListener('click', () => {
+    const inp = $('xaiApiKey');
+    inp.type = inp.type === 'password' ? 'text' : 'password';
+    $('xaiToggleKey').querySelector('.material-icons').textContent = inp.type === 'password' ? 'visibility' : 'visibility_off';
+});
+
+// Mode toggle
+$('xaiModeTxt').addEventListener('click', () => {
+    xaiMode = 'txt';
+    $('xaiModeTxt').classList.add('active');
+    $('xaiModeImg').classList.remove('active');
+    $('xaiImgSection').style.display = 'none';
+});
+$('xaiModeImg').addEventListener('click', () => {
+    xaiMode = 'img';
+    $('xaiModeImg').classList.add('active');
+    $('xaiModeTxt').classList.remove('active');
+    $('xaiImgSection').style.display = 'block';
+});
+
+// Image drop / file input
+$('xaiFileInput').addEventListener('change', e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    xaiLoadImageFile(file);
+});
+const xaiDrop = $('xaiImgDrop');
+xaiDrop.addEventListener('dragover', e => { e.preventDefault(); xaiDrop.classList.add('dragover'); });
+xaiDrop.addEventListener('dragleave', () => xaiDrop.classList.remove('dragover'));
+xaiDrop.addEventListener('drop', e => {
+    e.preventDefault(); xaiDrop.classList.remove('dragover');
+    const file = e.dataTransfer.files[0];
+    if (file && file.type.startsWith('image/')) xaiLoadImageFile(file);
+});
+
+function xaiLoadImageFile(file) {
+    const reader = new FileReader();
+    reader.onload = ev => {
+        xaiInputBase64 = ev.target.result; // full data URI
+        $('xaiInputPreview').src = ev.target.result;
+        $('xaiInputPreview').style.display = 'block';
+    };
+    reader.readAsDataURL(file);
+}
+
+function xaiUsePreview() {
+    if (!el.previewImg.src || el.previewImg.style.display === 'none') return;
+    xaiInputBase64 = el.previewImg.src;
+    $('xaiInputPreview').src = el.previewImg.src;
+    $('xaiInputPreview').style.display = 'block';
+    switchTab('xai');
+}
+
+// Duration slider
+$('xaiDuration').addEventListener('input', e => {
+    $('xaiDurationVal').textContent = e.target.value + 's';
+});
+
+// Logging
+function xaiLog(msg, cls = '') {
+    const log = $('xaiLog');
+    const line = document.createElement('div');
+    if (cls) line.className = 'log-' + cls;
+    const ts = new Date().toLocaleTimeString();
+    line.textContent = `[${ts}] ${msg}`;
+    log.appendChild(line);
+    log.scrollTop = log.scrollHeight;
+}
+
+function xaiSetStatus(text, icon = 'sync', spinning = true) {
+    $('xaiStatusText').textContent = text;
+    const ic = $('xaiStatusIcon');
+    ic.textContent = icon;
+    ic.className = 'material-icons' + (spinning ? ' spinning' : '');
+}
+
+function xaiStartElapsed() {
+    xaiStartTime = Date.now();
+    clearInterval(xaiElapsedTimer);
+    xaiElapsedTimer = setInterval(() => {
+        const secs = ((Date.now() - xaiStartTime) / 1000).toFixed(0);
+        $('xaiElapsed').textContent = `${secs}s elapsed`;
+    }, 1000);
+}
+
+function xaiStopElapsed() {
+    clearInterval(xaiElapsedTimer);
+    xaiElapsedTimer = null;
+}
+
+function xaiReset() {
+    clearInterval(xaiPollInterval);
+    xaiPollInterval = null;
+    xaiStopElapsed();
+    $('xaiGenerateBtn').disabled = false;
+    $('xaiGenIcon').textContent = 'cloud';
+    $('xaiGenIcon').className = 'material-icons';
+    $('xaiGenLabel').textContent = 'Generate with Grok';
+}
+
+// ─── MAIN GENERATE ───────────────────────────────────────
+$('xaiGenerateBtn').addEventListener('click', async () => {
+    const key = $('xaiApiKey').value.trim();
+    if (!key) { alert('Enter your xAI API key first.'); return; }
+
+    const prompt = $('xaiPrompt').value.trim();
+    if (!prompt) { alert('Enter a prompt.'); return; }
+
+    if (xaiMode === 'img' && !xaiInputBase64) { alert('Select or drop a source image first.'); return; }
+
+    // UI: busy
+    $('xaiGenerateBtn').disabled = true;
+    $('xaiGenIcon').textContent = 'sync';
+    $('xaiGenIcon').className = 'material-icons spinning';
+    $('xaiGenLabel').textContent = 'Submitting...';
+
+    // Show status box, reset result
+    const statusBox = $('xaiStatusBox');
+    statusBox.classList.add('visible');
+    $('xaiProgressFill').style.width = '100%';
+    $('xaiResultVideo').classList.remove('visible');
+    $('xaiResultVideo').src = '';
+    $('xaiResultActions').style.display = 'none';
+    $('xaiLog').innerHTML = '';
+    xaiCurrentVideoUrl = null;
+
+    xaiSetStatus('Submitting request to xAI...', 'cloud_upload', true);
+    xaiStartElapsed();
+
+    const body = {
+        model:        $('xaiModel').value,
+        prompt,
+        duration:     parseInt($('xaiDuration').value),
+        aspect_ratio: $('xaiAspect').value,
+        resolution:   $('xaiResolution').value,
+    };
+
+    // Image-to-video: attach image as data URI
+    if (xaiMode === 'img' && xaiInputBase64) {
+        body.image_url = xaiInputBase64;
+    }
+
+    xaiLog(`POST /v1/videos/generations · ${body.model} · ${body.duration}s · ${body.aspect_ratio} · ${body.resolution}`, 'pending');
+
+    try {
+        const startResp = await fetch(`${XAI_BASE}/videos/generations`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${key}`,
+            },
+            body: JSON.stringify(body),
+        });
+
+        if (!startResp.ok) {
+            const err = await startResp.json().catch(() => ({}));
+            throw new Error(err.error?.message || `HTTP ${startResp.status}`);
+        }
+
+        const startData = await startResp.json();
+        xaiCurrentRequestId = startData.request_id;
+        xaiLog(`Request accepted · ID: ${xaiCurrentRequestId}`, 'pending');
+        xaiSetStatus(`Pending · ${xaiCurrentRequestId.slice(0,16)}...`, 'hourglass_empty', true);
+        $('xaiGenLabel').textContent = 'Generating...';
+
+        // Start polling
+        xaiPollFailCount = 0;
+        xaiPollInterval = setInterval(() => xaiPoll(key, xaiCurrentRequestId), 5000);
+
+    } catch(e) {
+        xaiLog(`Error: ${e.message}`, 'error');
+        xaiSetStatus('Failed: ' + e.message, 'error', false);
+        xaiReset();
+    }
+});
+
+let xaiPollFailCount = 0;
+const XAI_MAX_POLL_FAILS = 5;
+
+async function xaiPoll(key, requestId) {
+    try {
+        const resp = await fetch(`${XAI_BASE}/videos/${requestId}`, {
+            headers: { 'Authorization': `Bearer ${key}` },
+        });
+
+        if (!resp.ok) {
+            const errBody = await resp.json().catch(() => ({}));
+            const errMsg = errBody.error?.message || `HTTP ${resp.status}`;
+            xaiLog(`Poll error: ${errMsg}`, 'error');
+            xaiPollFailCount++;
+            if (xaiPollFailCount >= XAI_MAX_POLL_FAILS || resp.status === 401 || resp.status === 403 || resp.status === 404) {
+                // Fatal or too many failures — stop polling
+                xaiLog(`Aborting after ${xaiPollFailCount} consecutive error(s): ${errMsg}`, 'error');
+                xaiSetStatus(`Failed: ${errMsg}`, 'error', false);
+                xaiReset();
+                xaiPollFailCount = 0;
+            }
+            return;
+        }
+
+        // Successful response — reset fail counter
+        xaiPollFailCount = 0;
+        const data = await resp.json();
+
+        xaiLog(`Poll · status: ${data.status}`, data.status === 'done' ? 'done' : 'pending');
+
+        if (data.status === 'done') {
+            clearInterval(xaiPollInterval);
+            xaiPollInterval = null;
+            xaiStopElapsed();
+
+            xaiCurrentVideoUrl = data.video?.url;
+            const dur = data.video?.duration ?? '?';
+
+            xaiSetStatus(`Done ✓ · ${dur}s · ${data.model}`, 'check_circle', false);
+            $('xaiProgressFill').style.width = '100%';
+            $('xaiProgressFill').style.animation = 'none';
+            $('xaiProgressFill').style.background = 'var(--neon-green)';
+
+            // Load video
+            const vid = $('xaiResultVideo');
+            vid.src = xaiCurrentVideoUrl;
+            vid.classList.add('visible');
+            $('xaiResultActions').style.display = 'flex';
+
+            xaiLog(`Video ready: ${xaiCurrentVideoUrl}`, 'done');
+            xaiReset();
+
+            // Add to gallery
+            const grokMeta = {
+                seed: '—',
+                model: data.model || 'grok-imagine-video',
+                duration: dur + 's',
+                resolution: $('xaiResolution').value,
+                aspect: $('xaiAspect').value,
+            };
+            addToGallery(xaiCurrentVideoUrl, grokMeta, 'video-grok');
+
+        } else if (data.status === 'failed' || data.status === 'error') {
+            // Generation failed on server side — stop polling
+            clearInterval(xaiPollInterval);
+            xaiPollInterval = null;
+            xaiStopElapsed();
+            const reason = data.error?.message || data.reason || data.status;
+            xaiSetStatus(`Generation failed: ${reason}`, 'error', false);
+            xaiLog(`Generation failed: ${reason}`, 'error');
+            xaiReset();
+
+        } else if (data.status === 'expired') {
+            clearInterval(xaiPollInterval);
+            xaiPollInterval = null;
+            xaiSetStatus('Request expired', 'warning', false);
+            xaiLog('Request expired before completion.', 'error');
+            xaiReset();
+        }
+        // else still pending — keep polling
+
+    } catch(e) {
+        xaiPollFailCount++;
+        xaiLog(`Poll network error (${xaiPollFailCount}/${XAI_MAX_POLL_FAILS}): ${e.message}`, 'error');
+        if (xaiPollFailCount >= XAI_MAX_POLL_FAILS) {
+            xaiLog('Too many consecutive poll failures — aborting.', 'error');
+            xaiSetStatus('Failed: network errors during polling', 'error', false);
+            xaiReset();
+            xaiPollFailCount = 0;
+        }
+    }
+}
+
+// ─── RESULT ACTIONS ───────────────────────────────────────
+$('xaiDownloadBtn').addEventListener('click', async () => {
+    if (!xaiCurrentVideoUrl) return;
+    // Fetch and download as blob to force file save
+    try {
+        const resp = await fetch(xaiCurrentVideoUrl);
+        const blob = await resp.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `redverse_grok_${Date.now()}.mp4`;
+        a.click();
+        URL.revokeObjectURL(url);
+    } catch(e) {
+        // Fallback: open URL directly
+        window.open(xaiCurrentVideoUrl, '_blank');
+    }
+});
+
+$('xaiSendPreviewBtn').addEventListener('click', () => {
+    if (xaiCurrentVideoUrl) window.open(xaiCurrentVideoUrl, '_blank');
+});
+
+// ═══════════════════════════════════════════════════════════
+//  STABILITY AI
+// ═══════════════════════════════════════════════════════════
+(function() {
+    const STABILITY_BASE = 'https://api.stability.ai/v2beta/stable-image/generate';
+    const keyEl = $('stabilityApiKey'), toggleEl = $('stabilityToggleKey'), saveEl = $('stabilitySaveKey');
+    const genBtn = $('stabilityGenBtn'), genIcon = $('stabilityGenIcon'), genLabel = $('stabilityGenLabel');
+    const statusEl = $('stabilityStatus'), resultEl = $('stabilityResult'), actionsEl = $('stabilityActions');
+
+    try { const k = localStorage.getItem('rv_stability_key'); if (k) keyEl.value = k; } catch(e) {}
+
+    toggleEl.addEventListener('click', () => {
+        keyEl.type = keyEl.type === 'password' ? 'text' : 'password';
+        toggleEl.querySelector('.material-icons').textContent = keyEl.type === 'password' ? 'visibility' : 'visibility_off';
+    });
+    saveEl.addEventListener('click', () => {
+        try { localStorage.setItem('rv_stability_key', keyEl.value.trim()); } catch(e) {}
+        saveEl.innerHTML = '<i class="material-icons" style="font-size:14px;">check</i> Saved';
+        setTimeout(() => saveEl.innerHTML = '<i class="material-icons" style="font-size:14px;">save</i> Save', 1500);
+    });
+
+    function setStatus(msg, cls) {
+        statusEl.textContent = msg;
+        statusEl.className = 'cloud-status visible' + (cls ? ' ' + cls : '');
+    }
+
+    genBtn.addEventListener('click', async () => {
+        const key = keyEl.value.trim();
+        if (!key) { alert('Enter your Stability AI key.'); return; }
+        const prompt = $('stabilityPrompt').value.trim();
+        if (!prompt) { alert('Enter a prompt.'); return; }
+
+        genBtn.disabled = true;
+        genIcon.textContent = 'sync'; genIcon.className = 'material-icons spinning';
+        genLabel.textContent = 'Generating...';
+        setStatus('Submitting to Stability AI...', 'busy');
+        resultEl.classList.remove('visible'); actionsEl.style.display = 'none';
+
+        const model = $('stabilityModel').value;
+        const formData = new FormData();
+        formData.append('prompt', prompt);
+        const neg = $('stabilityNeg').value.trim();
+        if (neg) formData.append('negative_prompt', neg);
+        formData.append('aspect_ratio', $('stabilityAspect').value);
+        formData.append('seed', parseInt($('stabilitySeed').value) || 0);
+        formData.append('output_format', 'png');
+        formData.append('model', model);
+
+        try {
+            const resp = await fetch(`${STABILITY_BASE}/sd3`, {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${key}`, 'Accept': 'image/*' },
+                body: formData,
+            });
+
+            if (!resp.ok) {
+                const errText = await resp.text();
+                let errMsg;
+                try { errMsg = JSON.parse(errText).message || errText; } catch(e) { errMsg = errText; }
+                throw new Error(`HTTP ${resp.status}: ${errMsg}`);
+            }
+
+            const blob = await resp.blob();
+            const url = URL.createObjectURL(blob);
+            resultEl.src = url; resultEl.classList.add('visible');
+            actionsEl.style.display = 'flex';
+            setStatus(`✓ Generated with ${model}`, 'ok');
+
+            // Convert to data URI for gallery
+            const reader = new FileReader();
+            reader.onload = () => {
+                addToGallery(reader.result, { seed: $('stabilitySeed').value, model, resolution: $('stabilityAspect').value }, 'image');
+            };
+            reader.readAsDataURL(blob);
+
+        } catch(e) {
+            setStatus('✗ ' + e.message, 'err');
+        } finally {
+            genBtn.disabled = false;
+            genIcon.textContent = 'auto_awesome'; genIcon.className = 'material-icons';
+            genLabel.textContent = 'Generate with Stability';
+        }
+    });
+
+    $('stabilityDownload').addEventListener('click', () => {
+        if (!resultEl.src) return;
+        const a = document.createElement('a');
+        a.href = resultEl.src; a.download = `redverse_stability_${Date.now()}.png`; a.click();
+    });
+})();
+
+// ═══════════════════════════════════════════════════════════
+//  FAL.AI
+// ═══════════════════════════════════════════════════════════
+(function() {
+    const FAL_QUEUE = 'https://queue.fal.run';
+    const keyEl = $('falApiKey'), toggleEl = $('falToggleKey'), saveEl = $('falSaveKey');
+    const genBtn = $('falGenBtn'), genIcon = $('falGenIcon'), genLabel = $('falGenLabel');
+    const statusEl = $('falStatus'), resultEl = $('falResult'), actionsEl = $('falActions');
+
+    try { const k = localStorage.getItem('rv_fal_key'); if (k) keyEl.value = k; } catch(e) {}
+
+    toggleEl.addEventListener('click', () => {
+        keyEl.type = keyEl.type === 'password' ? 'text' : 'password';
+        toggleEl.querySelector('.material-icons').textContent = keyEl.type === 'password' ? 'visibility' : 'visibility_off';
+    });
+    saveEl.addEventListener('click', () => {
+        try { localStorage.setItem('rv_fal_key', keyEl.value.trim()); } catch(e) {}
+        saveEl.innerHTML = '<i class="material-icons" style="font-size:14px;">check</i> Saved';
+        setTimeout(() => saveEl.innerHTML = '<i class="material-icons" style="font-size:14px;">save</i> Save', 1500);
+    });
+
+    // Slider listeners
+    $('falSteps').addEventListener('input', e => $('falStepsVal').textContent = e.target.value);
+    $('falGuidance').addEventListener('input', e => $('falGuidanceVal').textContent = parseFloat(e.target.value).toFixed(1));
+    $('falNumImages').addEventListener('input', e => $('falNumImagesVal').textContent = e.target.value);
+
+    function setStatus(msg, cls) {
+        statusEl.textContent = msg;
+        statusEl.className = 'cloud-status visible' + (cls ? ' ' + cls : '');
+    }
+
+    genBtn.addEventListener('click', async () => {
+        const key = keyEl.value.trim();
+        if (!key) { alert('Enter your FAL.ai key.'); return; }
+        const prompt = $('falPrompt').value.trim();
+        if (!prompt) { alert('Enter a prompt.'); return; }
+
+        genBtn.disabled = true;
+        genIcon.textContent = 'sync'; genIcon.className = 'material-icons spinning';
+        genLabel.textContent = 'Queuing...';
+        setStatus('Submitting to FAL queue...', 'busy');
+        resultEl.classList.remove('visible'); actionsEl.style.display = 'none';
+
+        const model = $('falModel').value;
+        const seed = parseInt($('falSeed').value);
+        const body = {
+            prompt,
+            image_size: $('falSize').value,
+            num_inference_steps: parseInt($('falSteps').value),
+            guidance_scale: parseFloat($('falGuidance').value),
+            num_images: parseInt($('falNumImages').value),
+        };
+        if (seed >= 0) body.seed = seed;
+
+        try {
+            // Submit to queue
+            const submitResp = await fetch(`${FAL_QUEUE}/${model}`, {
+                method: 'POST',
+                headers: { 'Authorization': `Key ${key}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify(body),
+            });
+            if (!submitResp.ok) {
+                const err = await submitResp.json().catch(() => ({}));
+                throw new Error(err.detail || err.message || `HTTP ${submitResp.status}`);
+            }
+            const submitData = await submitResp.json();
+            const requestId = submitData.request_id;
+            if (!requestId) throw new Error('No request_id returned');
+
+            genLabel.textContent = 'Generating...';
+            setStatus(`Queued · ${requestId.slice(0,16)}...`, 'busy');
+
+            // Poll for result
+            let attempts = 0;
+            const maxAttempts = 120; // 10 min max
+            while (attempts < maxAttempts) {
+                await new Promise(r => setTimeout(r, 3000));
+                attempts++;
+
+                const statusResp = await fetch(`${FAL_QUEUE}/${model}/requests/${requestId}/status`, {
+                    headers: { 'Authorization': `Key ${key}` },
+                });
+                if (!statusResp.ok) continue;
+                const statusData = await statusResp.json();
+
+                if (statusData.status === 'COMPLETED') {
+                    // Fetch result
+                    const resultResp = await fetch(`${FAL_QUEUE}/${model}/requests/${requestId}`, {
+                        headers: { 'Authorization': `Key ${key}` },
+                    });
+                    const resultData = await resultResp.json();
+
+                    const images = resultData.images || resultData.output?.images || [];
+                    if (images.length > 0) {
+                        const imgUrl = images[0].url;
+                        resultEl.src = imgUrl; resultEl.classList.add('visible');
+                        actionsEl.style.display = 'flex';
+                        setStatus(`✓ Generated with ${model.split('/').pop()} · ${images.length} image(s)`, 'ok');
+                        // Add all images to gallery
+                        images.forEach((img, i) => {
+                            addToGallery(img.url, {
+                                seed: resultData.seed ?? seed,
+                                model: model.split('/').pop(),
+                                resolution: $('falSize').value,
+                            }, 'image');
+                        });
+                    } else {
+                        setStatus('✓ Completed but no images returned', 'ok');
+                    }
+                    break;
+                } else if (statusData.status === 'FAILED') {
+                    throw new Error('Generation failed: ' + (statusData.error || 'unknown'));
+                } else {
+                    const pos = statusData.queue_position != null ? ` · Queue #${statusData.queue_position}` : '';
+                    setStatus(`${statusData.status}${pos} · ${attempts * 3}s elapsed`, 'busy');
+                }
+            }
+            if (attempts >= maxAttempts) throw new Error('Timed out waiting for result');
+
+        } catch(e) {
+            setStatus('✗ ' + e.message, 'err');
+        } finally {
+            genBtn.disabled = false;
+            genIcon.textContent = 'bolt'; genIcon.className = 'material-icons';
+            genLabel.textContent = 'Generate with FAL';
+        }
+    });
+
+    $('falDownload').addEventListener('click', () => {
+        if (!resultEl.src) return;
+        // Fetch as blob and download (cross-origin)
+        fetch(resultEl.src).then(r => r.blob()).then(blob => {
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url; a.download = `redverse_fal_${Date.now()}.png`; a.click();
+            URL.revokeObjectURL(url);
+        }).catch(() => window.open(resultEl.src, '_blank'));
+    });
+})();
+
+// ═══════════════════════════════════════════════════════════
+//  OPENROUTER
+// ═══════════════════════════════════════════════════════════
+(function() {
+    const OR_BASE = 'https://openrouter.ai/api/v1';
+    const keyEl = $('orApiKey'), toggleEl = $('orToggleKey'), saveEl = $('orSaveKey');
+    const genBtn = $('orGenBtn'), genIcon = $('orGenIcon'), genLabel = $('orGenLabel');
+    const statusEl = $('orStatus'), resultEl = $('orResult'), actionsEl = $('orActions');
+
+    try { const k = localStorage.getItem('rv_or_key'); if (k) keyEl.value = k; } catch(e) {}
+
+    toggleEl.addEventListener('click', () => {
+        keyEl.type = keyEl.type === 'password' ? 'text' : 'password';
+        toggleEl.querySelector('.material-icons').textContent = keyEl.type === 'password' ? 'visibility' : 'visibility_off';
+    });
+    saveEl.addEventListener('click', () => {
+        try { localStorage.setItem('rv_or_key', keyEl.value.trim()); } catch(e) {}
+        saveEl.innerHTML = '<i class="material-icons" style="font-size:14px;">check</i> Saved';
+        setTimeout(() => saveEl.innerHTML = '<i class="material-icons" style="font-size:14px;">save</i> Save', 1500);
+    });
+
+    $('orNumImages').addEventListener('input', e => $('orNumImagesVal').textContent = e.target.value);
+
+    function setStatus(msg, cls) {
+        statusEl.textContent = msg;
+        statusEl.className = 'cloud-status visible' + (cls ? ' ' + cls : '');
+    }
+
+    genBtn.addEventListener('click', async () => {
+        const key = keyEl.value.trim();
+        if (!key) { alert('Enter your OpenRouter key.'); return; }
+        const prompt = $('orPrompt').value.trim();
+        if (!prompt) { alert('Enter a prompt.'); return; }
+
+        genBtn.disabled = true;
+        genIcon.textContent = 'sync'; genIcon.className = 'material-icons spinning';
+        genLabel.textContent = 'Generating...';
+        setStatus('Submitting to OpenRouter...', 'busy');
+        resultEl.classList.remove('visible'); actionsEl.style.display = 'none';
+
+        const model = $('orModel').value;
+        const size = $('orSize').value;
+        const quality = $('orQuality').value;
+        const n = parseInt($('orNumImages').value);
+
+        try {
+            const resp = await fetch(`${OR_BASE}/images/generations`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${key}`,
+                    'Content-Type': 'application/json',
+                    'HTTP-Referer': window.location.href,
+                    'X-Title': 'RedVerse Art Generator',
+                },
+                body: JSON.stringify({ model, prompt, n, size, quality }),
+            });
+
+            if (!resp.ok) {
+                const err = await resp.json().catch(() => ({}));
+                throw new Error(err.error?.message || `HTTP ${resp.status}`);
+            }
+
+            const data = await resp.json();
+            const images = data.data || [];
+            if (images.length === 0) throw new Error('No images returned');
+
+            // Display first image
+            const firstUrl = images[0].url || images[0].b64_json;
+            const displaySrc = images[0].b64_json ? `data:image/png;base64,${images[0].b64_json}` : firstUrl;
+            resultEl.src = displaySrc;
+            resultEl.classList.add('visible');
+            actionsEl.style.display = 'flex';
+            setStatus(`✓ Generated ${images.length} image(s) with ${model.split('/').pop()}`, 'ok');
+
+            // Add all to gallery
+            images.forEach(img => {
+                const src = img.b64_json ? `data:image/png;base64,${img.b64_json}` : img.url;
+                addToGallery(src, {
+                    seed: '—',
+                    model: model.split('/').pop(),
+                    resolution: size,
+                    quality,
+                }, 'image');
+            });
+
+        } catch(e) {
+            setStatus('✗ ' + e.message, 'err');
+        } finally {
+            genBtn.disabled = false;
+            genIcon.textContent = 'hub'; genIcon.className = 'material-icons';
+            genLabel.textContent = 'Generate with OpenRouter';
+        }
+    });
+
+    $('orDownload').addEventListener('click', () => {
+        if (!resultEl.src) return;
+        if (resultEl.src.startsWith('data:')) {
+            const a = document.createElement('a');
+            a.href = resultEl.src; a.download = `redverse_or_${Date.now()}.png`; a.click();
+        } else {
+            fetch(resultEl.src).then(r => r.blob()).then(blob => {
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url; a.download = `redverse_or_${Date.now()}.png`; a.click();
+                URL.revokeObjectURL(url);
+            }).catch(() => window.open(resultEl.src, '_blank'));
+        }
+    });
+})();
+
+// ═══════════════════════════════════════════════════════════
+//  GALLERY TOOLBAR EVENT LISTENERS
+// ═══════════════════════════════════════════════════════════
+$('gallerySelectToggle').addEventListener('click', toggleSelectMode);
+$('gallerySelectAll').addEventListener('click', gallerySelectAll);
+$('galleryRemoveSelected').addEventListener('click', galleryRemoveSelected);
+$('galleryClearAll').addEventListener('click', galleryClearAll);
+$('galleryDownloadAll').addEventListener('click', galleryDownloadAll);
+
+// ═══════════════════════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════════════════════
+renderProfiles();
+renderActiveLoRAs();
+setConnStatus('disconnected');
+setSvdConnStatus('disconnected');
+
+// Boot persistent gallery from IndexedDB
+initGallery();
+
+// Auto-connect if URL looks valid and page loads
+window.addEventListener('load', () => {
+    const url = el.backendUrl.value;
+    if (url && url.startsWith('http')) {
+        // Soft auto-connect attempt after brief delay
+        setTimeout(connect, 600);
+    }
+    // Also try SVD server
+    setTimeout(() => {
+        svdConnect().catch(() => {});
+    }, 1200);
+});
+</script>
+</body>
+</html>

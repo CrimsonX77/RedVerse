@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MultiTool — RedForest Labs</title>
+<link rel="stylesheet" href="lyra.css">
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+<style>
+html,body{height:100vh;overflow:hidden}body{display:flex;flex-direction:column}
+.tool-layout{flex:1;display:flex;overflow:hidden}
+.tool-sidebar{width:200px;background:var(--lyra-stone);border-right:1px solid var(--lyra-border);display:flex;flex-direction:column;padding:12px 0}
+.tool-tab{padding:10px 16px;cursor:pointer;color:var(--lyra-ash);font-size:13px;font-weight:600;border-left:2px solid transparent;transition:all 0.2s;display:flex;align-items:center;gap:10px}
+.tool-tab:hover{color:var(--lyra-text);background:var(--lyra-blush)}
+.tool-tab.active{color:var(--lyra-crimson);border-left-color:var(--lyra-crimson);background:rgba(220,20,60,0.06)}
+.tool-tab .material-icons{font-size:18px}
+.tool-main{flex:1;overflow-y:auto;padding:24px;display:flex;flex-direction:column;gap:20px}
+.tool-page{display:none;flex-direction:column;gap:16px}
+.tool-page.active{display:flex}
+.drop-zone{border:2px dashed var(--lyra-border);border-radius:var(--lyra-radius-lg);padding:40px 20px;text-align:center;color:var(--lyra-ghost);cursor:pointer;transition:all 0.2s;background:var(--lyra-obsidian)}
+.drop-zone:hover,.drop-zone.dragover{border-color:var(--lyra-crimson);background:var(--lyra-blush);color:var(--lyra-silver)}
+.drop-zone .material-icons{font-size:48px;opacity:0.2;display:block;margin-bottom:12px;color:var(--lyra-crimson)}
+.result-box{background:var(--lyra-obsidian);border:1px solid var(--lyra-border);border-radius:var(--lyra-radius-md);padding:16px;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--lyra-ash);max-height:300px;overflow-y:auto;white-space:pre-wrap;display:none}
+.result-box.visible{display:block}
+.url-input-row{display:flex;gap:8px}
+.url-input-row input{flex:1}
+</style>
+</head>
+<body>
+<div class="lyra-cathedral"></div>
+<header class="lyra-header">
+  <a href="index.html" style="display:flex;align-items:center;gap:10px;text-decoration:none;color:inherit">
+    <div style="width:32px;height:32px;border-radius:6px;background:linear-gradient(135deg,var(--lyra-blood),var(--lyra-crimson));display:flex;align-items:center;justify-content:center;box-shadow:0 0 10px rgba(220,20,60,0.3)"><span style="color:var(--lyra-gold);font-size:16px">♦</span></div>
+    <span class="lyra-logo">MULTI<span class="lyra-logo-accent">TOOL</span></span>
+  </a>
+  <div class="lyra-status-pill"><div class="lyra-dot lyra-dot-pulse" id="dotStatus"></div><span id="lblStatus">…</span></div>
+</header>
+
+<div class="tool-layout">
+  <div class="tool-sidebar">
+    <div class="tool-tab active" data-page="webp"><i class="material-icons">image</i>WEBP → JPG</div>
+    <div class="tool-tab" data-page="json"><i class="material-icons">data_object</i>JSON Merge</div>
+    <div class="tool-tab" data-page="scrape"><i class="material-icons">language</i>Web Scraper</div>
+    <div class="tool-tab" data-page="pdf"><i class="material-icons">picture_as_pdf</i>PDF Merge</div>
+  </div>
+  <div class="tool-main">
+
+    <!-- WEBP Convert -->
+    <div class="tool-page active" id="page-webp">
+      <div class="lyra-section-title">WEBP to JPG Converter</div>
+      <div class="drop-zone" id="dropWebp">
+        <i class="material-icons">image</i>
+        <div style="font-family:'Cinzel',serif;font-size:14px;letter-spacing:1px">Drop .webp files here</div>
+        <div style="font-size:11px;margin-top:6px">or click to browse</div>
+      </div>
+      <input type="file" id="inputWebp" multiple accept=".webp" style="display:none">
+      <div id="statusWebp" class="lyra-mono lyra-text-dim" style="font-size:11px"></div>
+    </div>
+
+    <!-- JSON Merge -->
+    <div class="tool-page" id="page-json">
+      <div class="lyra-section-title">JSON / JSONL Consolidator</div>
+      <div class="drop-zone" id="dropJson">
+        <i class="material-icons">data_object</i>
+        <div style="font-family:'Cinzel',serif;font-size:14px;letter-spacing:1px">Drop .json / .jsonl files</div>
+      </div>
+      <input type="file" id="inputJson" multiple accept=".json,.jsonl" style="display:none">
+      <div style="display:flex;gap:8px;align-items:center">
+        <span class="lyra-label">Output format:</span>
+        <select class="lyra-select" id="jsonFmt"><option value="jsonl">JSONL</option><option value="json">JSON</option></select>
+      </div>
+      <div id="statusJson" class="lyra-mono lyra-text-dim" style="font-size:11px"></div>
+    </div>
+
+    <!-- Web Scraper -->
+    <div class="tool-page" id="page-scrape">
+      <div class="lyra-section-title">Web Text Scraper</div>
+      <div class="url-input-row">
+        <input class="lyra-input" type="url" id="scrapeUrl" placeholder="https://example.com">
+        <button class="lyra-btn lyra-btn-primary" id="scrapeBtn">Scrape</button>
+      </div>
+      <div class="result-box" id="scrapeResult"></div>
+      <div id="statusScrape" class="lyra-mono lyra-text-dim" style="font-size:11px"></div>
+    </div>
+
+    <!-- PDF Merge -->
+    <div class="tool-page" id="page-pdf">
+      <div class="lyra-section-title">PDF Merger</div>
+      <div class="drop-zone" id="dropPdf">
+        <i class="material-icons">picture_as_pdf</i>
+        <div style="font-family:'Cinzel',serif;font-size:14px;letter-spacing:1px">Drop PDF files to merge</div>
+      </div>
+      <input type="file" id="inputPdf" multiple accept=".pdf" style="display:none">
+      <div id="statusPdf" class="lyra-mono lyra-text-dim" style="font-size:11px"></div>
+    </div>
+  </div>
+</div>
+
+<footer class="lyra-footer">
+  <span class="lyra-footer-brand">MultiTool · RedForest Labs</span>
+  <span class="lyra-mono" id="footerInfo">—</span>
+</footer>
+
+<script>
+const API='http://127.0.0.1:8913';
+const $=id=>document.getElementById(id);
+
+// Tab switching
+document.querySelectorAll('.tool-tab').forEach(tab=>{
+  tab.addEventListener('click',()=>{
+    document.querySelectorAll('.tool-tab').forEach(t=>t.classList.remove('active'));
+    document.querySelectorAll('.tool-page').forEach(p=>p.classList.remove('active'));
+    tab.classList.add('active');
+    $('page-'+tab.dataset.page).classList.add('active');
+  });
+});
+
+// Drop zone helper
+function setupDrop(zoneId, inputId, handler){
+  const zone=$(zoneId),input=$(inputId);
+  zone.addEventListener('click',()=>input.click());
+  zone.addEventListener('dragover',e=>{e.preventDefault();zone.classList.add('dragover')});
+  zone.addEventListener('dragleave',()=>zone.classList.remove('dragover'));
+  zone.addEventListener('drop',e=>{e.preventDefault();zone.classList.remove('dragover');handler(e.dataTransfer.files)});
+  input.addEventListener('change',()=>{handler(input.files);input.value=''});
+}
+
+// WEBP Convert
+setupDrop('dropWebp','inputWebp',async files=>{
+  $('statusWebp').textContent='Converting '+files.length+' file(s)…';
+  const fd=new FormData();
+  for(const f of files)fd.append('files',f);
+  try{
+    const r=await fetch(`${API}/api/convert-webp`,{method:'POST',body:fd});
+    const blob=await r.blob();
+    const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=files.length>1?'converted.zip':files[0].name.replace('.webp','.jpg');a.click();
+    $('statusWebp').textContent='Done — '+files.length+' file(s) converted';
+  }catch(e){$('statusWebp').textContent='Error: '+e.message}
+});
+
+// JSON Merge
+setupDrop('dropJson','inputJson',async files=>{
+  $('statusJson').textContent='Merging '+files.length+' file(s)…';
+  const fd=new FormData();
+  for(const f of files)fd.append('files',f);
+  fd.append('format',$('jsonFmt').value);
+  try{
+    const r=await fetch(`${API}/api/merge-json`,{method:'POST',body:fd});
+    const blob=await r.blob();
+    const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='merged.'+$('jsonFmt').value;a.click();
+    $('statusJson').textContent='Done — merged to '+$('jsonFmt').value;
+  }catch(e){$('statusJson').textContent='Error: '+e.message}
+});
+
+// Scraper
+$('scrapeBtn').addEventListener('click',async()=>{
+  const url=$('scrapeUrl').value.trim();if(!url)return;
+  $('statusScrape').textContent='Scraping…';
+  $('scrapeResult').classList.remove('visible');
+  try{
+    const r=await fetch(`${API}/api/scrape`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url})});
+    const d=await r.json();
+    if(d.error){$('statusScrape').textContent='Error: '+d.error;return}
+    $('scrapeResult').textContent=d.text;$('scrapeResult').classList.add('visible');
+    $('statusScrape').textContent=`Scraped ${d.chars} characters from ${d.url}`;
+  }catch(e){$('statusScrape').textContent='Error: '+e.message}
+});
+
+// PDF Merge
+setupDrop('dropPdf','inputPdf',async files=>{
+  $('statusPdf').textContent='Merging '+files.length+' PDF(s)…';
+  const fd=new FormData();
+  for(const f of files)fd.append('files',f);
+  try{
+    const r=await fetch(`${API}/api/merge-pdf`,{method:'POST',body:fd});
+    const blob=await r.blob();
+    const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='merged.pdf';a.click();
+    $('statusPdf').textContent='Done — PDFs merged';
+  }catch(e){$('statusPdf').textContent='Error: '+e.message}
+});
+
+// Status
+async function poll(){try{await fetch(`${API}/api/status`);$('dotStatus').className='lyra-dot lyra-dot-ok';$('lblStatus').textContent='Online'}catch(e){$('dotStatus').className='lyra-dot lyra-dot-error';$('lblStatus').textContent='Offline'}}
+poll();setInterval(poll,10000);
+</script>
+</body>
+</html>

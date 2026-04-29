@@ -1,0 +1,278 @@
+<!-- ═══════════════════════════════════════════════════════════════
+     DROPDOWN CSS — paste into your existing <style> block
+     (anywhere after the nav styles you already have)
+     ═══════════════════════════════════════════════════════════════ -->
+
+<style>
+/* Dropdown parent — the <li> containing a submenu */
+.nav-links li.has-dropdown { position: relative; }
+
+/* Chevron indicator on dropdown-parent links */
+.nav-links li.has-dropdown > a::before {
+  content: '▾';
+  display: inline-block;
+  margin-right: 0.4em;
+  font-size: 0.6em;
+  opacity: 0.5;
+  transform: translateY(-1px);
+  transition: transform 0.25s ease, opacity 0.25s ease;
+}
+.nav-links li.has-dropdown:hover > a::before,
+.nav-links li.has-dropdown.open > a::before {
+  opacity: 1;
+  transform: translateY(-1px) rotate(-180deg);
+}
+
+/* The dropdown panel itself */
+.nav-dropdown {
+  position: absolute;
+  top: calc(100% + 14px);
+  left: 50%;
+  transform: translateX(-50%) translateY(-8px);
+  min-width: 220px;
+  padding: 0.6rem 0;
+  list-style: none;
+  background: rgba(10, 10, 12, 0.97);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(196, 18, 48, 0.25);
+  border-radius: 4px;
+  box-shadow:
+    0 20px 60px rgba(0, 0, 0, 0.6),
+    0 0 40px rgba(196, 18, 48, 0.08);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.25s ease, transform 0.25s ease, visibility 0.25s;
+  z-index: 1001;
+}
+
+/* Accent bar across the top of the panel — matches your cathedral aesthetic */
+.nav-dropdown::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg,
+    transparent,
+    var(--crimson) 30%,
+    var(--gold) 50%,
+    var(--crimson) 70%,
+    transparent);
+  opacity: 0.5;
+}
+
+/* Show on hover (desktop) or when JS opens it (click/tap) */
+.nav-links li.has-dropdown:hover > .nav-dropdown,
+.nav-links li.has-dropdown.open > .nav-dropdown {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* Dropdown items */
+.nav-dropdown li { list-style: none; }
+.nav-dropdown a {
+  display: block;
+  padding: 0.55rem 1.3rem;
+  font-family: var(--font-display);
+  font-size: 0.7rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--silver-dim);
+  text-decoration: none;
+  transition: all 0.2s ease;
+  border-left: 2px solid transparent;
+}
+.nav-dropdown a::after { display: none; }  /* no underline on sub-items */
+
+.nav-dropdown a:hover {
+  color: var(--gold);
+  background: rgba(196, 18, 48, 0.08);
+  border-left-color: var(--crimson);
+  padding-left: 1.5rem;
+  text-shadow: 0 0 12px rgba(212, 168, 70, 0.3);
+}
+
+/* Section dividers inside dropdowns (optional, use class="divider") */
+.nav-dropdown li.divider {
+  height: 1px;
+  margin: 0.4rem 0.8rem;
+  background: rgba(196, 18, 48, 0.15);
+}
+
+/* Section labels inside dropdowns (optional) */
+.nav-dropdown li.label {
+  padding: 0.6rem 1.3rem 0.2rem;
+  font-family: var(--font-mono);
+  font-size: 0.55rem;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  color: var(--crimson);
+  opacity: 0.55;
+}
+
+/* ─── Mobile: dropdowns become inline-expanded sections ─── */
+@media (max-width: 780px) {
+  .nav-dropdown {
+    position: static;
+    transform: none;
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    box-shadow: none;
+    border: none;
+    background: rgba(196, 18, 48, 0.04);
+    border-left: 1px solid rgba(196, 18, 48, 0.2);
+    margin: 0.3rem 0 0.8rem 1rem;
+    padding: 0.3rem 0;
+    display: none;
+    min-width: 0;
+  }
+  .nav-dropdown::before { display: none; }
+  .nav-links li.has-dropdown.open > .nav-dropdown { display: block; }
+  .nav-links li.has-dropdown > a { cursor: pointer; }
+}
+</style>
+
+
+<!-- ═══════════════════════════════════════════════════════════════
+     NAV REPLACEMENT — swap your entire existing <nav id="mainNav">
+     block for this one
+     ═══════════════════════════════════════════════════════════════ -->
+
+<nav id="mainNav">
+  <a href="Redverse.html" class="nav-brand">RedVerse</a>
+  <button class="nav-toggle" onclick="toggleNav()" aria-label="Menu">
+    <span></span><span></span><span></span>
+  </button>
+  <ul class="nav-links" id="navLinks">
+
+    <li><a href="Redverse.html">Home</a></li>
+
+    <!-- ─── TOOLS DROPDOWN ─── -->
+    <li class="has-dropdown">
+      <a href="tools.html" aria-haspopup="true">Tools</a>
+      <ul class="nav-dropdown" role="menu">
+        <li class="label">Media &amp; Conversion</li>
+        <li><a href="audiocutter.html">Audio Cutter</a></li>
+        <li><a href="dragon-forge-app.html">Dragon Forge</a></li>
+        <li><a href="multitool.html">Multitool</a></li>
+        <li><a href="looppad.html">Loop Pad</a></li>
+        <li><a href="speaker.html">Speaker</a></li>
+        <li class="divider"></li>
+        <li class="label">System</li>
+        <li><a href="dragon-cleaner-app.html">Dragon Cleaner</a></li>
+        <li><a href="gauntlet-app.html">Gauntlet</a></li>
+        <li><a href="void-eater.html">Void Eater</a></li>
+        <li><a href="blackbox.py">Blackbox</a></li>
+        <li><a href="omnisensor-hud-v2.html">OmniSensor HUD v2</a></li>
+        <li><a href="gdm-core.html">GDM Core</a></li>
+        <li class="divider"></li>
+        <li class="label">Capture &amp; Scribe</li>
+        <li><a href="quickcam.html">QuickCam</a></li>
+        <li><a href="redvox-app.html">RedVox</a></li>
+        <li><a href="scribe-app.html">Scribe</a></li>
+        <li><a href="narrator.html">Narrator</a></li>
+        <li><a href="screen_recorder.html">Screen Recorder</a></li>
+        <li><a href="redvault-indexer-app.html">Indexer</a></li>
+        <li class="divider"></li>
+        <li class="label">Interface Modules</li>
+        <li><a href="clock.html">Clock</a></li>
+        <li><a href="lyra_forge_ui.html">Lyra Forge UI</a></li>
+        <li><a href="media-hud.html">Media HUD</a></li>
+        <li><a href="vision_app.html">Vision Switchboard</a></li>
+      </ul>
+    </li>
+
+    <li><a href="map.html">Map</a></li>
+
+    <!-- ─── INTERFACE DROPDOWN ─── -->
+    <li class="has-dropdown">
+      <a href="lunas-room.html" aria-haspopup="true">Interface</a>
+      <ul class="nav-dropdown" role="menu">
+        <li><a href="lunas-room.html">Luna's Room</a></li>
+        <li><a href="luna-fui-v3.html">Luna FUI v3</a></li>
+        <li><a href="EDrive.html">E-Drive</a></li>
+        <li><a href="oracle.html">Oracle</a></li>
+        <li><a href="soulstacker.html">Soul Stacker</a></li>
+      </ul>
+    </li>
+
+    <li><a href="media-hud.html">Music</a></li>
+
+    <!-- ─── LORE DROPDOWN ─── -->
+    <li class="has-dropdown">
+      <a href="redverse-coming-soon.html" aria-haspopup="true">Lore</a>
+      <ul class="nav-dropdown" role="menu">
+        <li><a href="redverse-coming-soon.html">Lore Bible</a></li>
+        <li><a href="redverse-coming-soon.html">Cosmology</a></li>
+        <li><a href="redverse-coming-soon.html">Saga Grid</a></li>
+        <li><a href="redverse-coming-soon.html">Saga Detail</a></li>
+        <li><a href="redverse-coming-soon.html">Chronicles</a></li>
+      </ul>
+    </li>
+
+    <li><a href="redverse-shop.html">Store</a></li>
+    <li><a href="profile.html">Profile</a></li>
+    <li><a href="redverse-coming-soon.html">Coming Soon</a></li>
+    <li><a href="waifu_support.html" class="support-link">w-A-fu!</a></li>
+
+  </ul>
+</nav>
+
+
+<!-- ═══════════════════════════════════════════════════════════════
+     DROPDOWN JS — paste inside your existing <script> block
+     (or add a new one at the bottom of <body>)
+     ═══════════════════════════════════════════════════════════════ -->
+
+<script>
+(function() {
+  'use strict';
+
+  // Tap/click handling — on mobile AND desktop (for tap-to-open parity).
+  // On desktop, hover still works via CSS; this adds click-as-alternative.
+  const parents = document.querySelectorAll('.nav-links li.has-dropdown');
+
+  parents.forEach(li => {
+    const trigger = li.querySelector(':scope > a');
+    if (!trigger) return;
+
+    trigger.addEventListener('click', (e) => {
+      // Only intercept on small screens OR when the user clearly wants the menu
+      // (i.e., they haven't yet seen it open). On desktop, let the link navigate
+      // normally after a brief reveal — but if the submenu isn't yet open, show it.
+      const isMobile = window.matchMedia('(max-width: 780px)').matches;
+
+      if (isMobile) {
+        e.preventDefault();
+        // Close siblings, toggle self
+        parents.forEach(p => { if (p !== li) p.classList.remove('open'); });
+        li.classList.toggle('open');
+      } else {
+        // Desktop: first click opens, second click (now-visible) navigates.
+        if (!li.classList.contains('open')) {
+          e.preventDefault();
+          parents.forEach(p => p.classList.remove('open'));
+          li.classList.add('open');
+        }
+      }
+    });
+  });
+
+  // Click outside to close (desktop)
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('.has-dropdown')) {
+      parents.forEach(p => p.classList.remove('open'));
+    }
+  });
+
+  // Escape key closes all dropdowns
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      parents.forEach(p => p.classList.remove('open'));
+    }
+  });
+})();
+</script>

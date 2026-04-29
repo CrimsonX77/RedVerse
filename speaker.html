@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Aetherion Speaker — RedForest Labs</title>
+<link rel="stylesheet" href="lyra.css">
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+<style>
+html,body{height:100vh;overflow:hidden}body{display:flex;flex-direction:column}
+.speaker-layout{flex:1;display:flex;overflow:hidden}
+
+/* Left: Controls */
+.speaker-controls{width:320px;min-width:260px;display:flex;flex-direction:column;background:var(--lyra-stone);border-right:1px solid var(--lyra-border);overflow-y:auto}
+.ctrl-section{padding:14px 16px;border-bottom:1px solid var(--lyra-border)}
+
+/* Play/Stop bar */
+.play-bar{display:flex;gap:8px;align-items:center;padding:14px 16px;background:var(--lyra-obsidian);border-bottom:1px solid var(--lyra-border)}
+.play-bar .lyra-btn{flex:1;padding:12px;font-size:13px;justify-content:center}
+
+/* Voice selector */
+.voice-select-wrap{display:flex;gap:6px;align-items:center}
+.voice-select-wrap select{flex:1;max-width:100%}
+
+/* Spin controls */
+.spin-group{display:flex;flex-direction:column;gap:3px;flex:1}
+.spin-group label{font-size:10px}
+.spin-row{display:flex;gap:10px}
+.spin-input{width:100%;background:var(--lyra-obsidian);border:1px solid var(--lyra-border);border-radius:var(--lyra-radius-sm);padding:6px 8px;color:var(--lyra-text);font-family:'JetBrains Mono',monospace;font-size:12px;text-align:center;outline:none}
+.spin-input:focus{border-color:var(--lyra-crimson)}
+
+/* Right: Text area */
+.speaker-text-panel{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.text-area-main{flex:1;width:100%;background:var(--lyra-abyss);border:none;padding:20px;color:var(--lyra-text);font-family:'Rajdhani',sans-serif;font-size:15px;line-height:1.7;resize:none;outline:none}
+.text-area-main::placeholder{color:var(--lyra-ghost)}
+.text-footer{padding:8px 16px;border-top:1px solid var(--lyra-border);display:flex;justify-content:space-between;font-size:11px;color:var(--lyra-ghost);background:var(--lyra-obsidian)}
+
+/* Waveform visualizer */
+.waveform{height:40px;background:var(--lyra-void);border-bottom:1px solid var(--lyra-border);display:flex;align-items:center;justify-content:center;gap:2px;padding:0 20px;overflow:hidden}
+.wave-bar{width:3px;background:var(--lyra-crimson);border-radius:1px;transition:height 0.1s;opacity:0.4}
+.waveform.active .wave-bar{opacity:1;animation:wavePulse 0.8s ease infinite alternate}
+@keyframes wavePulse{0%{transform:scaleY(0.3)}100%{transform:scaleY(1)}}
+
+/* Progress */
+.speak-progress{height:3px;background:var(--lyra-iron)}
+.speak-progress-fill{height:100%;width:0%;background:linear-gradient(90deg,var(--lyra-blood),var(--lyra-crimson),var(--lyra-ember));transition:width 0.3s}
+
+/* Formatting toggles */
+.format-toggles{display:flex;gap:12px;align-items:center}
+.format-toggle{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--lyra-ash);cursor:pointer}
+.format-toggle input{accent-color:var(--lyra-crimson)}
+
+@media(max-width:800px){
+  .speaker-layout{flex-direction:column}
+  .speaker-controls{width:100%;max-height:40vh;border-right:none;border-bottom:1px solid var(--lyra-border)}
+}
+</style>
+</head>
+<body>
+<div class="lyra-cathedral"></div>
+
+<header class="lyra-header">
+  <a href="index.html" style="display:flex;align-items:center;gap:10px;text-decoration:none;color:inherit">
+    <div style="width:32px;height:32px;border-radius:6px;background:linear-gradient(135deg,var(--lyra-blood),var(--lyra-crimson));display:flex;align-items:center;justify-content:center;box-shadow:0 0 10px rgba(220,20,60,0.3)"><span style="color:var(--lyra-gold);font-size:16px">♦</span></div>
+    <span class="lyra-logo">AETHERION <span class="lyra-logo-accent">SPEAKER</span></span>
+  </a>
+  <div style="display:flex;align-items:center;gap:10px">
+    <div class="ai-state" id="aiState" data-state="idle" style="display:flex;align-items:center;gap:8px;padding:4px 12px;border-radius:999px;border:1px solid var(--lyra-border);background:rgba(0,0,0,0.3);font-size:11px;font-weight:600;font-family:'Rajdhani',sans-serif"><div class="ai-state-orb" style="width:8px;height:8px;border-radius:50%"></div><span id="aiLabel">Ready</span></div>
+    <button id="reconnectBtn" style="background:none;border:1px solid var(--lyra-border);border-radius:4px;padding:4px 8px;color:var(--lyra-ash);cursor:pointer;display:flex;align-items:center;gap:4px;font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:600"><i class="material-icons" style="font-size:14px">refresh</i>Reload Voices</button>
+  </div>
+</header>
+
+<!-- Progress bar -->
+<div class="speak-progress"><div class="speak-progress-fill" id="progressFill"></div></div>
+
+<div class="speaker-layout">
+  <!-- Controls Panel -->
+  <div class="speaker-controls lyra-stagger">
+    <!-- Play / Stop -->
+    <div class="play-bar">
+      <button class="lyra-btn lyra-btn-primary" id="playBtn"><i class="material-icons" style="font-size:18px">play_arrow</i> Speak</button>
+      <button class="lyra-btn lyra-btn-danger" id="stopBtn" disabled><i class="material-icons" style="font-size:18px">stop</i> Stop</button>
+    </div>
+
+    <!-- Voice Selection -->
+    <div class="ctrl-section">
+      <div class="lyra-section-title">Voice</div>
+      <div class="voice-select-wrap">
+        <select class="lyra-select" id="voiceSelect" style="width:100%"><option>Loading voices…</option></select>
+      </div>
+    </div>
+
+    <!-- Voice Controls -->
+    <div class="ctrl-section">
+      <div class="lyra-section-title">Controls</div>
+      <div class="spin-row">
+        <div class="spin-group">
+          <label class="lyra-label">Rate %</label>
+          <input class="spin-input" type="number" id="rateInput" value="0" min="-50" max="100">
+        </div>
+        <div class="spin-group">
+          <label class="lyra-label">Volume %</label>
+          <input class="spin-input" type="number" id="volumeInput" value="0" min="-50" max="50">
+        </div>
+        <div class="spin-group">
+          <label class="lyra-label">Pitch Hz</label>
+          <input class="spin-input" type="number" id="pitchInput" value="0" min="-50" max="50">
+        </div>
+      </div>
+    </div>
+
+    <!-- Text Formatting -->
+    <div class="ctrl-section">
+      <div class="lyra-section-title">Formatting</div>
+      <div class="format-toggles">
+        <label class="format-toggle"><input type="checkbox" id="stripNewlines" checked> Strip newlines</label>
+        <label class="format-toggle"><input type="checkbox" id="collapseSpaces" checked> Collapse spaces</label>
+      </div>
+      <div style="margin-top:8px">
+        <label class="lyra-label">Chunk Size</label>
+        <select class="lyra-select" id="chunkSelect" style="width:100%;margin-top:4px">
+          <option value="50">50</option><option value="100">100</option><option value="150">150</option>
+          <option value="200" selected>200</option><option value="250">250</option><option value="300">300</option>
+          <option value="400">400</option><option value="500">500</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- File Actions -->
+    <div class="ctrl-section">
+      <div class="lyra-section-title">File</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        <button class="lyra-btn" id="loadFileBtn" style="flex:1;font-size:11px;padding:6px 10px;justify-content:center"><i class="material-icons" style="font-size:14px">upload_file</i> Load Text</button>
+        <button class="lyra-btn" id="saveAudioBtn" style="flex:1;font-size:11px;padding:6px 10px;justify-content:center"><i class="material-icons" style="font-size:14px">download</i> Save Audio</button>
+        <button class="lyra-btn" id="clearBtn" style="flex:1;font-size:11px;padding:6px 10px;justify-content:center"><i class="material-icons" style="font-size:14px">delete_outline</i> Clear</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Text Panel -->
+  <div class="speaker-text-panel">
+    <!-- Waveform visualizer -->
+    <div class="waveform" id="waveform"></div>
+
+    <textarea class="text-area-main" id="textArea" placeholder="Enter text to speak…&#10;&#10;Lyra speaks what you write here. Choose a voice, adjust the controls, then hit Speak."></textarea>
+    
+    <div class="text-footer">
+      <span id="charCount">Characters: 0</span>
+      <span id="statusText">Ready</span>
+    </div>
+  </div>
+</div>
+
+<footer class="lyra-footer">
+  <span class="lyra-footer-brand">Aetherion Speaker · RedForest Labs</span>
+  <span class="lyra-mono" id="footerInfo">—</span>
+</footer>
+
+<!-- Hidden file input -->
+<input type="file" id="fileInput" accept=".txt,.md,.text" style="display:none">
+
+<script>
+const API='http://127.0.0.1:8911';
+const $=id=>document.getElementById(id);
+let speaking=false;
+
+function setAi(s,l){$('aiState').dataset.state=s;$('aiLabel').textContent=l}
+
+// Generate waveform bars
+(function(){const w=$('waveform');for(let i=0;i<60;i++){const b=document.createElement('div');b.className='wave-bar';b.style.height=(Math.random()*20+4)+'px';w.appendChild(b)}})();
+
+function animateWave(active){
+  const bars=document.querySelectorAll('.wave-bar');
+  if(active){
+    $('waveform').classList.add('active');
+    bars.forEach((b,i)=>{b.style.animationDelay=(i*0.05)+'s';b.style.height=(Math.random()*30+5)+'px'});
+  }else{
+    $('waveform').classList.remove('active');
+    bars.forEach(b=>{b.style.height=(Math.random()*8+3)+'px'});
+  }
+}
+
+// Load voices
+async function loadVoices(){
+  setAi('loading','Loading voices');
+  try{
+    const r=await fetch(`${API}/api/voices`);const d=await r.json();
+    const sel=$('voiceSelect');sel.innerHTML='';
+    const config=(await(await fetch(`${API}/api/status`)).json()).config||{};
+    d.voices.forEach(v=>{
+      const o=document.createElement('option');
+      o.value=v.ShortName;
+      o.textContent=`${v.ShortName} (${v.Locale}) — ${v.Gender}`;
+      if(v.ShortName===config.voice)o.selected=true;
+      sel.appendChild(o);
+    });
+    $('footerInfo').textContent=`${d.count} voices loaded`;
+    setAi('live','Ready');
+  }catch(e){
+    $('voiceSelect').innerHTML='<option>Server offline</option>';
+    setAi('error','No server');
+  }
+}
+
+$('reconnectBtn').addEventListener('click',loadVoices);
+
+// Speak
+$('playBtn').addEventListener('click',async()=>{
+  let text=$('textArea').value;
+  if(!text.trim())return;
+  if($('stripNewlines').checked)text=text.replace(/\n/g,' ');
+  if($('collapseSpaces').checked)while(text.includes('  '))text=text.replace('  ',' ');
+
+  speaking=true;
+  $('playBtn').disabled=true;
+  $('stopBtn').disabled=false;
+  setAi('speaking','Speaking');
+  animateWave(true);
+  $('progressFill').style.width='30%';
+
+  try{
+    const r=await fetch(`${API}/api/speak`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+      text:text.trim(),
+      voice:$('voiceSelect').value,
+      rate:parseInt($('rateInput').value)||0,
+      volume:parseInt($('volumeInput').value)||0,
+      pitch:parseInt($('pitchInput').value)||0
+    })});
+    const d=await r.json();
+    $('statusText').textContent=d.status==='complete'?`Spoke ${d.chars} chars`:(d.error||'Done');
+    $('progressFill').style.width='100%';
+  }catch(e){
+    $('statusText').textContent='Error: '+e.message;
+    setAi('error','Error');
+  }
+  
+  speaking=false;
+  $('playBtn').disabled=false;
+  $('stopBtn').disabled=true;
+  animateWave(false);
+  setTimeout(()=>{$('progressFill').style.width='0%'},800);
+  setAi('live','Ready');
+});
+
+// Stop
+$('stopBtn').addEventListener('click',async()=>{
+  try{await fetch(`${API}/api/stop`,{method:'POST'})}catch(e){}
+  speaking=false;
+  $('playBtn').disabled=false;
+  $('stopBtn').disabled=true;
+  animateWave(false);
+  $('progressFill').style.width='0%';
+  setAi('live','Ready');
+  $('statusText').textContent='Stopped';
+});
+
+// Save audio
+$('saveAudioBtn').addEventListener('click',async()=>{
+  let text=$('textArea').value;if(!text.trim())return;
+  if($('stripNewlines').checked)text=text.replace(/\n/g,' ');
+  setAi('loading','Generating');
+  $('statusText').textContent='Generating audio file…';
+  try{
+    const r=await fetch(`${API}/api/generate`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+      text:text.trim(),voice:$('voiceSelect').value,
+      rate:parseInt($('rateInput').value)||0,volume:parseInt($('volumeInput').value)||0,pitch:parseInt($('pitchInput').value)||0
+    })});
+    const blob=await r.blob();
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');a.href=url;a.download='lyra-speech.mp3';a.click();
+    URL.revokeObjectURL(url);
+    $('statusText').textContent='Audio saved';
+  }catch(e){$('statusText').textContent='Save failed'}
+  setAi('live','Ready');
+});
+
+// Load file
+$('loadFileBtn').addEventListener('click',()=>$('fileInput').click());
+$('fileInput').addEventListener('change',async(e)=>{
+  const f=e.target.files[0];if(!f)return;
+  const text=await f.text();
+  $('textArea').value=text;
+  $('charCount').textContent=`Characters: ${text.length}`;
+  $('statusText').textContent=`Loaded: ${f.name}`;
+});
+
+// Clear
+$('clearBtn').addEventListener('click',()=>{$('textArea').value='';$('charCount').textContent='Characters: 0'});
+
+// Char count
+$('textArea').addEventListener('input',()=>{$('charCount').textContent=`Characters: ${$('textArea').value.length}`});
+
+// Init
+loadVoices();
+</script>
+</body>
+</html>

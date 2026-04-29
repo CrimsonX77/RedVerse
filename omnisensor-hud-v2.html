@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>OmniSensor HUD v2 • RedVerse</title>
+  <link rel="stylesheet" href="lyra.css" />
+  <style>
+    .wrap { max-width: 920px; margin: 40px auto; padding: 20px; }
+    .card { background: var(--lyra-stone); border: 1px solid var(--lyra-border); border-radius: 14px; padding: 20px; }
+    .row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 14px; }
+    .mono { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--lyra-ash); }
+    pre { background: var(--lyra-obsidian); border: 1px solid var(--lyra-border); border-radius: 10px; padding: 12px; color: var(--lyra-silver); max-height: 320px; overflow: auto; }
+  </style>
+</head>
+<body>
+  <header class="lyra-header">
+    <a href="tools.html" class="lyra-logo">Back to <span class="lyra-logo-accent">Tools</span></a>
+  </header>
+
+  <main class="wrap">
+    <div class="card">
+      <h1 class="lyra-title">OmniSensor HUD v2</h1>
+      <p class="lyra-subtitle">Control and trace the desktop HUD process from the web layer.</p>
+
+      <div class="row">
+        <button class="lyra-btn lyra-btn-primary" onclick="startHud()">Start HUD</button>
+        <button class="lyra-btn" onclick="stopHud()">Stop HUD</button>
+        <button class="lyra-btn lyra-btn-ghost" onclick="refreshStatus()">Refresh Status</button>
+      </div>
+
+      <p id="status" class="mono" style="margin-top:12px;">Status: checking…</p>
+
+      <h3 style="margin-top:18px;">Recent traces</h3>
+      <pre id="traceBox">Loading traces...</pre>
+    </div>
+  </main>
+
+  <script>
+    const API = 'http://127.0.0.1:8933';
+
+    async function refreshStatus() {
+      try {
+        const r = await fetch(`${API}/omnisensor/status`);
+        const d = await r.json();
+        document.getElementById('status').textContent = `Status: ${d.running ? 'RUNNING' : 'STOPPED'}${d.pid ? ` (PID ${d.pid})` : ''}`;
+      } catch (e) {
+        document.getElementById('status').textContent = `Status: backend unavailable (${e.message})`;
+      }
+      await refreshTraces();
+    }
+
+    async function startHud() {
+      await fetch(`${API}/omnisensor/start`, { method: 'POST' });
+      await refreshStatus();
+    }
+
+    async function stopHud() {
+      await fetch(`${API}/omnisensor/stop`, { method: 'POST' });
+      await refreshStatus();
+    }
+
+    async function refreshTraces() {
+      try {
+        const r = await fetch(`${API}/trace/recent?limit=40`);
+        const d = await r.json();
+        const lines = (d.events || []).map(ev => {
+          const ts = new Date((ev.ts || 0) * 1000).toLocaleString();
+          return `[${ts}] [${ev.level}] [${ev.category}] ${ev.message}`;
+        });
+        document.getElementById('traceBox').textContent = lines.length ? lines.join('\n') : 'No traces yet.';
+      } catch (e) {
+        document.getElementById('traceBox').textContent = `Trace unavailable: ${e.message}`;
+      }
+    }
+
+    refreshStatus();
+    setInterval(refreshStatus, 5000);
+  </script>
+</body>
+</html>

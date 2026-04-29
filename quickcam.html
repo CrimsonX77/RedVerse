@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vision Portal — RedForest Labs</title>
+<link rel="stylesheet" href="lyra.css">
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+<style>
+html,body{height:100vh;overflow:hidden}body{display:flex;flex-direction:column}
+.vision-layout{flex:1;display:flex;overflow:hidden;position:relative}
+.vision-main{flex:1;display:flex;align-items:center;justify-content:center;background:var(--lyra-void);position:relative;overflow:hidden}
+.vision-feed{width:100%;height:100%;object-fit:contain;display:block}
+.vision-placeholder{text-align:center;color:var(--lyra-ghost)}
+.vision-placeholder .material-icons{font-size:80px;opacity:0.08;color:var(--lyra-crimson);display:block;margin-bottom:16px}
+
+/* Controls overlay - bottom */
+.vision-controls{position:absolute;bottom:0;left:0;right:0;background:linear-gradient(transparent,rgba(6,6,10,0.95));padding:24px 20px 14px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;opacity:0;transition:opacity var(--lyra-duration-med)}
+.vision-main:hover .vision-controls{opacity:1}
+
+.vision-mode-pills{display:flex;gap:4px;flex-wrap:wrap}
+.mode-pill{padding:4px 12px;border-radius:var(--lyra-radius-pill);border:1px solid var(--lyra-border);background:rgba(0,0,0,0.5);color:var(--lyra-ash);font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:600;cursor:pointer;transition:all var(--lyra-duration-med)}
+.mode-pill:hover{border-color:var(--lyra-crimson);color:var(--lyra-silver)}
+.mode-pill.active{border-color:var(--lyra-crimson);background:rgba(220,20,60,0.2);color:var(--lyra-text-bright);box-shadow:0 0 8px rgba(220,20,60,0.2)}
+
+.intensity-wrap{display:flex;align-items:center;gap:8px}
+.intensity-wrap label{font-size:11px;color:var(--lyra-ash);font-weight:600}
+.intensity-val{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--lyra-crimson);width:24px;text-align:center}
+
+/* Status bar overlay - top right */
+.vision-status{position:absolute;top:12px;right:12px;display:flex;gap:8px;z-index:5}
+
+/* Camera select - top left */
+.vision-camera-select{position:absolute;top:12px;left:12px;z-index:5}
+
+/* Snapshot flash */
+.flash{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none;transition:opacity 0.1s}
+.flash.active{opacity:0.8;transition:none}
+
+@media(max-width:800px){.vision-controls{opacity:1}}
+</style>
+</head>
+<body>
+<div class="lyra-cathedral"></div>
+
+<header class="lyra-header">
+  <a href="index.html" class="portal-link" style="display:flex;align-items:center;gap:10px;text-decoration:none;color:inherit">
+    <div style="width:32px;height:32px;border-radius:6px;background:linear-gradient(135deg,var(--lyra-blood),var(--lyra-crimson));display:flex;align-items:center;justify-content:center;box-shadow:0 0 10px rgba(220,20,60,0.3)"><span style="color:var(--lyra-gold);font-size:16px">♦</span></div>
+    <span class="lyra-logo">VISION <span class="lyra-logo-accent">PORTAL</span></span>
+  </a>
+  <div style="display:flex;align-items:center;gap:10px">
+    <div class="ai-state" id="aiState" data-state="idle"><div class="ai-state-orb" style="width:8px;height:8px;border-radius:50%"></div><span id="aiLabel">Offline</span></div>
+    <button class="reconnect-btn" id="reconnectBtn" style="background:none;border:1px solid var(--lyra-border);border-radius:4px;padding:4px 8px;color:var(--lyra-ash);cursor:pointer;display:flex;align-items:center;gap:4px;font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:600"><i class="material-icons" style="font-size:14px">refresh</i>Reconnect</button>
+  </div>
+</header>
+
+<div class="vision-layout">
+  <div class="vision-main" id="visionMain">
+    <!-- Live feed -->
+    <img class="vision-feed" id="visionFeed" style="display:none">
+    
+    <!-- Placeholder -->
+    <div class="vision-placeholder" id="visionPlaceholder">
+      <i class="material-icons">videocam</i>
+      <div style="font-family:'Cinzel',serif;font-size:15px;letter-spacing:2px;color:var(--lyra-ash)">Vision Portal Sealed</div>
+      <div style="font-size:12px;margin-top:8px;color:var(--lyra-dim)">Start the camera server and connect</div>
+    </div>
+
+    <!-- Flash overlay for snapshots -->
+    <div class="flash" id="flash"></div>
+
+    <!-- Status pills -->
+    <div class="vision-status">
+      <div class="lyra-status-pill"><div class="lyra-dot" id="dotCam"></div><span id="lblCam">Camera …</span></div>
+    </div>
+
+    <!-- Camera selector -->
+    <div class="vision-camera-select">
+      <select class="lyra-select" id="cameraSelect" style="font-size:11px;padding:4px 8px;background:rgba(0,0,0,0.6);border-color:var(--lyra-border)">
+        <option value="0">Camera 0</option>
+      </select>
+    </div>
+
+    <!-- Bottom controls -->
+    <div class="vision-controls">
+      <div class="vision-mode-pills" id="modePills">
+        <button class="mode-pill active" data-mode="normal">Normal</button>
+        <button class="mode-pill" data-mode="green">Night Vision</button>
+        <button class="mode-pill" data-mode="thermal">Thermal</button>
+        <button class="mode-pill" data-mode="lowlight">Low-Light</button>
+        <button class="mode-pill" data-mode="edge">Edge Detect</button>
+        <button class="mode-pill" data-mode="spectral">Spectral</button>
+      </div>
+      <div class="intensity-wrap">
+        <label>Power</label>
+        <input class="lyra-range" type="range" id="intensitySlider" min="1" max="10" value="5" style="width:100px">
+        <span class="intensity-val" id="intensityVal">5</span>
+      </div>
+      <div style="margin-left:auto;display:flex;gap:6px">
+        <button class="lyra-btn" id="snapshotBtn" style="padding:6px 12px;font-size:11px"><i class="material-icons" style="font-size:14px">photo_camera</i></button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer class="lyra-footer">
+  <span class="lyra-footer-brand">Vision Portal · RedForest Labs</span>
+  <span class="lyra-mono" id="footerInfo">—</span>
+</footer>
+
+<script>
+const API='http://127.0.0.1:8910';
+const $=id=>document.getElementById(id);
+let knownDevices = [];
+
+function setStreamSource(){
+  $('visionFeed').src=`${API}/stream?t=${Date.now()}`;
+}
+
+async function loadDevices(refresh=false){
+  try{
+    const r=await fetch(`${API}/api/devices?refresh=${refresh?1:0}`);
+    const d=await r.json();
+    const devices = Array.isArray(d.devices)?d.devices:[];
+    if(!devices.length) return;
+
+    const prev = $('cameraSelect').value;
+    const changed = JSON.stringify(devices)!==JSON.stringify(knownDevices);
+    if(changed){
+      knownDevices = devices;
+      $('cameraSelect').innerHTML=devices.map(c=>`<option value="${c.index}">${c.name}</option>`).join('');
+    }
+
+    if(prev && devices.some(c=>String(c.index)===String(prev))){
+      $('cameraSelect').value = prev;
+    }
+  }catch(e){
+    console.warn('Device list unavailable');
+  }
+}
+
+// AI State helper
+function setAi(state,label){const el=$('aiState');el.dataset.state=state;$('aiLabel').textContent=label}
+
+// Check status
+async function checkStatus(){
+  try{
+    const r=await fetch(`${API}/api/status`);const d=await r.json();
+    $('dotCam').className='lyra-dot '+(d.camera_active?'lyra-dot-ok':'lyra-dot-error');
+    $('lblCam').textContent=d.camera_active?'Camera ✓':'Camera ✗';
+    if(d.camera_active){
+      if(!$('visionFeed').src) setStreamSource();
+      $('visionFeed').style.display='block';
+      $('visionPlaceholder').style.display='none';
+      setAi('live','Streaming');
+    }else{
+      $('visionFeed').style.display='none';
+      $('visionPlaceholder').style.display='block';
+      setAi('error','No Camera');
+    }
+    if(d.camera_index!==undefined){
+      const idx=String(d.camera_index);
+      if([...$('cameraSelect').options].some(o=>o.value===idx)){
+        $('cameraSelect').value=idx;
+      }
+    }
+    $('footerInfo').textContent=`Mode: ${d.vision_mode} · Intensity: ${d.intensity}`;
+  }catch(e){
+    $('dotCam').className='lyra-dot lyra-dot-error';
+    $('lblCam').textContent='No Server';
+    setAi('error','Offline');
+  }
+}
+
+// Reconnect
+$('reconnectBtn').addEventListener('click',async()=>{
+  setAi('loading','Connecting');
+  await loadDevices(true);
+  setStreamSource();
+  checkStatus();
+});
+
+// Camera select
+$('cameraSelect').addEventListener('change',async(e)=>{
+  const previous = $('cameraSelect').dataset.lastValue || e.target.value;
+  const nextVal = parseInt(e.target.value);
+  try{
+    const r=await fetch(`${API}/api/camera`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({index:nextVal})});
+    const d=await r.json();
+    if(!r.ok){
+      $('cameraSelect').value = String(d.camera_index ?? previous);
+      console.warn(d.error||'Camera switch failed');
+      return;
+    }
+    $('cameraSelect').dataset.lastValue = String(d.camera_index);
+    setStreamSource();
+    setTimeout(checkStatus,250);
+  }catch(err){
+    $('cameraSelect').value = String(previous);
+  }
+});
+
+// Vision modes
+$('modePills').addEventListener('click',async(e)=>{
+  const btn=e.target.closest('.mode-pill');if(!btn)return;
+  document.querySelectorAll('.mode-pill').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  await fetch(`${API}/api/vision`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({mode:btn.dataset.mode})});
+});
+
+// Intensity
+$('intensitySlider').addEventListener('input',async(e)=>{
+  $('intensityVal').textContent=e.target.value;
+  await fetch(`${API}/api/vision`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({intensity:parseInt(e.target.value)})});
+});
+
+// Snapshot
+$('snapshotBtn').addEventListener('click',async()=>{
+  $('flash').classList.add('active');
+  setTimeout(()=>$('flash').classList.remove('active'),150);
+  try{
+    const r=await fetch(`${API}/api/snapshot`);
+    const blob=await r.blob();
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');a.href=url;a.download=`snapshot-${Date.now()}.jpg`;a.click();
+    URL.revokeObjectURL(url);
+  }catch(e){console.error(e)}
+});
+
+loadDevices(true).then(()=>{
+  $('cameraSelect').dataset.lastValue = $('cameraSelect').value;
+  setStreamSource();
+  checkStatus();
+});
+setInterval(checkStatus,10000);
+</script>
+</body>
+</html>

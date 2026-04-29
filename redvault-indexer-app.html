@@ -1,0 +1,818 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RedVault Indexer — RedForest Labs</title>
+<link rel="stylesheet" href="lyra.css">
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+<style>
+html, body { min-height: 100vh; }
+body { display: flex; flex-direction: column; }
+
+/* ─── Page bg slot ───────────────────────────────────────── */
+.page-bg {
+  position: fixed; inset: 0; z-index: -2;
+  background: radial-gradient(ellipse at 30% 25%, rgba(220,20,60,0.09), transparent 60%),
+              radial-gradient(ellipse at 70% 75%, rgba(0,229,255,0.04), transparent 60%),
+              var(--lyra-void);
+}
+.page-bg .bg-media {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  object-fit: cover; opacity: 0.2; filter: brightness(0.4);
+}
+.page-bg::after {
+  content: ''; position: absolute; inset: 0;
+  background: linear-gradient(180deg, rgba(6,6,10,0.55) 0%, rgba(6,6,10,0.92) 100%);
+}
+
+.idx-layout {
+  flex: 1;
+  max-width: 1280px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 24px;
+  display: flex; flex-direction: column; gap: 16px;
+}
+
+/* ─── Hero ────────────────────────────────────────────────── */
+.idx-hero {
+  position: relative;
+  background: var(--lyra-stone);
+  border: 1px solid var(--lyra-border);
+  border-radius: var(--lyra-radius-lg);
+  padding: 22px 24px;
+  overflow: hidden;
+  isolation: isolate;
+}
+.idx-hero::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+  background: linear-gradient(90deg, transparent, var(--lyra-crimson) 25%, var(--lyra-gold) 50%, var(--lyra-cyan) 75%, transparent);
+  opacity: 0.55;
+}
+.idx-hero .hero-media {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  object-fit: cover; opacity: 0.15; filter: brightness(0.4); z-index: -1;
+}
+.hero-row { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
+.hero-sigil {
+  width: 54px; height: 54px;
+  border-radius: var(--lyra-radius-md);
+  background: linear-gradient(135deg, var(--lyra-blood), var(--lyra-crimson));
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 0 22px rgba(220,20,60,0.3);
+  flex-shrink: 0;
+}
+.hero-sigil .material-icons { color: var(--lyra-gold); font-size: 30px; }
+.hero-text h1 {
+  font-family: 'Cinzel', serif; font-size: 22px; font-weight: 900;
+  letter-spacing: 3px; color: var(--lyra-text-bright); margin: 0;
+}
+.hero-text p {
+  font-family: 'Crimson Pro', serif; font-style: italic;
+  font-size: 14px; color: var(--lyra-ash); margin: 2px 0 0;
+}
+.hero-meta { margin-left: auto; display: flex; gap: 8px; flex-wrap: wrap; }
+
+/* ─── Panels ──────────────────────────────────────────────── */
+.panel {
+  background: var(--lyra-stone);
+  border: 1px solid var(--lyra-border);
+  border-radius: var(--lyra-radius-lg);
+  padding: 20px;
+  position: relative;
+  overflow: hidden;
+}
+.panel::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg, transparent, var(--lyra-crimson), transparent);
+  opacity: 0.3;
+}
+.panel-title {
+  font-family: 'Orbitron', sans-serif; font-size: 10px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 2.5px;
+  color: var(--lyra-crimson); margin-bottom: 14px;
+  display: flex; align-items: center; gap: 10px;
+}
+.panel-title::after {
+  content: ''; flex: 1; height: 1px;
+  background: linear-gradient(90deg, var(--lyra-border), transparent);
+}
+
+/* ─── Scan config row ─────────────────────────────────────── */
+.scan-row {
+  display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
+}
+.scan-row input[type=text] {
+  flex: 1; min-width: 240px;
+  font-family: 'JetBrains Mono', monospace;
+}
+.scan-row label {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 12px; color: var(--lyra-ash);
+  font-family: 'JetBrains Mono', monospace;
+}
+.scan-row input[type=checkbox] { accent-color: var(--lyra-crimson); }
+
+.scan-progress {
+  margin-top: 14px;
+  display: none;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--lyra-ash);
+}
+.scan-progress.active { display: block; }
+.progress-bar {
+  height: 3px; background: var(--lyra-iron);
+  border-radius: 2px; overflow: hidden; margin-top: 6px;
+}
+.progress-fill {
+  height: 100%; width: 0%;
+  background: linear-gradient(90deg, var(--lyra-blood), var(--lyra-crimson), var(--lyra-gold));
+  transition: width 0.5s;
+  animation: shimmer 1.5s infinite;
+}
+@keyframes shimmer { 0%,100%{opacity:0.7} 50%{opacity:1} }
+
+/* ─── Stats grid ──────────────────────────────────────────── */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 10px;
+  margin-bottom: 14px;
+}
+.stat-card {
+  background: var(--lyra-obsidian);
+  border: 1px solid var(--lyra-border);
+  border-radius: var(--lyra-radius-md);
+  padding: 12px 14px;
+  text-align: center;
+}
+.stat-val {
+  font-family: 'Cinzel', serif;
+  font-size: 22px; font-weight: 900;
+  color: var(--lyra-gold); line-height: 1.1;
+}
+.stat-lbl {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px; letter-spacing: 1.5px; text-transform: uppercase;
+  color: var(--lyra-text-dim); margin-top: 4px;
+}
+
+/* ─── Category chips ──────────────────────────────────────── */
+.cat-chips {
+  display: flex; gap: 6px; flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+.cat-chip {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px; letter-spacing: 1px;
+  padding: 4px 10px;
+  border-radius: var(--lyra-radius-pill);
+  border: 1px solid var(--lyra-border);
+  background: var(--lyra-obsidian);
+  color: var(--lyra-ash);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.cat-chip:hover { border-color: var(--lyra-crimson); color: var(--lyra-silver); }
+.cat-chip .cnt { color: var(--lyra-gold); margin-left: 4px; }
+.cat-chip.active {
+  border-color: var(--lyra-gold); color: var(--lyra-gold);
+  background: linear-gradient(135deg, rgba(220,20,60,0.08), rgba(255,215,0,0.06));
+}
+
+/* ─── Projects grid ───────────────────────────────────────── */
+.proj-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 12px;
+}
+.proj-card {
+  background: var(--lyra-obsidian);
+  border: 1px solid var(--lyra-border);
+  border-radius: var(--lyra-radius-md);
+  padding: 14px 16px;
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+  overflow: hidden;
+}
+.proj-card:hover {
+  border-color: var(--lyra-crimson);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.4), 0 0 16px rgba(220,20,60,0.08);
+}
+.proj-card::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+  background: linear-gradient(90deg, transparent, var(--lyra-crimson), transparent);
+  opacity: 0; transition: opacity 0.2s;
+}
+.proj-card:hover::before { opacity: 0.6; }
+
+.proj-name {
+  font-family: 'Cinzel', serif; font-size: 14px; font-weight: 700;
+  letter-spacing: 1.5px; color: var(--lyra-text-bright);
+  margin-bottom: 4px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.proj-path {
+  font-family: 'JetBrains Mono', monospace; font-size: 10px;
+  color: var(--lyra-text-dim);
+  margin-bottom: 10px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.proj-meta {
+  display: flex; justify-content: space-between; gap: 8px;
+  font-family: 'JetBrains Mono', monospace; font-size: 10px;
+  color: var(--lyra-ash);
+  margin-bottom: 8px;
+}
+.proj-meta .size { color: var(--lyra-gold); }
+.proj-flags {
+  display: flex; gap: 4px; flex-wrap: wrap;
+}
+.proj-flag {
+  font-size: 9px; letter-spacing: 1px;
+  padding: 2px 7px;
+  border-radius: var(--lyra-radius-pill);
+  border: 1px solid;
+}
+.flag-py    { color: var(--lyra-cyan);    border-color: rgba(0,229,255,0.3); background: rgba(0,229,255,0.04); }
+.flag-web   { color: var(--lyra-gold);    border-color: rgba(255,215,0,0.3); background: rgba(255,215,0,0.04); }
+.flag-cfg   { color: var(--lyra-magenta); border-color: rgba(200,144,255,0.3); background: rgba(200,144,255,0.04); }
+.flag-entry { color: var(--lyra-crimson); border-color: rgba(220,20,60,0.35); background: rgba(220,20,60,0.04); }
+
+/* ─── File list / search results ──────────────────────────── */
+.search-row {
+  display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap;
+}
+.search-row input[type=search] {
+  flex: 1; min-width: 220px;
+  font-family: 'JetBrains Mono', monospace;
+}
+.filter-chip {
+  font-family: 'Cinzel', serif; font-size: 10px;
+  letter-spacing: 1.5px; text-transform: uppercase;
+  padding: 4px 10px;
+  border-radius: var(--lyra-radius-pill);
+  border: 1px solid var(--lyra-border);
+  background: var(--lyra-obsidian);
+  color: var(--lyra-ash);
+  cursor: pointer;
+}
+.filter-chip.active {
+  border-color: var(--lyra-gold); color: var(--lyra-gold);
+  background: linear-gradient(135deg, rgba(220,20,60,0.08), rgba(255,215,0,0.06));
+}
+
+.file-list {
+  max-height: 460px;
+  overflow-y: auto;
+  border: 1px solid var(--lyra-border);
+  border-radius: var(--lyra-radius-md);
+  background: var(--lyra-obsidian);
+}
+.file-row {
+  display: grid;
+  grid-template-columns: 24px 1fr auto auto;
+  gap: 10px;
+  align-items: center;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--lyra-border);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  transition: background 0.15s;
+}
+.file-row:last-child { border-bottom: none; }
+.file-row:hover { background: rgba(220,20,60,0.04); }
+.file-icon .material-icons { font-size: 14px; color: var(--lyra-ash); }
+.file-row.entry .file-icon .material-icons { color: var(--lyra-crimson); }
+.file-row.soul .file-icon .material-icons { color: var(--lyra-magenta); }
+
+.file-path { color: var(--lyra-silver); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.file-path .dim { color: var(--lyra-text-dim); }
+.file-path .name { color: var(--lyra-text-bright); font-weight: 700; }
+.file-cat {
+  font-size: 9px; letter-spacing: 1px; text-transform: uppercase;
+  padding: 1px 7px;
+  border-radius: var(--lyra-radius-pill);
+  border: 1px solid var(--lyra-border);
+  color: var(--lyra-text-dim);
+}
+.file-size { color: var(--lyra-gold); font-size: 10px; min-width: 56px; text-align: right; }
+
+.empty-panel {
+  padding: 30px 16px;
+  text-align: center;
+  font-family: 'Crimson Pro', serif; font-style: italic;
+  color: var(--lyra-text-dim);
+}
+
+/* ─── Modal (project detail / report) ─────────────────────── */
+.modal-scrim {
+  position: fixed; inset: 0;
+  background: rgba(6,6,10,0.88);
+  backdrop-filter: blur(10px);
+  display: none; align-items: center; justify-content: center;
+  z-index: 1000;
+}
+.modal-scrim.active { display: flex; }
+.modal {
+  background: var(--lyra-stone);
+  border: 1px solid var(--lyra-border);
+  border-radius: var(--lyra-radius-lg);
+  max-width: 760px; width: 94%;
+  max-height: 85vh;
+  display: flex; flex-direction: column;
+}
+.modal-head {
+  padding: 18px 22px;
+  border-bottom: 1px solid var(--lyra-border);
+  display: flex; justify-content: space-between; align-items: center; gap: 12px;
+}
+.modal-head h3 {
+  font-family: 'Cinzel', serif; font-size: 16px;
+  letter-spacing: 2px; color: var(--lyra-text-bright); margin: 0;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  min-width: 0; flex: 1;
+}
+.modal-body {
+  padding: 18px 22px;
+  overflow-y: auto;
+  flex: 1;
+}
+.modal-foot {
+  padding: 12px 22px;
+  border-top: 1px solid var(--lyra-border);
+  display: flex; justify-content: flex-end; gap: 10px;
+}
+
+.meta-pill {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase;
+  padding: 4px 10px; border-radius: var(--lyra-radius-pill);
+  border: 1px solid;
+}
+.meta-pill.ok  { color: var(--lyra-success); border-color: rgba(0,255,136,0.3); background: rgba(0,255,136,0.06); }
+.meta-pill.err { color: var(--lyra-error); border-color: rgba(255,45,64,0.3); background: rgba(255,45,64,0.06); }
+.meta-pill.info { color: var(--lyra-cyan); border-color: rgba(0,229,255,0.3); background: rgba(0,229,255,0.06); }
+
+/* Toast */
+.toast {
+  position: fixed; bottom: 24px; right: 24px;
+  background: var(--lyra-stone);
+  border: 1px solid var(--lyra-success);
+  border-left: 3px solid var(--lyra-success);
+  border-radius: var(--lyra-radius-md);
+  padding: 12px 18px;
+  font-family: 'JetBrains Mono', monospace; font-size: 12px;
+  color: var(--lyra-text-bright);
+  z-index: 2000;
+  box-shadow: var(--lyra-shadow-lg);
+  display: none;
+  max-width: 340px;
+}
+.toast.error { border-color: var(--lyra-error); border-left-color: var(--lyra-error); }
+.toast.warn  { border-color: var(--lyra-warning); border-left-color: var(--lyra-warning); }
+.toast.active { display: block; }
+</style>
+</head>
+<body>
+
+<div class="page-bg">
+  <!-- SLOT: page background media -->
+  <!-- <video class="bg-media" autoplay loop muted playsinline><source src="assets/indexer-bg.mp4" type="video/mp4"></video> -->
+</div>
+
+<header class="lyra-header">
+  <a href="tools.html" style="display:flex;align-items:center;gap:10px;text-decoration:none;color:inherit">
+    <div style="width:32px;height:32px;border-radius:6px;background:linear-gradient(135deg,var(--lyra-blood),var(--lyra-crimson));display:flex;align-items:center;justify-content:center;box-shadow:0 0 10px rgba(220,20,60,0.3)">
+      <span style="color:var(--lyra-gold);font-size:16px">📇</span>
+    </div>
+    <span class="lyra-logo">REDVAULT <span class="lyra-logo-accent">INDEXER</span></span>
+  </a>
+  <div class="lyra-status-pill"><div class="lyra-dot lyra-dot-pulse" id="dotStatus"></div><span id="lblStatus">…</span></div>
+</header>
+
+<main class="idx-layout">
+
+  <!-- Hero -->
+  <section class="idx-hero">
+    <!-- SLOT: hero background media -->
+    <!-- <video class="hero-media" autoplay loop muted playsinline><source src="assets/indexer-hero.mp4" type="video/mp4"></video> -->
+    <div class="hero-row">
+      <div class="hero-sigil"><i class="material-icons">travel_explore</i></div>
+      <div class="hero-text">
+        <h1>REDVAULT INDEXER</h1>
+        <p>Find what you built. Ignore what you didn't. node_modules need not apply.</p>
+      </div>
+      <div class="hero-meta">
+        <span class="meta-pill info" id="scansPill">◆ scans: 0</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- Scan config -->
+  <section class="panel">
+    <div class="panel-title">Scan Configuration</div>
+    <div class="scan-row">
+      <input class="lyra-input" type="text" id="scanPath" placeholder="/home/user — blank = home directory" />
+      <label title="Read file headers for titles, docstrings, soul-schema detection"><input type="checkbox" id="deepScan" checked> Deep scan</label>
+      <button class="lyra-btn lyra-btn-primary" id="btnStart">
+        <i class="material-icons" style="font-size:16px">play_arrow</i> Start
+      </button>
+    </div>
+    <div class="scan-progress" id="scanProgress">
+      <span id="progressLabel">Preparing…</span>
+      <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+      <span id="progressDetail" style="color:var(--lyra-text-dim);font-size:10px;display:block;margin-top:4px"></span>
+    </div>
+  </section>
+
+  <!-- Results (hidden until a scan completes) -->
+  <section class="panel" id="resultsPanel" style="display:none">
+    <div class="panel-title">
+      <span>Results</span>
+      <span style="flex:unset;font-size:10px;color:var(--lyra-text-dim);margin-left:auto" id="resultsRootLabel">—</span>
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat-card"><div class="stat-val" id="statProjects">—</div><div class="stat-lbl">Projects</div></div>
+      <div class="stat-card"><div class="stat-val" id="statFiles">—</div><div class="stat-lbl">Files</div></div>
+      <div class="stat-card"><div class="stat-val" id="statSize">—</div><div class="stat-lbl">Total Size</div></div>
+      <div class="stat-card"><div class="stat-val" id="statDirs">—</div><div class="stat-lbl">Dirs Scanned</div></div>
+      <div class="stat-card"><div class="stat-val" id="statSkipped">—</div><div class="stat-lbl">Dirs Skipped</div></div>
+      <div class="stat-card"><div class="stat-val" id="statTime">—</div><div class="stat-lbl">Scan Time</div></div>
+    </div>
+
+    <div class="cat-chips" id="catChips"></div>
+
+    <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap">
+      <button class="lyra-btn lyra-btn-ghost" id="btnExportMd" style="padding:6px 12px;font-size:11px">
+        <i class="material-icons" style="font-size:14px">download</i> Report (Markdown)
+      </button>
+      <button class="lyra-btn lyra-btn-ghost" id="btnExportJson" style="padding:6px 12px;font-size:11px">
+        <i class="material-icons" style="font-size:14px">data_object</i> Report (JSON)
+      </button>
+      <button class="lyra-btn lyra-btn-ghost" id="btnShowEntries" style="padding:6px 12px;font-size:11px">
+        <i class="material-icons" style="font-size:14px">play_circle</i> Entrypoints (<span id="entryCount">0</span>)
+      </button>
+      <button class="lyra-btn lyra-btn-ghost" id="btnShowSouls" style="padding:6px 12px;font-size:11px">
+        <i class="material-icons" style="font-size:14px">auto_awesome</i> Souls (<span id="soulCount">0</span>)
+      </button>
+    </div>
+  </section>
+
+  <!-- Projects grid -->
+  <section class="panel" id="projectsPanel" style="display:none">
+    <div class="panel-title">Projects</div>
+    <div class="proj-grid" id="projGrid"></div>
+  </section>
+
+  <!-- File search -->
+  <section class="panel" id="searchPanel" style="display:none">
+    <div class="panel-title">File Search</div>
+    <div class="search-row">
+      <input class="lyra-input" type="search" id="searchBox" placeholder="Search by name, path, title, or docstring…">
+      <button class="filter-chip active" data-filter="all">All</button>
+      <button class="filter-chip" data-filter="entrypoint">Entrypoints</button>
+      <button class="filter-chip" data-filter="soul">Souls</button>
+    </div>
+    <div class="file-list" id="fileList">
+      <div class="empty-panel">Type to search, or pick a filter.</div>
+    </div>
+  </section>
+
+</main>
+
+<!-- Project detail modal -->
+<div class="modal-scrim" id="projModal">
+  <div class="modal">
+    <div class="modal-head">
+      <h3 id="projModalTitle">—</h3>
+      <button class="lyra-btn lyra-btn-ghost" id="projModalClose" style="padding:4px 10px">
+        <i class="material-icons" style="font-size:16px">close</i>
+      </button>
+    </div>
+    <div class="modal-body" id="projModalBody">—</div>
+    <div class="modal-foot">
+      <button class="lyra-btn lyra-btn-ghost" id="projModalCloseBtn">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<footer class="lyra-footer">
+  <span class="lyra-footer-brand">RedVault Indexer · Find What You Built</span>
+  <span class="lyra-mono" id="footerInfo">Port 8920</span>
+</footer>
+
+<script>
+const API = 'http://127.0.0.1:8920';
+const $ = id => document.getElementById(id);
+
+let currentScanId = null;
+let summary = null;
+let scanPollTimer = null;
+let selectedCategory = null;
+let searchFilter = 'all';
+
+// ─── Utilities ────────────────────────────────────────────
+function humanSize(b) {
+  if (!b && b !== 0) return '—';
+  const u = ['B','KB','MB','GB','TB']; let i = 0;
+  while (b >= 1024 && i < u.length - 1) { b /= 1024; i++; }
+  return b.toFixed(1) + ' ' + u[i];
+}
+function esc(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g,
+    c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function splitPath(p) {
+  const i = Math.max(p.lastIndexOf('/'), p.lastIndexOf('\\'));
+  return i >= 0 ? [p.slice(0, i + 1), p.slice(i + 1)] : ['', p];
+}
+
+// ─── Toast ────────────────────────────────────────────────
+let toastTimer = null;
+function toast(msg, type = 'ok') {
+  const el = $('toast');
+  el.className = 'toast active ' + (type === 'error' ? 'error' : type === 'warn' ? 'warn' : '');
+  el.textContent = msg;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('active'), 4000);
+}
+
+// ─── Status ───────────────────────────────────────────────
+async function pollStatus() {
+  try {
+    const r = await fetch(`${API}/api/status`);
+    const d = await r.json();
+    $('dotStatus').className = 'lyra-dot lyra-dot-ok';
+    $('lblStatus').textContent = 'Online';
+    $('scansPill').textContent = `◆ scans: ${d.total_sessions}`;
+    if (!d.indexer_loaded) {
+      toast('indexer module missing on server side', 'warn');
+    }
+  } catch (e) {
+    $('dotStatus').className = 'lyra-dot lyra-dot-error';
+    $('lblStatus').textContent = 'Offline';
+  }
+}
+
+// ─── Start a scan ─────────────────────────────────────────
+$('btnStart').addEventListener('click', async () => {
+  const path = $('scanPath').value.trim();
+  const deep = $('deepScan').checked;
+  try {
+    const r = await fetch(`${API}/api/scan/start`, {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ path, deep_scan: deep })
+    });
+    const d = await r.json();
+    if (!r.ok) { toast(d.error || 'Scan failed', 'error'); return; }
+    currentScanId = d.scan_id;
+    $('btnStart').disabled = true;
+    $('scanProgress').classList.add('active');
+    $('progressLabel').textContent = 'Scanning…';
+    $('progressFill').style.width = '30%';
+    scanPollTimer = setInterval(pollScan, 800);
+  } catch (e) { toast('Error: ' + e.message, 'error'); }
+});
+
+async function pollScan() {
+  if (!currentScanId) return;
+  try {
+    const r = await fetch(`${API}/api/scan/status/${currentScanId}`);
+    const d = await r.json();
+    if (d.progress) {
+      $('progressLabel').textContent = `Scanning · ${d.progress.files_indexed || 0} files indexed`;
+      $('progressDetail').textContent = `${d.progress.dirs_scanned || 0} dirs / ${d.progress.dirs_skipped || 0} skipped · ${d.elapsed}s`;
+    }
+    if (d.state === 'complete') {
+      clearInterval(scanPollTimer);
+      $('progressFill').style.width = '100%';
+      $('progressLabel').textContent = 'Complete.';
+      await loadSummary();
+    } else if (d.state === 'error') {
+      clearInterval(scanPollTimer);
+      $('progressLabel').textContent = 'Error: ' + (d.error || 'unknown');
+      $('btnStart').disabled = false;
+    }
+  } catch (e) {
+    clearInterval(scanPollTimer);
+    $('progressLabel').textContent = 'Connection lost.';
+    $('btnStart').disabled = false;
+  }
+}
+
+async function loadSummary() {
+  try {
+    const r = await fetch(`${API}/api/scan/summary/${currentScanId}`);
+    const d = await r.json();
+    if (!r.ok) { toast(d.error || 'Summary failed', 'error'); return; }
+    summary = d;
+    renderSummary();
+    $('btnStart').disabled = false;
+    setTimeout(() => $('scanProgress').classList.remove('active'), 1500);
+  } catch (e) { toast(e.message, 'error'); }
+}
+
+// ─── Render summary, projects, search ─────────────────────
+function renderSummary() {
+  if (!summary) return;
+  $('resultsPanel').style.display = '';
+  $('projectsPanel').style.display = '';
+  $('searchPanel').style.display = '';
+  $('resultsRootLabel').textContent = summary.root;
+  $('statProjects').textContent = summary.project_count.toLocaleString();
+  $('statFiles').textContent = summary.stats.files_indexed.toLocaleString();
+  $('statSize').textContent = summary.stats_human.total_size;
+  $('statDirs').textContent = summary.stats.dirs_scanned.toLocaleString();
+  $('statSkipped').textContent = summary.stats.dirs_skipped.toLocaleString();
+  $('statTime').textContent = summary.stats_human.scan_time_s + 's';
+  $('entryCount').textContent = summary.entrypoints.length;
+  $('soulCount').textContent = summary.soul_schemas.length;
+
+  renderCategoryChips();
+  renderProjects();
+  runSearch();
+}
+
+function renderCategoryChips() {
+  const wrap = $('catChips'); wrap.innerHTML = '';
+  const cats = Object.entries(summary.category_counts).sort((a,b) => b[1] - a[1]);
+  const allChip = document.createElement('button');
+  allChip.className = 'cat-chip' + (selectedCategory === null ? ' active' : '');
+  allChip.innerHTML = `all <span class="cnt">${summary.stats.files_indexed}</span>`;
+  allChip.onclick = () => { selectedCategory = null; renderCategoryChips(); runSearch(); };
+  wrap.appendChild(allChip);
+  for (const [cat, n] of cats) {
+    const c = document.createElement('button');
+    c.className = 'cat-chip' + (selectedCategory === cat ? ' active' : '');
+    c.innerHTML = `${cat} <span class="cnt">${n}</span>`;
+    c.onclick = () => { selectedCategory = (selectedCategory === cat ? null : cat); renderCategoryChips(); runSearch(); };
+    wrap.appendChild(c);
+  }
+}
+
+function renderProjects() {
+  const grid = $('projGrid'); grid.innerHTML = '';
+  if (!summary.projects.length) {
+    grid.innerHTML = '<div class="empty-panel" style="grid-column:1/-1">No projects found.</div>';
+    return;
+  }
+  summary.projects.forEach(p => {
+    const card = document.createElement('div');
+    card.className = 'proj-card';
+    const date = new Date(p.last_modified * 1000);
+    const flags = [];
+    if (p.has_python)     flags.push('<span class="proj-flag flag-py">PY</span>');
+    if (p.has_html)       flags.push('<span class="proj-flag flag-web">WEB</span>');
+    if (p.has_config)     flags.push('<span class="proj-flag flag-cfg">CFG</span>');
+    if (p.has_entrypoint) flags.push('<span class="proj-flag flag-entry">ENTRY</span>');
+    card.innerHTML = `
+      <div class="proj-name" title="${esc(p.name)}">${esc(p.name)}</div>
+      <div class="proj-path" title="${esc(p.root_dir)}">${esc(p.root_dir)}</div>
+      <div class="proj-meta">
+        <span>${p.file_count} files</span>
+        <span class="size">${humanSize(p.total_size)}</span>
+        <span>${date.toISOString().slice(0,10)}</span>
+      </div>
+      <div class="proj-flags">${flags.join('')}</div>`;
+    card.onclick = () => showProjectModal(p.root_dir);
+    grid.appendChild(card);
+  });
+}
+
+// ─── Search ───────────────────────────────────────────────
+let searchTimer = null;
+$('searchBox').addEventListener('input', () => {
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(runSearch, 250);
+});
+document.querySelectorAll('.filter-chip[data-filter]').forEach(c => {
+  c.addEventListener('click', () => {
+    document.querySelectorAll('.filter-chip[data-filter]').forEach(x => x.classList.toggle('active', x === c));
+    searchFilter = c.dataset.filter;
+    runSearch();
+  });
+});
+
+async function runSearch() {
+  if (!currentScanId) return;
+  const q = $('searchBox').value.trim();
+  const params = new URLSearchParams({ limit: '300' });
+  if (q) params.set('q', q);
+  if (selectedCategory) params.set('category', selectedCategory);
+  if (searchFilter === 'entrypoint') params.set('entrypoint', 'true');
+  if (searchFilter === 'soul') params.set('soul', 'true');
+
+  try {
+    const r = await fetch(`${API}/api/scan/search/${currentScanId}?${params}`);
+    const d = await r.json();
+    renderFileList(d.results, d.truncated);
+  } catch (e) {}
+}
+
+function renderFileList(items, truncated) {
+  const list = $('fileList');
+  if (!items.length) {
+    list.innerHTML = '<div class="empty-panel">No matches.</div>';
+    return;
+  }
+  list.innerHTML = items.map(f => {
+    const [dir, name] = splitPath(f.path);
+    const icon = f.is_entrypoint ? 'play_circle'
+               : f.is_soul_schema ? 'auto_awesome'
+               : iconForCategory(f.category);
+    const cls = f.is_entrypoint ? 'entry' : f.is_soul_schema ? 'soul' : '';
+    return `<div class="file-row ${cls}">
+      <span class="file-icon"><i class="material-icons">${icon}</i></span>
+      <span class="file-path"><span class="dim">${esc(dir)}</span><span class="name">${esc(name)}</span></span>
+      <span class="file-cat">${esc(f.category)}</span>
+      <span class="file-size">${humanSize(f.size)}</span>
+    </div>`;
+  }).join('') + (truncated ? '<div class="empty-panel" style="padding:12px">… results truncated. Refine search.</div>' : '');
+}
+
+function iconForCategory(cat) {
+  return {
+    python: 'code', web: 'language', javascript: 'javascript',
+    config: 'settings', data: 'data_object', docs: 'article',
+    media_image: 'image', media_audio: 'audiotrack', media_video: 'movie',
+    model_weights: 'psychology', archive: 'folder_zip',
+    executable: 'terminal', modelfile: 'smart_toy',
+    soul_schema: 'auto_awesome',
+  }[cat] || 'insert_drive_file';
+}
+
+// ─── Project modal ────────────────────────────────────────
+async function showProjectModal(rootDir) {
+  $('projModalTitle').textContent = 'Loading…';
+  $('projModalBody').innerHTML = '';
+  $('projModal').classList.add('active');
+  try {
+    const r = await fetch(`${API}/api/scan/project/${currentScanId}/${encodeURIComponent(rootDir)}`);
+    const d = await r.json();
+    if (!r.ok) { $('projModalBody').textContent = d.error || 'Failed.'; return; }
+    const p = d.project;
+    $('projModalTitle').textContent = p.name;
+
+    const files = d.files.map(f => {
+      const [dir, name] = splitPath(f.path);
+      const icon = f.is_entrypoint ? 'play_circle' : f.is_soul_schema ? 'auto_awesome' : iconForCategory(f.category);
+      const cls = f.is_entrypoint ? 'entry' : f.is_soul_schema ? 'soul' : '';
+      return `<div class="file-row ${cls}">
+        <span class="file-icon"><i class="material-icons">${icon}</i></span>
+        <span class="file-path"><span class="dim">${esc(dir)}</span><span class="name">${esc(name)}</span></span>
+        <span class="file-cat">${esc(f.category)}</span>
+        <span class="file-size">${humanSize(f.size)}</span>
+      </div>`;
+    }).join('');
+
+    const catLines = Object.entries(p.categories).sort((a,b)=>b[1]-a[1])
+      .map(([c,n]) => `<span class="cat-chip">${esc(c)} <span class="cnt">${n}</span></span>`).join('');
+
+    $('projModalBody').innerHTML = `
+      <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--lyra-text-dim);margin-bottom:12px;word-break:break-all">${esc(p.root_dir)}</div>
+      <div class="stats-grid" style="margin-bottom:14px">
+        <div class="stat-card"><div class="stat-val">${p.file_count}</div><div class="stat-lbl">Files</div></div>
+        <div class="stat-card"><div class="stat-val">${humanSize(p.total_size)}</div><div class="stat-lbl">Size</div></div>
+      </div>
+      <div class="cat-chips">${catLines}</div>
+      <div class="file-list">${files}</div>`;
+  } catch (e) {
+    $('projModalBody').textContent = 'Error: ' + e.message;
+  }
+}
+$('projModalClose').onclick = () => $('projModal').classList.remove('active');
+$('projModalCloseBtn').onclick = () => $('projModal').classList.remove('active');
+$('projModal').onclick = (e) => { if (e.target === $('projModal')) $('projModal').classList.remove('active'); };
+
+// ─── Quick filters ────────────────────────────────────────
+$('btnShowEntries').onclick = () => {
+  document.querySelectorAll('.filter-chip[data-filter]').forEach(c => c.classList.toggle('active', c.dataset.filter === 'entrypoint'));
+  searchFilter = 'entrypoint'; $('searchBox').value = ''; runSearch();
+  $('searchPanel').scrollIntoView({ behavior: 'smooth', block: 'start' });
+};
+$('btnShowSouls').onclick = () => {
+  document.querySelectorAll('.filter-chip[data-filter]').forEach(c => c.classList.toggle('active', c.dataset.filter === 'soul'));
+  searchFilter = 'soul'; $('searchBox').value = ''; runSearch();
+  $('searchPanel').scrollIntoView({ behavior: 'smooth', block: 'start' });
+};
+
+// ─── Export ───────────────────────────────────────────────
+$('btnExportMd').onclick = () => window.open(`${API}/api/scan/report/${currentScanId}?format=markdown`, '_blank');
+$('btnExportJson').onclick = () => window.open(`${API}/api/scan/report/${currentScanId}?format=json`, '_blank');
+
+// ─── Startup ──────────────────────────────────────────────
+pollStatus(); setInterval(pollStatus, 6000);
+</script>
+
+</body>
+</html>

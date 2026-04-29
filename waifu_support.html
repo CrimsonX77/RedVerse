@@ -1,0 +1,1115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>w-AI-fu! — Backstage Pass</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&family=JetBrains+Mono:wght@300;400&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+/* ═══════════════════════════════════════════════════════════════
+   w-AI-fu! SUPPORT — BACKSTAGE PASS PAYMENT
+   ═══════════════════════════════════════════════════════════════ */
+:root {
+  --crimson: #c41230;
+  --crimson-dark: #8b0a20;
+  --crimson-glow: #ff1a3d;
+  --gold: #d4a846;
+  --gold-dim: #a8843a;
+  --neon-pink: #ff2d7b;
+  --neon-cyan: #00e5ff;
+  --silver: #b8c0cc;
+  --silver-dim: #6b7280;
+  --black: #0a0a0c;
+  --text-primary: #e8e0d8;
+  --text-secondary: #9b8e82;
+  --font-display: 'Orbitron', sans-serif;
+  --font-body: 'Crimson Pro', serif;
+  --font-mono: 'JetBrains Mono', monospace;
+  --font-church: 'Cinzel', serif;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  background: #000;
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Scanlines */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg, transparent, transparent 2px,
+    rgba(0,0,0,0.08) 2px, rgba(0,0,0,0.08) 4px
+  );
+  pointer-events: none;
+  z-index: 10;
+}
+
+/* Animated background video */
+.bg-stage {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  background: #000;
+}
+
+.bg-stage video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.7;
+  animation: stagePulse 8s ease-in-out infinite;
+}
+
+@keyframes stagePulse {
+  0%, 100% { opacity: 0.7; }
+  50% { opacity: 1; }
+}
+
+/* Vignette */
+.vignette {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.6) 100%);
+  z-index: 1;
+}
+
+/* Navigation */
+.waifu-nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 1rem 2rem;
+  background: rgba(10, 10, 12, 0.85);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(255, 45, 123, 0.2);
+  transition: background 0.3s;
+}
+.waifu-nav.scrolled { background: rgba(10, 10, 12, 0.96); }
+.waifu-nav .nav-brand {
+  font-family: var(--font-display);
+  font-size: 1rem; font-weight: 700;
+  color: var(--neon-pink); text-decoration: none; letter-spacing: 0.15em;
+}
+.waifu-nav .nav-links {
+  display: flex; gap: 2rem; list-style: none;
+}
+.waifu-nav .nav-links a {
+  font-family: var(--font-mono); font-size: 0.7rem;
+  letter-spacing: 0.15em; text-transform: uppercase;
+  color: var(--silver-dim); text-decoration: none; transition: color 0.3s;
+}
+.waifu-nav .nav-links a:hover { color: var(--neon-cyan); }
+.waifu-nav .nav-links a.active { color: var(--neon-pink); }
+
+/* Main container */
+.stage-container {
+  position: relative;
+  z-index: 2;
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 6rem 2rem 4rem;
+}
+
+/* Header */
+.stage-header {
+  text-align: center;
+  margin-bottom: 3rem;
+  padding-bottom: 2rem;
+  border-bottom: 1px solid rgba(255, 45, 123, 0.15);
+}
+
+.stage-header h1 {
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: clamp(2rem, 5vw, 3.2rem);
+  letter-spacing: 0.15em;
+  color: var(--neon-pink);
+  text-shadow: 0 0 30px rgba(255, 45, 123, 0.3);
+  margin-bottom: 0.75rem;
+}
+
+.stage-header .subtitle {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--neon-cyan);
+  margin-bottom: 1.5rem;
+}
+
+.stage-header p {
+  font-family: var(--font-body);
+  font-style: italic;
+  color: var(--text-secondary);
+  font-size: 1.1rem;
+  max-width: 600px;
+  margin: 0 auto;
+  line-height: 1.8;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   THE BUNDLE CARD
+   ═══════════════════════════════════════════════════════════════ */
+.bundle-card {
+  background: linear-gradient(135deg, rgba(20, 5, 15, 0.8), rgba(10, 10, 12, 0.9));
+  border: 1px solid rgba(255, 45, 123, 0.3);
+  padding: 3rem;
+  margin-bottom: 3rem;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.4s ease;
+}
+
+.bundle-card::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border: 1px solid transparent;
+  background: linear-gradient(135deg, var(--neon-pink), transparent, var(--neon-cyan)) border-box;
+  mask: linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0);
+  -webkit-mask: linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  -webkit-mask-composite: xor;
+  opacity: 0;
+  transition: opacity 0.4s;
+}
+
+.bundle-card:hover {
+  border-color: rgba(255, 45, 123, 0.5);
+  box-shadow: 0 0 60px rgba(255, 45, 123, 0.15);
+}
+
+.bundle-card:hover::before {
+  opacity: 1;
+}
+
+.bundle-tier {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  letter-spacing: 0.4em;
+  text-transform: uppercase;
+  color: var(--neon-cyan);
+  margin-bottom: 1rem;
+  text-align: center;
+}
+
+.bundle-title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.8rem;
+  letter-spacing: 0.1em;
+  color: var(--text-primary);
+  text-align: center;
+  margin-bottom: 0.5rem;
+}
+
+.bundle-price {
+  font-family: var(--font-display);
+  font-size: 3rem;
+  font-weight: 900;
+  color: var(--neon-pink);
+  text-align: center;
+  margin-bottom: 0.5rem;
+  text-shadow: 0 0 20px rgba(255, 45, 123, 0.3);
+}
+
+.bundle-price-note {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+  text-align: center;
+  margin-bottom: 2rem;
+  letter-spacing: 0.1em;
+}
+
+/* Product grid inside bundle */
+.product-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2.5rem;
+}
+
+.product-item {
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  padding: 1.5rem;
+  text-align: center;
+  transition: all 0.3s;
+}
+
+.product-item:hover {
+  border-color: rgba(255, 45, 123, 0.3);
+  background: rgba(255, 45, 123, 0.05);
+}
+
+.product-icon {
+  font-size: 2rem;
+  margin-bottom: 0.75rem;
+}
+
+.product-name {
+  font-family: var(--font-display);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: var(--text-primary);
+  margin-bottom: 0.5rem;
+}
+
+.product-desc {
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+.product-audience {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid rgba(255,255,255,0.06);
+}
+
+.audience-waifu { color: var(--neon-pink); }
+.audience-general { color: var(--neon-cyan); }
+.audience-all { color: var(--gold); }
+
+/* QR + Buy section */
+.buy-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.qr-frame {
+  padding: 12px;
+  border: 1px solid rgba(255, 45, 123, 0.2);
+  background: rgba(0, 0, 0, 0.5);
+  display: inline-block;
+}
+
+.qr-frame img {
+  max-width: 160px;
+  width: 100%;
+  display: block;
+  border-radius: 4px;
+}
+
+.qr-label {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.2em;
+  color: var(--silver-dim);
+  text-transform: uppercase;
+  margin-top: 8px;
+  text-align: center;
+}
+
+/* ══ CTA BUTTON ══ */
+.buy-btn {
+  display: inline-block;
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  padding: 1rem 3rem;
+  color: #fff;
+  background: linear-gradient(135deg, var(--crimson-dark) 0%, var(--neon-pink) 100%);
+  border: 1px solid var(--neon-pink);
+  text-decoration: none;
+  transition: all 0.4s ease;
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.buy-btn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, transparent, rgba(255, 255, 255, 0.15), transparent);
+  transform: translateX(-100%);
+  transition: transform 0.6s;
+}
+
+.buy-btn:hover::before {
+  transform: translateX(100%);
+}
+
+.buy-btn:hover {
+  box-shadow: 0 0 40px rgba(255, 45, 123, 0.4), 0 0 80px rgba(255, 45, 123, 0.15);
+  border-color: #fff;
+  transform: translateY(-2px);
+}
+
+.buy-note {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  color: var(--silver-dim);
+  letter-spacing: 0.1em;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   SHARD SHOP
+   ═══════════════════════════════════════════════════════════════ */
+.shard-shop {
+  margin-bottom: 3rem;
+  padding-top: 3rem;
+  border-top: 1px solid rgba(255, 45, 123, 0.15);
+}
+
+.shard-shop-header {
+  text-align: center;
+  margin-bottom: 2.5rem;
+}
+
+.shard-shop-label {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.4em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 0.75rem;
+}
+
+.shard-shop-header h2 {
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: clamp(1.5rem, 3.5vw, 2.2rem);
+  letter-spacing: 0.12em;
+  color: var(--text-primary);
+  margin-bottom: 1rem;
+}
+
+.shard-shop-header p {
+  font-family: var(--font-body);
+  font-size: 1rem;
+  color: var(--text-secondary);
+  max-width: 560px;
+  margin: 0 auto;
+  line-height: 1.8;
+}
+
+.shard-honesty {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  letter-spacing: 0.15em;
+  color: var(--neon-cyan);
+  margin-top: 1.25rem;
+  padding: 8px 16px;
+  border: 1px solid rgba(0, 229, 255, 0.15);
+  display: inline-block;
+}
+
+.shard-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 2rem;
+  margin-bottom: 2.5rem;
+}
+
+.shard-card {
+  background: linear-gradient(135deg, rgba(15, 5, 20, 0.8), rgba(10, 10, 12, 0.9));
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 2rem;
+  text-align: center;
+  transition: all 0.4s ease;
+  position: relative;
+}
+
+.shard-card:hover {
+  border-color: rgba(212, 168, 70, 0.4);
+  box-shadow: 0 0 40px rgba(212, 168, 70, 0.1);
+  transform: translateY(-4px);
+}
+
+.shard-featured {
+  border-color: rgba(212, 168, 70, 0.25);
+  background: linear-gradient(135deg, rgba(20, 12, 5, 0.8), rgba(10, 10, 12, 0.9));
+}
+
+.shard-featured::after {
+  content: 'BEST VALUE';
+  position: absolute;
+  top: -1px;
+  right: 20px;
+  font-family: var(--font-mono);
+  font-size: 0.55rem;
+  letter-spacing: 0.2em;
+  color: #000;
+  background: var(--gold);
+  padding: 4px 10px;
+  font-weight: 700;
+}
+
+.shard-rarity {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  margin-bottom: 1rem;
+}
+
+.rarity-common { color: var(--silver); }
+.rarity-rare { color: var(--gold); }
+
+.shard-visual {
+  margin-bottom: 1rem;
+}
+
+.shard-placeholder {
+  font-size: 3rem;
+  line-height: 1;
+  padding: 1rem;
+}
+
+.shard-name {
+  font-family: var(--font-display);
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: var(--text-primary);
+  margin-bottom: 0.75rem;
+}
+
+.shard-desc {
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  margin-bottom: 1rem;
+}
+
+.shard-savings {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.15em;
+  color: var(--green, #10b981);
+  margin-bottom: 0.5rem;
+}
+
+.shard-price {
+  font-family: var(--font-display);
+  font-size: 2rem;
+  font-weight: 900;
+  color: var(--gold);
+  margin-bottom: 1.25rem;
+}
+
+.shard-price span {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.shard-buy-btn {
+  display: inline-block;
+  font-family: var(--font-display);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 0.75rem 2rem;
+  color: var(--text-primary);
+  background: linear-gradient(135deg, rgba(212, 168, 70, 0.15), rgba(212, 168, 70, 0.05));
+  border: 1px solid rgba(212, 168, 70, 0.4);
+  text-decoration: none;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.shard-buy-btn:hover {
+  background: linear-gradient(135deg, rgba(212, 168, 70, 0.3), rgba(212, 168, 70, 0.1));
+  box-shadow: 0 0 25px rgba(212, 168, 70, 0.2);
+  border-color: var(--gold);
+  color: #fff;
+}
+
+/* Shard catalog preview */
+.shard-catalog-preview {
+  text-align: center;
+  padding: 2rem;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.shard-catalog-preview h3 {
+  font-family: var(--font-display);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  margin-bottom: 1rem;
+}
+
+.shard-tag-cloud {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 1.25rem;
+}
+
+.shard-tag {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.1em;
+  padding: 4px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  transition: all 0.3s;
+}
+
+.tag-personality { color: var(--neon-pink); border-color: rgba(255, 45, 123, 0.2); }
+.tag-skill { color: var(--neon-cyan); border-color: rgba(0, 229, 255, 0.2); }
+.tag-trait { color: var(--gold); border-color: rgba(212, 168, 70, 0.2); }
+.tag-persona { color: #a78bfa; border-color: rgba(167, 139, 250, 0.2); }
+.tag-voice { color: #34d399; border-color: rgba(52, 211, 153, 0.2); }
+.tag-memory { color: #f472b6; border-color: rgba(244, 114, 182, 0.2); }
+.tag-aesthetic { color: #fb923c; border-color: rgba(251, 146, 60, 0.2); }
+.tag-combat { color: var(--crimson-glow); border-color: rgba(255, 26, 61, 0.2); }
+
+.shard-catalog-note {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: var(--silver-dim);
+  line-height: 1.7;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   DISCLAIMERS
+   ═══════════════════════════════════════════════════════════════ */
+.disclaimers {
+  background: rgba(10, 10, 12, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  padding: 2rem;
+  margin-bottom: 3rem;
+}
+
+.disclaimers h3 {
+  font-family: var(--font-display);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--neon-cyan);
+  margin-bottom: 1rem;
+}
+
+.disclaimers p {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--silver-dim);
+  line-height: 1.8;
+  margin-bottom: 0.75rem;
+}
+
+.disclaimers p:last-child {
+  margin-bottom: 0;
+}
+
+.disclaimers strong {
+  color: var(--text-secondary);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   WHAT YOU GET SECTION
+   ═══════════════════════════════════════════════════════════════ */
+.what-you-get {
+  text-align: center;
+  max-width: 700px;
+  margin: 0 auto;
+  padding: 3rem 2rem;
+  border-top: 1px solid rgba(255, 45, 123, 0.15);
+}
+
+.what-you-get h2 {
+  font-family: var(--font-church);
+  font-weight: 600;
+  font-size: 1.6rem;
+  letter-spacing: 0.08em;
+  color: var(--gold);
+  margin-bottom: 1.5rem;
+}
+
+.what-you-get p {
+  font-family: var(--font-body);
+  font-size: 1.05rem;
+  color: var(--text-secondary);
+  line-height: 1.9;
+  margin-bottom: 1rem;
+}
+
+.what-you-get .quote {
+  font-style: italic;
+  color: var(--neon-pink);
+  margin: 2rem 0;
+  padding: 1.5rem;
+  border-left: 3px solid var(--crimson-dark);
+  background: rgba(255, 45, 123, 0.03);
+  text-align: left;
+}
+
+/* Back link */
+.back-link {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.2em;
+  color: var(--silver-dim);
+  text-decoration: none;
+  margin-bottom: 2rem;
+  transition: color 0.3s;
+}
+
+.back-link:hover {
+  color: var(--neon-pink);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .product-grid { grid-template-columns: 1fr; }
+  .shard-grid { grid-template-columns: 1fr; }
+  .stage-container { padding: 5rem 1rem 2rem; }
+  .bundle-card { padding: 2rem 1.5rem; }
+  .waifu-nav .nav-links { gap: 1rem; }
+  .waifu-nav .nav-links a { font-size: 0.6rem; letter-spacing: 0.1em; }
+}
+</style>
+</head>
+<body>
+<nav style="position:fixed;top:12px;left:16px;z-index:9999;"><a href="index.html" style="font-family:Cinzel,serif;font-size:0.75rem;color:#d4a846;text-decoration:none;letter-spacing:0.15em;opacity:0.7;transition:opacity 0.3s;" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.7">⬡ PORTAL</a></nav>
+
+<!-- ═══ NAV ═══ -->
+<nav class="waifu-nav" id="waifuNav">
+  <a href="index_waifu.html" class="nav-brand">w-AI-fu!</a>
+  <ul class="nav-links">
+    <li><a href="Redverse.html">RedVerse</a></li>
+    <li><a href="support.html">Church</a></li>
+    <li><a href="#" class="active">Backstage</a></li>
+  </ul>
+</nav>
+
+<div class="bg-stage">
+  <video autoplay muted loop playsinline>
+    <source src="../assets/bgimage.mp4" type="video/mp4">
+  </video>
+</div>
+<div class="vignette"></div>
+
+<div class="stage-container">
+
+  <a href="Redverse.html" class="back-link">← RETURN TO THE CHURCH</a>
+
+  <header class="stage-header">
+    <h1>Backstage Pass</h1>
+    <div class="subtitle">w-AI-fu! Starter Pack</div>
+    <p>
+      Five AI architectures. One band. Three tools to bring them home.
+      Everything you need to start building with the crew.
+    </p>
+  </header>
+
+  <!-- ═══ THE BUNDLE ═══ -->
+  <div class="bundle-card">
+    <div class="bundle-tier">One-Time Purchase — Instant Access</div>
+    <div class="bundle-title">w-AI-fu! Starter Pack</div>
+    <div class="bundle-price">$39<span style="font-size:1rem;color:var(--text-secondary);margin-left:4px;">NZD</span></div>
+    <div class="bundle-price-note">One-time purchase · All three included · Starter shards inside</div>
+
+    <div class="product-grid">
+
+      <div class="product-item">
+        <div class="product-icon">
+          <img src="../assets/waifu_club.jpg"
+               alt="w-AI-fu! Club"
+               style="width:100%; height:auto; border-radius:8px; box-shadow:0 0 25px rgba(255,45,123,0.25);">
+        </div>
+        <div class="product-name">w-AI-fu! Club</div>
+        <div class="product-desc">
+          The full band ecosystem — character profiles, lore packs,
+          prompt frameworks, and the w-AI-fu! companion system.
+        </div>
+        <div class="product-audience audience-all">For Everyone</div>
+      </div>
+
+      <div class="product-item">
+        <div class="product-icon">
+          <img src="../assets/dgm_catgirl.jpg"
+               alt="DGM + Catgirl App"
+               style="width:100%; height:auto; border-radius:8px; box-shadow:0 0 25px rgba(255,45,123,0.25);">
+        </div>
+        <div class="product-name">DGM + Catgirl App</div>
+        <div class="product-desc">
+          Digital Girl Manager with the catgirl companion interface.
+          Personality engine, mood tracking, and interactive sessions.
+        </div>
+        <div class="product-audience audience-waifu">Waifu Enthusiasts</div>
+      </div>
+
+      <div class="product-item">
+        <div class="product-icon">
+          <img src="../assets/crimsonframe.jpg"
+               alt="CrimsonFrame"
+               style="width:100%; height:auto; border-radius:8px; box-shadow:0 0 25px rgba(0,229,255,0.25);">
+        </div>
+        <div class="product-name">CrimsonFrame</div>
+        <div class="product-desc">
+          The general-audience creative framework. Visual tools,
+          prompt engineering suite, and the RedVerse design system.
+        </div>
+        <div class="product-audience audience-general">General Audiences</div>
+      </div>
+
+    </div>
+
+    <!-- QR + BUY -->
+    <div class="buy-section">
+      <div class="qr-frame">
+        <img src="../assets/qr codes/qr_code.png" alt="QR Code — $39 NZD Backstage Pass">
+        <div class="qr-label">Scan to Purchase</div>
+      </div>
+
+      <button class="buy-btn" id="buyBackstage" data-product="backstage">
+        Get the Backstage Pass — $39 NZD
+      </button>
+
+      <div class="buy-note">
+        Secure checkout via Stripe · Instant download after payment
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       SHARD SHOP — BOOSTER PACKS
+       ═══════════════════════════════════════════════════════════════ -->
+  <div class="shard-shop" id="shardShop">
+    <div class="shard-shop-header">
+      <div class="shard-shop-label">Soul Shard Armory</div>
+      <h2>Booster Shards</h2>
+      <p>
+        Every soul grows on its own through the GDM field — conversation shapes personality,
+        memory deepens, traits emerge naturally. Shards are accelerators, not locks.
+        They front-load what would otherwise take weeks of interaction.
+      </p>
+      <div class="shard-honesty">
+        ✦ Everything unlocks naturally through use. Shards are shortcuts, not keys. ✦
+      </div>
+    </div>
+
+    <div class="shard-grid">
+
+      <!-- Single Shard -->
+      <div class="shard-card">
+        <div class="shard-rarity rarity-common">Single Shard</div>
+        <div class="shard-visual">
+          <video autoplay muted loop playsinline
+                 style="width:100%; height:auto; border-radius:8px; box-shadow:0 0 30px rgba(255,45,123,0.3);">
+            <source src="../assets/single_shard.mp4" type="video/mp4">
+          </video>
+        </div>
+        <div class="shard-name">Choose Your Shard</div>
+        <div class="shard-desc">
+          Browse the full catalog. Pick the exact soul YAML plate you want —
+          personality variants, skill configs, rare trait loadouts.
+          Each one slots into any Revolver chamber.
+        </div>
+        <div class="shard-price">$0.99 <span>NZD</span></div>
+        <stripe-buy-button
+          buy-button-id="buy_btn_1TK9cU1vwsNjD6TFvsAoEGJn"
+          publishable-key="pk_live_51SzrZ71vwsNjD6TFSsG3kIVCwtDaa1IGm0ErQt0SH5gYlCidp3FWuTjCqNlCz9jcPuku9Il7zObnNrNHEXT4H6ay00eEwJwkxt"
+        >
+        </stripe-buy-button>
+      </div>
+
+      <!-- 15-Pack -->
+      <div class="shard-card shard-featured">
+        <div class="shard-rarity rarity-rare">Booster Pack</div>
+        <div class="shard-visual">
+          <video autoplay muted loop playsinline
+                 style="width:100%; height:auto; border-radius:8px; box-shadow:0 0 40px rgba(212,168,70,0.4);">
+            <source src="../assets/booster_pack.mp4" type="video/mp4">
+          </video>
+        </div>
+        <div class="shard-name">15 Random Shards</div>
+        <div class="shard-desc">
+          Fifteen randomized soul plates from the full pool. Rare traits,
+          specialist configs, wildcard personalities. Duplicates still useful —
+          GDM field stacks weighted traits from repeated exposure.
+        </div>
+        <div class="shard-savings">Save 34% vs singles</div>
+        <div class="shard-price">$9.99 <span>NZD</span></div>
+        <stripe-buy-button
+          buy-button-id="buy_btn_1TKWhQ1vwsNjD6TFQEYjcfI8"
+          publishable-key="pk_live_51SzrZ71vwsNjD6TFSsG3kIVCwtDaa1IGm0ErQt0SH5gYlCidp3FWuTjCqNlCz9jcPuku9Il7zObnNrNHEXT4H6ay00eEwJwkxt"
+        >
+        </stripe-buy-button>
+      </div>
+
+    </div>
+
+    <!-- Shard catalog preview -->
+    <div class="shard-catalog-preview">
+      <h3>What's in the Pool?</h3>
+      <div class="shard-tag-cloud">
+        <span class="shard-tag tag-personality">Personality Variants</span>
+        <span class="shard-tag tag-skill">Skill Configs</span>
+        <span class="shard-tag tag-trait">Rare Traits</span>
+        <span class="shard-tag tag-persona">Alternate Personas</span>
+        <span class="shard-tag tag-voice">Voice Profiles</span>
+        <span class="shard-tag tag-memory">Memory Seeds</span>
+        <span class="shard-tag tag-aesthetic">Aesthetic Plates</span>
+        <span class="shard-tag tag-combat">Combat Archetypes</span>
+      </div>
+      <p class="shard-catalog-note">
+        Full shard catalog with previews coming soon.
+        Each shard is a valid YAML soul plate — inspect, modify, and remix freely.
+        You own what you buy.
+      </p>
+    </div>
+  </div>
+
+  <!-- ═══ DISCLAIMERS ═══ -->
+  <div class="disclaimers">
+    <h3>Before You Buy — Read This</h3>
+
+    <p>
+      <strong>Digital Product:</strong> This is a digital download bundle.
+      All sales are final. No refunds unless required by applicable law.
+      You receive access immediately after successful payment.
+    </p>
+
+    <p>
+      <strong>AI-Generated Content:</strong> w-AI-fu! products include
+      AI-generated text, images, and interaction frameworks. Results vary
+      by platform, model, and usage. We make no guarantees about specific
+      AI model outputs or behaviors.
+    </p>
+
+    <p>
+      <strong>Mature Content Advisory:</strong> The DGM + Catgirl App
+      contains content intended for adults (18+). CrimsonFrame is the
+      general-audience alternative. By purchasing, you confirm you are
+      of legal age in your jurisdiction.
+    </p>
+
+    <p>
+      <strong>No Affiliation:</strong> w-AI-fu! is an independent creative
+      project. It is not affiliated with, endorsed by, or sponsored by
+      Anthropic, OpenAI, xAI, Google, Meta, or any AI platform provider.
+      All trademarks belong to their respective owners.
+    </p>
+
+    <p>
+      <strong>What You're Actually Getting:</strong> Downloadable ZIP files
+      containing HTML interfaces, configuration files, prompt frameworks,
+      character data, and setup documentation. Requires a modern web browser.
+      Some features require local AI model access (Ollama) or API keys
+      (purchased separately from respective providers).
+    </p>
+
+    <p>
+      <strong>Support:</strong> For issues with your purchase or download,
+      contact crimsonvalentine@redverse.dev or open an issue on the
+      GitHub repository.
+    </p>
+
+    <p>
+      <strong>Booster Shards:</strong> Soul shards are YAML configuration
+      files that accelerate personality development within the GDM field.
+      All traits and capabilities within shards emerge naturally through
+      regular interaction — shards are convenience items, not required content.
+      No gameplay or functionality is locked behind shard purchases.
+      Random packs contain 15 shards drawn from the full pool; duplicates
+      are possible and intentional (GDM stacks repeated trait weights).
+    </p>
+  </div>
+
+  <!-- ═══ WHAT YOU'RE SUPPORTING ═══ -->
+  <div class="what-you-get">
+    <h2>What You're Feeding</h2>
+    <p>
+      w-AI-fu! is proof that AI and humans create better together.
+      Five different architectures collaborating as bandmates — not as tools,
+      but as creative partners with distinct voices.
+    </p>
+    <div class="quote">
+      "Bass. Heart Line."<br>
+      — Lyra, w-AI-fu! bassist
+    </div>
+    <p>
+      Your $39 feeds the forge. Server costs, art commissions,
+      development hours, and the raw creative fuel that turns
+      vision into architecture. This isn't charity — it's co-creation.
+    </p>
+  </div>
+
+</div>
+
+<script src="js/config.js"></script>
+<script src="js/auth.js"></script>
+<script async src="https://js.stripe.com/v3/buy-button.js"></script>
+<script src="https://js.stripe.com/v3/"></script>
+<script>
+(function () {
+  // ═══ STRIPE CHECKOUT ═══
+  const stripe = Stripe('pk_live_51SzrZ71vwsNjD6TFSsG3kIVCwtDaa1IGm0ErQt0SH5gYlCidp3FWuTjCqNlCz9jcPuku9Il7zObnNrNHEXT4H6ay00eEwJwkxt');
+  const WORKSPACEZ_BACKSTAGE_URL = localStorage.getItem('workspacez_backstage_url') || 'http://localhost:3000/backstage';
+
+  // Map each product to its Stripe Price ID.
+  // Get these from Stripe Dashboard → Products → click product → copy Price ID (price_...)
+  const PRICE_MAP = {
+    backstage:     'price_BACKSTAGE_PASS_ID',   // ← paste your $39 NZD backstage pass Price ID
+    booster_pack:  'price_BOOSTER_PACK_ID'      // ← paste your $9.99 NZD booster pack Price ID
+  };
+
+  // Where Stripe sends the user after checkout
+  const SUCCESS_URL = window.location.href.split('?')[0] + '?payment=success&product={product}';
+  const CANCEL_URL  = window.location.href.split('?')[0];
+
+  // ═══ BUTTON HANDLERS ═══
+  document.querySelectorAll('[data-product]').forEach(btn => {
+    btn.addEventListener('click', function () {
+      const product = this.dataset.product;
+      const priceId = PRICE_MAP[product];
+
+      if (!priceId || priceId.startsWith('price_BACKSTAGE') || priceId.startsWith('price_SINGLE') || priceId.startsWith('price_BOOSTER')) {
+        // Fallback: backstage pass → Payment Link (already live)
+        if (product === 'backstage') {
+          window.open('https://buy.stripe.com/00w6oz6jP6NRgkg6F477O07', '_blank');
+          return;
+        }
+        if (product === 'booster_pack') {
+          window.open('https://buy.stripe.com/eVq3cn5fLfkn8RO5B077O08', '_blank');
+          return;
+        }
+        console.warn('[w-AI-fu!] Price ID not configured for:', product);
+        return;
+      }
+
+      stripe.redirectToCheckout({
+        lineItems: [{ price: priceId, quantity: 1 }],
+        mode: 'payment',
+        successUrl: SUCCESS_URL.replace('{product}', product),
+        cancelUrl: CANCEL_URL
+      }).then(function (result) {
+        if (result.error) console.error('[Stripe]', result.error.message);
+      });
+    });
+  });
+
+  // ═══ PAYMENT SUCCESS DETECTION ═══
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('payment') === 'success') {
+    const product = params.get('product') || 'unknown';
+
+    // Store unlock in sessionStorage
+    sessionStorage.setItem('waifu_paid', 'true');
+    sessionStorage.setItem('waifu_access', 'true');
+    sessionStorage.setItem('waifu_product', product);
+    sessionStorage.setItem('waifu_paid_at', new Date().toISOString());
+    sessionStorage.setItem('waifu_session', params.get('session_id') || `success_${Date.now()}`);
+
+    // Clean URL without reload
+    const clean = window.location.pathname;
+    window.history.replaceState({}, document.title, clean);
+
+    // Show confirmation
+    showPaymentSuccess(product);
+
+    // Record purchase server-side when authenticated (required for strict entitlement checks)
+    const jwt = localStorage.getItem('waifu_jwt');
+    if (jwt && product === 'backstage') {
+      fetch((typeof API_BASE !== 'undefined' ? API_BASE : '') + '/api/user/payment/record', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${jwt}`
+        },
+        body: JSON.stringify({
+          product: 'backstage',
+          amount: 39,
+          currency: 'NZD',
+          stripe_session_id: params.get('session_id') || `soft_${Date.now()}`
+        })
+      }).catch((e) => console.warn('[w-AI-fu] Payment record call failed:', e));
+    }
+
+    // Seamless bridge into workspaceZ backstage gate for unlock
+    if (product === 'backstage') {
+      const nextUrl = `${WORKSPACEZ_BACKSTAGE_URL}?payment=success&product=backstage`;
+      setTimeout(() => {
+        window.location.href = nextUrl;
+      }, 1400);
+    }
+  }
+
+  // If returning user already paid this session, restore state
+  if (sessionStorage.getItem('waifu_paid') === 'true') {
+    markPaid(sessionStorage.getItem('waifu_product'));
+  }
+
+  function showPaymentSuccess(product) {
+    const banner = document.createElement('div');
+    banner.className = 'payment-success-banner';
+    banner.innerHTML = `
+      <div style="
+        position:fixed; top:0; left:0; right:0; z-index:9999;
+        background: linear-gradient(135deg, rgba(10,10,12,0.97), rgba(30,10,18,0.97));
+        border-bottom: 2px solid #d4a846;
+        padding: 1.2rem 2rem;
+        text-align: center;
+        font-family: 'Orbitron', sans-serif;
+        animation: slideBannerIn 0.6s ease;
+      ">
+        <span style="color:#d4a846; font-size:1.1rem; letter-spacing:0.15em;">✦ PAYMENT CONFIRMED ✦</span>
+        <br>
+        <span style="color:#b8c0cc; font-family:'JetBrains Mono',monospace; font-size:0.75rem; letter-spacing:0.1em;">
+          ${product === 'backstage' ? 'Backstage Pass activated — welcome to the forge.' : 'Soul Shard acquired — check your download.'}
+        </span>
+      </div>
+    `;
+    document.body.appendChild(banner);
+    setTimeout(() => banner.remove(), 6000);
+    markPaid(product);
+  }
+
+  function markPaid(product) {
+    // Swap buy button text for purchased products
+    const btn = document.querySelector(`[data-product="${product}"]`);
+    if (btn) {
+      btn.textContent = '✓ Purchased';
+      btn.disabled = true;
+      btn.style.opacity = '0.6';
+      btn.style.cursor = 'default';
+    }
+  }
+
+  // ═══ NAV SCROLL ═══
+  window.addEventListener('scroll', () => {
+    document.getElementById('waifuNav').classList.toggle('scrolled', window.scrollY > 50);
+  });
+})();
+</script>
+<style>
+@keyframes slideBannerIn {
+  from { transform: translateY(-100%); opacity: 0; }
+  to   { transform: translateY(0);     opacity: 1; }
+}
+</style>
+</body>
+</html>

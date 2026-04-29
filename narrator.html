@@ -1,0 +1,1044 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>RedVerse Narrator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@400;600;800&family=Archivo:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ══════════════════════════════════════════════════════════════
+   RedVerse — Narrator Web Front
+   Brand: crimson/gold cathedral · cybercore · fierce elegance
+   ══════════════════════════════════════════════════════════════ */
+
+:root{
+  --bg-void:#0a0612;
+  --bg-deep:#110a18;
+  --bg-panel:#1a0f24;
+  --bg-elev:#241530;
+  --line:#3a1f45;
+  --line-faint:#2a1533;
+  --text:#e8dfe8;
+  --text-mute:#8a7a94;
+  --text-dim:#5a4a68;
+  --crimson:#dc143c;
+  --crimson-deep:#8b0f24;
+  --crimson-glow:#ff2a52;
+  --gold:#d4a846;
+  --gold-deep:#8a6a2a;
+  --ok:#4dd0a3;
+  --warn:#e8a547;
+  --font-display:"Unbounded",sans-serif;
+  --font-body:"Archivo",system-ui,sans-serif;
+  --font-mono:"IBM Plex Mono",monospace;
+}
+
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:var(--bg-void);color:var(--text);font-family:var(--font-body);font-size:14px;overflow:hidden}
+body{
+  background:
+    radial-gradient(1200px 600px at 85% -20%, rgba(220,20,60,.08), transparent 60%),
+    radial-gradient(800px 400px at -10% 120%, rgba(212,168,70,.04), transparent 60%),
+    var(--bg-void);
+}
+button{font-family:inherit;color:inherit;background:none;border:none;cursor:pointer}
+input,textarea,select{font-family:inherit;color:inherit;background:none;border:none;outline:none}
+
+/* ── APP SHELL ─────────────────────────────────────────── */
+.app{
+  display:grid;
+  grid-template-columns:48px 1fr;
+  grid-template-rows:72px 1fr 32px;
+  height:100vh;
+}
+.rail{
+  grid-row:1/4;
+  background:var(--bg-deep);
+  border-right:1px solid var(--line);
+  display:flex;flex-direction:column;align-items:center;
+  padding:16px 0;
+  position:relative;
+}
+.rail::before{
+  content:"";
+  position:absolute;top:0;left:0;right:0;height:72px;
+  background:linear-gradient(180deg,var(--crimson-deep),transparent);
+  opacity:.3;
+}
+.rail-mark{
+  width:32px;height:32px;
+  border:1px solid var(--crimson);
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--font-display);font-weight:800;font-size:14px;color:var(--crimson);
+  position:relative;z-index:1;
+  transform:rotate(0deg);
+  letter-spacing:-1px;
+}
+.rail-text{
+  writing-mode:vertical-rl;
+  transform:rotate(180deg);
+  margin-top:24px;
+  font-family:var(--font-mono);font-size:10px;color:var(--text-mute);
+  letter-spacing:.3em;
+}
+.rail-dot{
+  width:6px;height:6px;border-radius:50%;
+  background:var(--gold);
+  margin-top:auto;
+  box-shadow:0 0 8px var(--gold);
+}
+
+/* ── HEADER ───────────────────────────────────────────── */
+.header{
+  grid-column:2;
+  border-bottom:1px solid var(--line);
+  background:var(--bg-deep);
+  display:flex;align-items:center;
+  padding:0 24px;
+  gap:24px;
+  position:relative;
+}
+.header::after{
+  content:"";position:absolute;bottom:-1px;left:0;width:120px;height:1px;
+  background:linear-gradient(90deg,var(--crimson),transparent);
+}
+.brand{
+  display:flex;align-items:baseline;gap:12px;
+  font-family:var(--font-display);
+}
+.brand-red{font-weight:800;font-size:18px;color:var(--text);letter-spacing:-.01em}
+.brand-slash{color:var(--crimson);font-weight:800}
+.brand-verse{font-weight:400;font-size:18px;color:var(--text-mute)}
+.brand-tool{
+  margin-left:16px;padding-left:16px;
+  border-left:1px solid var(--line);
+  font-family:var(--font-mono);font-size:11px;font-weight:500;
+  color:var(--gold);letter-spacing:.25em;text-transform:uppercase;
+}
+.header-spacer{flex:1}
+.header-status{
+  display:flex;align-items:center;gap:16px;
+  font-family:var(--font-mono);font-size:11px;
+  color:var(--text-mute);
+  letter-spacing:.1em;
+}
+.pulse-dot{
+  width:8px;height:8px;border-radius:50%;
+  background:var(--ok);
+  box-shadow:0 0 0 0 var(--ok);
+  animation:pulse 2s infinite;
+}
+.pulse-dot.offline{background:var(--text-dim);box-shadow:none;animation:none}
+.pulse-dot.warn{background:var(--warn);animation:pulse-warn 2s infinite}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(77,208,163,.5)}70%{box-shadow:0 0 0 8px rgba(77,208,163,0)}100%{box-shadow:0 0 0 0 rgba(77,208,163,0)}}
+@keyframes pulse-warn{0%{box-shadow:0 0 0 0 rgba(232,165,71,.5)}70%{box-shadow:0 0 0 8px rgba(232,165,71,0)}100%{box-shadow:0 0 0 0 rgba(232,165,71,0)}}
+
+/* ── MAIN + TABS ──────────────────────────────────────── */
+.main{
+  grid-column:2;
+  overflow:hidden;
+  display:flex;flex-direction:column;
+  background:var(--bg-void);
+}
+.tabs{
+  display:flex;
+  padding:12px 24px 0;
+  gap:2px;
+  border-bottom:1px solid var(--line-faint);
+}
+.tab{
+  font-family:var(--font-mono);font-size:11px;font-weight:500;
+  color:var(--text-dim);
+  padding:10px 18px;
+  border:1px solid transparent;border-bottom:none;
+  letter-spacing:.2em;text-transform:uppercase;
+  position:relative;
+  transition:color .15s;
+}
+.tab:hover{color:var(--text-mute)}
+.tab.active{
+  color:var(--gold);
+  border-color:var(--line);
+  background:var(--bg-panel);
+}
+.tab.active::after{
+  content:"";position:absolute;left:0;right:0;bottom:-1px;height:2px;
+  background:var(--gold);
+}
+.tab-badge{
+  margin-left:8px;
+  display:inline-block;min-width:18px;height:16px;line-height:14px;
+  padding:0 5px;font-size:9px;
+  border:1px solid var(--line);border-radius:2px;color:var(--text-mute);
+}
+.tab.active .tab-badge{border-color:var(--gold);color:var(--gold)}
+
+.content{
+  flex:1;overflow:auto;
+  padding:24px;
+}
+.content::-webkit-scrollbar{width:8px;height:8px}
+.content::-webkit-scrollbar-track{background:var(--bg-deep)}
+.content::-webkit-scrollbar-thumb{background:var(--line)}
+.content::-webkit-scrollbar-thumb:hover{background:var(--crimson-deep)}
+
+.pane{display:none}
+.pane.active{display:block}
+
+/* ── PANELS ────────────────────────────────────────────── */
+.panel{
+  background:var(--bg-panel);
+  border:1px solid var(--line);
+  position:relative;
+}
+.panel-label{
+  position:absolute;top:-9px;left:16px;
+  padding:0 8px;
+  background:var(--bg-void);
+  font-family:var(--font-mono);font-size:9px;font-weight:600;
+  color:var(--gold);letter-spacing:.3em;text-transform:uppercase;
+}
+.panel-body{padding:18px}
+
+/* ── NARRATOR TAB ──────────────────────────────────────── */
+.narrator-grid{
+  display:grid;grid-template-columns:1fr 420px;
+  gap:16px;
+  height:100%;
+}
+.story-input{
+  display:flex;flex-direction:column;min-height:0;
+}
+.story-toolbar{
+  display:flex;gap:8px;margin-bottom:12px;align-items:center;
+}
+.story-textarea{
+  flex:1;
+  background:var(--bg-deep);
+  border:1px solid var(--line);
+  padding:16px;
+  color:var(--text);
+  font-family:var(--font-mono);font-size:13px;line-height:1.7;
+  resize:none;
+  min-height:280px;
+}
+.story-textarea:focus{border-color:var(--crimson);box-shadow:inset 0 0 0 1px var(--crimson-deep)}
+
+.segments-panel{
+  display:flex;flex-direction:column;min-height:0;
+}
+.segments-list{
+  flex:1;overflow:auto;
+  padding:12px;
+  display:flex;flex-direction:column;gap:8px;
+  min-height:200px;
+}
+.segment{
+  padding:10px 12px;
+  background:var(--bg-deep);
+  border-left:2px solid var(--line);
+  font-size:13px;line-height:1.5;
+}
+.segment-head{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:4px;
+  font-family:var(--font-mono);font-size:10px;
+  letter-spacing:.15em;text-transform:uppercase;
+}
+.segment-char{font-weight:600}
+.segment-voice{color:var(--text-mute)}
+.segment-text{color:var(--text)}
+.segment-empty{
+  color:var(--text-dim);font-style:italic;text-align:center;
+  padding:40px 20px;
+  font-size:12px;
+}
+
+.render-row{
+  padding:14px 12px;border-top:1px solid var(--line-faint);
+  display:flex;align-items:center;gap:12px;
+}
+.progress-wrap{flex:1;height:4px;background:var(--bg-deep);overflow:hidden}
+.progress-bar{height:100%;background:linear-gradient(90deg,var(--crimson),var(--gold));width:0;transition:width .25s}
+.progress-text{font-family:var(--font-mono);font-size:10px;color:var(--text-mute);min-width:60px;text-align:right}
+
+/* ── BUTTONS ─────────────────────────────────────────────── */
+.btn{
+  font-family:var(--font-mono);font-size:11px;font-weight:500;
+  letter-spacing:.15em;text-transform:uppercase;
+  padding:9px 18px;
+  background:var(--bg-elev);border:1px solid var(--line);
+  color:var(--text);
+  transition:all .15s;
+  display:inline-flex;align-items:center;gap:8px;
+}
+.btn:hover{border-color:var(--gold);color:var(--gold)}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn-primary{
+  background:linear-gradient(180deg,var(--crimson),var(--crimson-deep));
+  border-color:var(--crimson);color:#fff;
+}
+.btn-primary:hover{border-color:var(--gold);color:var(--gold);background:var(--bg-elev)}
+.btn-ghost{background:transparent;border-color:var(--line-faint)}
+.btn-ghost:hover{border-color:var(--text-mute);color:var(--text)}
+.btn-icon{padding:9px 12px;min-width:36px;justify-content:center}
+
+/* ── CHARACTER TABLE ────────────────────────────────────── */
+.char-table{
+  width:100%;border-collapse:collapse;
+  font-size:13px;
+}
+.char-table th{
+  text-align:left;padding:10px 12px;
+  font-family:var(--font-mono);font-size:10px;font-weight:500;
+  color:var(--text-mute);letter-spacing:.2em;text-transform:uppercase;
+  border-bottom:1px solid var(--line);
+  background:var(--bg-deep);
+}
+.char-table td{
+  padding:12px;
+  border-bottom:1px solid var(--line-faint);
+}
+.char-table tr:hover td{background:rgba(220,20,60,.03)}
+.char-swatch{
+  display:inline-block;width:10px;height:10px;margin-right:8px;
+  border:1px solid rgba(255,255,255,.15);
+}
+.char-engine{
+  font-family:var(--font-mono);font-size:10px;
+  padding:2px 6px;
+  border:1px solid var(--line);
+  color:var(--text-mute);
+  letter-spacing:.15em;text-transform:uppercase;
+}
+.char-engine.edge{color:#4a9fd9;border-color:#1e4b66}
+.char-engine.pyttsx3{color:var(--warn);border-color:var(--gold-deep)}
+.char-engine.sovits{color:var(--crimson);border-color:var(--crimson-deep)}
+
+/* ── SETTINGS FORM ──────────────────────────────────────── */
+.form-grid{
+  display:grid;grid-template-columns:180px 1fr;
+  gap:14px 20px;
+  max-width:720px;
+}
+.form-label{
+  font-family:var(--font-mono);font-size:11px;
+  color:var(--text-mute);letter-spacing:.1em;text-transform:uppercase;
+  padding-top:10px;
+}
+.form-input,.form-select{
+  background:var(--bg-deep);
+  border:1px solid var(--line);
+  padding:10px 12px;
+  color:var(--text);
+  font-size:13px;
+  width:100%;
+}
+.form-input:focus,.form-select:focus{border-color:var(--crimson)}
+.form-select{font-family:var(--font-mono);font-size:12px}
+.form-group-title{
+  grid-column:1/-1;
+  font-family:var(--font-display);font-size:13px;font-weight:600;
+  color:var(--text);
+  padding-top:16px;
+  letter-spacing:.05em;
+}
+.form-group-title:first-child{padding-top:0}
+.form-group-title::before{content:"▌ ";color:var(--crimson)}
+
+/* ── VOICE CATALOG ──────────────────────────────────────── */
+.voice-search{
+  width:100%;
+  background:var(--bg-deep);border:1px solid var(--line);
+  padding:10px 14px;
+  color:var(--text);font-size:13px;
+  margin-bottom:16px;
+}
+.voice-search:focus{border-color:var(--crimson)}
+.voice-grid{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));
+  gap:10px;
+}
+.voice-card{
+  padding:14px;
+  background:var(--bg-deep);
+  border:1px solid var(--line-faint);
+  display:flex;flex-direction:column;gap:6px;
+  transition:border-color .15s;
+}
+.voice-card:hover{border-color:var(--crimson)}
+.voice-name{
+  font-family:var(--font-mono);font-size:12px;font-weight:600;
+  color:var(--text);
+}
+.voice-meta{
+  font-size:11px;color:var(--text-mute);
+}
+.voice-actions{
+  display:flex;gap:6px;margin-top:4px;
+}
+.voice-actions .btn{padding:5px 10px;font-size:9px}
+
+/* ── STATUS STRIP ───────────────────────────────────────── */
+.status-strip{
+  grid-column:2;
+  background:var(--bg-deep);
+  border-top:1px solid var(--line);
+  display:flex;align-items:center;
+  padding:0 24px;
+  gap:20px;
+  font-family:var(--font-mono);font-size:10px;
+  color:var(--text-dim);
+  letter-spacing:.15em;text-transform:uppercase;
+}
+.status-item{display:flex;align-items:center;gap:8px}
+.status-item strong{color:var(--text-mute);font-weight:500}
+.status-spacer{flex:1}
+.status-time{color:var(--gold)}
+
+/* ── PAGE LOAD STAGGER ──────────────────────────────────── */
+@keyframes fadeUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.header,.tabs,.content,.status-strip{animation:fadeUp .45s ease-out both}
+.tabs{animation-delay:.08s}
+.content{animation-delay:.14s}
+.status-strip{animation-delay:.22s}
+
+/* ── DIALOG (character editor) ──────────────────────────── */
+.dialog-backdrop{
+  position:fixed;inset:0;
+  background:rgba(10,6,18,.7);
+  backdrop-filter:blur(4px);
+  display:none;align-items:center;justify-content:center;
+  z-index:100;
+}
+.dialog-backdrop.open{display:flex}
+.dialog{
+  background:var(--bg-panel);
+  border:1px solid var(--crimson);
+  width:460px;max-width:95vw;
+  position:relative;
+}
+.dialog::before{
+  content:"";position:absolute;top:0;left:0;width:40px;height:1px;background:var(--gold);
+}
+.dialog-title{
+  padding:16px 20px;
+  border-bottom:1px solid var(--line);
+  font-family:var(--font-display);font-weight:600;font-size:14px;
+  letter-spacing:.08em;text-transform:uppercase;
+  color:var(--gold);
+}
+.dialog-body{padding:20px}
+.dialog-footer{
+  padding:14px 20px;border-top:1px solid var(--line);
+  display:flex;justify-content:flex-end;gap:8px;
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- ── BRAND RAIL ───────────────────────────────────── -->
+  <aside class="rail">
+    <div class="rail-mark">RV</div>
+    <div class="rail-text">NARRATOR · CANON · VOICE</div>
+    <div class="rail-dot" title="RedForest Labs"></div>
+  </aside>
+
+  <!-- ── HEADER ──────────────────────────────────────── -->
+  <header class="header">
+    <div class="brand">
+      <span class="brand-red">RED</span><span class="brand-slash">//</span><span class="brand-verse">VERSE</span>
+      <span class="brand-tool">Narrator</span>
+    </div>
+    <div class="header-spacer"></div>
+    <div class="header-status">
+      <div class="status-item"><span class="pulse-dot" id="api-dot"></span><span id="api-label">API · <span id="api-state">probing</span></span></div>
+      <div class="status-item"><strong>ENGINE</strong><span id="engine-label">edge-tts</span></div>
+    </div>
+  </header>
+
+  <!-- ── MAIN ─────────────────────────────────────────── -->
+  <main class="main">
+    <nav class="tabs">
+      <button class="tab active" data-tab="narrator">Narrator</button>
+      <button class="tab" data-tab="characters">Characters <span class="tab-badge" id="char-count">0</span></button>
+      <button class="tab" data-tab="settings">Settings</button>
+      <button class="tab" data-tab="voices">Voice Catalog</button>
+    </nav>
+
+    <div class="content">
+
+      <!-- ── NARRATOR PANE ─────────────────────────── -->
+      <section class="pane active" data-pane="narrator">
+        <div class="narrator-grid">
+
+          <div class="story-input">
+            <div class="story-toolbar">
+              <button class="btn" id="btn-load-file">📂 Load File</button>
+              <button class="btn btn-ghost" id="btn-paste-sample">Sample</button>
+              <div style="flex:1"></div>
+              <button class="btn" id="btn-parse">Parse Speakers</button>
+              <button class="btn btn-primary" id="btn-render" disabled>▶ Render</button>
+            </div>
+            <textarea class="story-textarea" id="story-text"
+              placeholder="Paste story text here.
+
+Dialogue will be parsed to characters via the selected detection engine. Each character gets its own voice — configured in the Characters tab.
+
+Example:
+  &quot;Are you sure about this?&quot; Sable said.
+  Lyra didn't look up. &quot;The rhythm's off. Listen again.&quot;"></textarea>
+          </div>
+
+          <aside class="segments-panel panel">
+            <div class="panel-label">Parsed Segments</div>
+            <div class="segments-list" id="segments-list">
+              <div class="segment-empty">No segments yet — paste text and hit Parse.</div>
+            </div>
+            <div class="render-row">
+              <div class="progress-wrap"><div class="progress-bar" id="prog-bar"></div></div>
+              <div class="progress-text" id="prog-text">idle</div>
+            </div>
+          </aside>
+
+        </div>
+      </section>
+
+      <!-- ── CHARACTERS PANE ─────────────────────── -->
+      <section class="pane" data-pane="characters">
+        <div class="panel">
+          <div class="panel-label">Character Roster</div>
+          <div class="panel-body" style="padding:0">
+            <div style="padding:14px 18px;border-bottom:1px solid var(--line-faint);display:flex;gap:8px;align-items:center">
+              <div style="color:var(--text-mute);font-size:12px">Voices assigned per character. Detection uses these as the known list.</div>
+              <div style="flex:1"></div>
+              <button class="btn btn-primary" id="btn-add-char">＋ Add Character</button>
+            </div>
+            <table class="char-table" id="char-table">
+              <thead>
+                <tr><th style="width:40px"></th><th>Name</th><th>Voice</th><th>Engine</th><th>Speed</th><th style="width:160px;text-align:right">Actions</th></tr>
+              </thead>
+              <tbody id="char-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── SETTINGS PANE ─────────────────────────── -->
+      <section class="pane" data-pane="settings">
+        <div class="panel">
+          <div class="panel-label">Engine &amp; Detection</div>
+          <div class="panel-body">
+            <div class="form-grid">
+
+              <div class="form-group-title">Default Engine</div>
+              <label class="form-label">TTS Engine</label>
+              <select class="form-select" id="set-engine">
+                <option value="edge-tts">edge-tts (Microsoft Neural)</option>
+                <option value="pyttsx3">pyttsx3 (offline system voices)</option>
+                <option value="gptsovits">GPT-SoVITS (local server)</option>
+              </select>
+
+              <label class="form-label">GPT-SoVITS URL</label>
+              <input class="form-input" id="set-sovits-url" placeholder="http://127.0.0.1:9880">
+
+              <div class="form-group-title">Speaker Detection</div>
+              <label class="form-label">Method</label>
+              <select class="form-select" id="set-detect">
+                <option value="ollama">Ollama (local)</option>
+                <option value="claude">Claude (API)</option>
+                <option value="openai">OpenAI (API)</option>
+              </select>
+
+              <label class="form-label">Ollama URL</label>
+              <input class="form-input" id="set-ollama-url" value="http://localhost:11434">
+
+              <label class="form-label">Ollama Model</label>
+              <input class="form-input" id="set-ollama-model" placeholder="llama3.1:8b">
+
+              <label class="form-label">Anthropic API Key</label>
+              <input class="form-input" type="password" id="set-anthropic-key" placeholder="stored in system keyring">
+
+              <label class="form-label">OpenAI API Key</label>
+              <input class="form-input" type="password" id="set-openai-key" placeholder="stored in system keyring">
+
+              <div class="form-group-title">Output</div>
+              <label class="form-label">Output Directory</label>
+              <input class="form-input" id="set-output-dir" placeholder="~/Music/RedVerse/Narrator">
+
+              <label class="form-label"></label>
+              <div>
+                <button class="btn btn-primary" id="btn-save-settings">💾 Save Settings</button>
+              </div>
+
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── VOICES PANE ─────────────────────────── -->
+      <section class="pane" data-pane="voices">
+        <div class="panel">
+          <div class="panel-label">Voice Catalog</div>
+          <div class="panel-body">
+            <input class="voice-search" id="voice-search" placeholder="Search voices — locale, gender, name…">
+            <div class="voice-grid" id="voice-grid"></div>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <!-- ── STATUS STRIP ────────────────────────────────── -->
+  <footer class="status-strip">
+    <div class="status-item"><strong>SESSION</strong><span id="session-id">—</span></div>
+    <div class="status-item"><strong>LAST</strong><span id="last-action">ready</span></div>
+    <div class="status-spacer"></div>
+    <div class="status-item">RV//NARRATOR · v1.0</div>
+    <div class="status-item status-time" id="status-time"></div>
+  </footer>
+
+</div>
+
+<!-- ── CHARACTER DIALOG ─────────────────────────────── -->
+<div class="dialog-backdrop" id="char-dialog">
+  <div class="dialog">
+    <div class="dialog-title" id="dialog-title">Edit Character</div>
+    <div class="dialog-body">
+      <div class="form-grid" style="grid-template-columns:120px 1fr">
+        <label class="form-label">Name</label>
+        <input class="form-input" id="dlg-name">
+        <label class="form-label">Voice</label>
+        <select class="form-select" id="dlg-voice"></select>
+        <label class="form-label">Engine</label>
+        <select class="form-select" id="dlg-engine">
+          <option value="edge-tts">edge-tts</option>
+          <option value="pyttsx3">pyttsx3</option>
+          <option value="gptsovits">gptsovits</option>
+        </select>
+        <label class="form-label">Speed</label>
+        <input class="form-input" id="dlg-speed" type="number" value="0" step="5" min="-50" max="50">
+        <label class="form-label">Color</label>
+        <input class="form-input" id="dlg-color" type="color" value="#dc143c" style="height:36px;padding:2px">
+      </div>
+    </div>
+    <div class="dialog-footer">
+      <button class="btn btn-ghost" id="dlg-cancel">Cancel</button>
+      <button class="btn btn-primary" id="dlg-save">Save</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ══════════════════════════════════════════════════════════════
+   STATE — mirrors the Python app's config shape
+   ══════════════════════════════════════════════════════════════ */
+const API = ""; // same-origin; the future server mounts here
+const VOICES = [
+  "en-US-GuyNeural","en-US-JennyNeural","en-GB-RyanNeural","en-GB-SoniaNeural",
+  "en-AU-NatashaNeural","en-AU-WilliamNeural","en-US-AriaNeural","en-US-DavisNeural",
+  "en-US-AmberNeural","en-US-TonyNeural","en-US-AndrewNeural","en-US-EmmaNeural",
+  "en-GB-LibbyNeural","en-IE-EmilyNeural","en-ZA-LeahNeural","en-HK-SamNeural",
+];
+const COLORS = ["#dc143c","#d4a846","#4dd0a3","#4a9fd9","#b768e0","#e8a547","#ff6a50","#6adcc9"];
+
+let state = {
+  characters: [],
+  settings: {
+    engine:"edge-tts",
+    sovits_url:"http://127.0.0.1:9880",
+    detect:"ollama",
+    ollama_url:"http://localhost:11434",
+    ollama_model:"llama3.1:8b",
+    output_dir:"",
+  },
+  segments: [],
+  editing_idx: -1,
+};
+
+/* ── init ───────────────────────────────────── */
+(async function init(){
+  populateDialogVoices();
+  bindTabs();
+  bindButtons();
+  bindDialog();
+  bindVoiceSearch();
+  loadConfig();
+  renderVoices(VOICES);
+  checkHealth();
+  setInterval(checkHealth, 15000);
+  tickTime();
+  setInterval(tickTime,1000);
+  state.session_id = "rv-" + Math.random().toString(36).slice(2,8);
+  document.getElementById("session-id").textContent = state.session_id;
+})();
+
+function tickTime(){
+  const d = new Date();
+  const p = n=>String(n).padStart(2,"0");
+  document.getElementById("status-time").textContent =
+    `${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
+}
+
+/* ── API health ─────────────────────────────── */
+async function checkHealth(){
+  const dot = document.getElementById("api-dot");
+  const label = document.getElementById("api-state");
+  try{
+    const r = await fetch(`${API}/api/narrator/health`,{method:"GET"});
+    if(r.ok){
+      dot.className="pulse-dot";
+      label.textContent="live";
+    }else throw new Error();
+  }catch{
+    dot.className="pulse-dot offline";
+    label.textContent="offline";
+  }
+}
+
+/* ── tabs ───────────────────────────────────── */
+function bindTabs(){
+  document.querySelectorAll(".tab").forEach(t=>{
+    t.addEventListener("click",()=>{
+      document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));
+      document.querySelectorAll(".pane").forEach(x=>x.classList.remove("active"));
+      t.classList.add("active");
+      document.querySelector(`[data-pane="${t.dataset.tab}"]`).classList.add("active");
+    });
+  });
+}
+
+/* ── config load/save ──────────────────────── */
+async function loadConfig(){
+  try{
+    const r = await fetch(`${API}/api/narrator/config`);
+    if(r.ok){
+      const cfg = await r.json();
+      state.characters = cfg.characters || [];
+      Object.assign(state.settings, cfg.settings || {});
+    }
+  }catch{/* offline — use defaults */}
+
+  // seed defaults if first run
+  if(!state.characters.length){
+    state.characters = [
+      {name:"Narrator",voice:"en-US-GuyNeural",engine:"edge-tts",speed:0,color:"#d4a846"},
+      {name:"Sable",voice:"en-US-AriaNeural",engine:"edge-tts",speed:5,color:"#dc143c"},
+      {name:"Lyra",voice:"en-GB-SoniaNeural",engine:"edge-tts",speed:-5,color:"#4dd0a3"},
+    ];
+  }
+  applySettingsToUI();
+  renderCharacters();
+}
+
+function applySettingsToUI(){
+  const s = state.settings;
+  document.getElementById("set-engine").value = s.engine;
+  document.getElementById("set-sovits-url").value = s.sovits_url||"";
+  document.getElementById("set-detect").value = s.detect;
+  document.getElementById("set-ollama-url").value = s.ollama_url||"";
+  document.getElementById("set-ollama-model").value = s.ollama_model||"";
+  document.getElementById("set-output-dir").value = s.output_dir||"";
+  document.getElementById("engine-label").textContent = s.engine;
+}
+
+async function saveConfig(){
+  const s = state.settings;
+  s.engine = document.getElementById("set-engine").value;
+  s.sovits_url = document.getElementById("set-sovits-url").value;
+  s.detect = document.getElementById("set-detect").value;
+  s.ollama_url = document.getElementById("set-ollama-url").value;
+  s.ollama_model = document.getElementById("set-ollama-model").value;
+  s.output_dir = document.getElementById("set-output-dir").value;
+  const anth = document.getElementById("set-anthropic-key").value;
+  const oai  = document.getElementById("set-openai-key").value;
+
+  document.getElementById("engine-label").textContent = s.engine;
+
+  try{
+    await fetch(`${API}/api/narrator/config`,{
+      method:"POST",headers:{"content-type":"application/json"},
+      body:JSON.stringify({
+        characters:state.characters, settings:s,
+        anthropic_key:anth||undefined, openai_key:oai||undefined,
+      })
+    });
+    flash("settings saved");
+  }catch{
+    flash("saved locally (offline)");
+  }
+}
+
+/* ── characters table ───────────────────────── */
+function renderCharacters(){
+  const tb = document.getElementById("char-tbody");
+  tb.innerHTML = "";
+  state.characters.forEach((c,i)=>{
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td><span class="char-swatch" style="background:${c.color||"#dc143c"}"></span></td>
+      <td style="font-weight:600">${escape(c.name)}</td>
+      <td style="font-family:var(--font-mono);font-size:12px;color:var(--text-mute)">${escape(c.voice)}</td>
+      <td><span class="char-engine ${engineClass(c.engine)}">${c.engine}</span></td>
+      <td style="font-family:var(--font-mono);color:${c.speed>0?"var(--ok)":c.speed<0?"var(--warn)":"var(--text-mute)"}">${c.speed>0?"+":""}${c.speed}%</td>
+      <td style="text-align:right">
+        <button class="btn btn-ghost" data-act="preview" data-i="${i}">Preview</button>
+        <button class="btn btn-ghost" data-act="edit" data-i="${i}">Edit</button>
+        <button class="btn btn-ghost" data-act="del" data-i="${i}">Del</button>
+      </td>`;
+    tb.appendChild(tr);
+  });
+  document.getElementById("char-count").textContent = state.characters.length;
+  tb.querySelectorAll("button[data-act]").forEach(b=>{
+    b.addEventListener("click",()=>charAction(b.dataset.act, +b.dataset.i));
+  });
+}
+function engineClass(e){return e==="edge-tts"?"edge":e==="pyttsx3"?"pyttsx3":"sovits"}
+
+function charAction(act,i){
+  if(act==="del"){
+    state.characters.splice(i,1);
+    renderCharacters();
+  }else if(act==="edit"){
+    openDialog(i);
+  }else if(act==="preview"){
+    previewVoice(state.characters[i]);
+  }
+}
+
+/* ── character dialog ───────────────────────── */
+function populateDialogVoices(){
+  const sel = document.getElementById("dlg-voice");
+  VOICES.forEach(v=>{
+    const o=document.createElement("option");o.value=v;o.textContent=v;sel.appendChild(o);
+  });
+}
+function bindDialog(){
+  document.getElementById("btn-add-char").addEventListener("click",()=>openDialog(-1));
+  document.getElementById("dlg-cancel").addEventListener("click",closeDialog);
+  document.getElementById("dlg-save").addEventListener("click",saveDialog);
+  document.getElementById("char-dialog").addEventListener("click",e=>{
+    if(e.target.id==="char-dialog") closeDialog();
+  });
+}
+function openDialog(idx){
+  state.editing_idx = idx;
+  const isNew = idx<0;
+  const c = isNew ? {name:"",voice:VOICES[0],engine:"edge-tts",speed:0,color:COLORS[state.characters.length % COLORS.length]} : state.characters[idx];
+  document.getElementById("dialog-title").textContent = isNew ? "Add Character" : "Edit Character";
+  document.getElementById("dlg-name").value = c.name;
+  document.getElementById("dlg-voice").value = c.voice;
+  document.getElementById("dlg-engine").value = c.engine;
+  document.getElementById("dlg-speed").value = c.speed;
+  document.getElementById("dlg-color").value = c.color||"#dc143c";
+  document.getElementById("char-dialog").classList.add("open");
+}
+function closeDialog(){document.getElementById("char-dialog").classList.remove("open")}
+function saveDialog(){
+  const c = {
+    name:document.getElementById("dlg-name").value.trim(),
+    voice:document.getElementById("dlg-voice").value,
+    engine:document.getElementById("dlg-engine").value,
+    speed:+document.getElementById("dlg-speed").value||0,
+    color:document.getElementById("dlg-color").value,
+  };
+  if(!c.name) return;
+  if(state.editing_idx<0) state.characters.push(c);
+  else state.characters[state.editing_idx] = c;
+  renderCharacters();
+  closeDialog();
+}
+
+/* ── parse + render ─────────────────────────── */
+function bindButtons(){
+  document.getElementById("btn-load-file").addEventListener("click",loadFile);
+  document.getElementById("btn-paste-sample").addEventListener("click",pasteSample);
+  document.getElementById("btn-parse").addEventListener("click",parseSpeakers);
+  document.getElementById("btn-render").addEventListener("click",renderSegments);
+  document.getElementById("btn-save-settings").addEventListener("click",saveConfig);
+}
+function loadFile(){
+  const inp = document.createElement("input");
+  inp.type="file"; inp.accept=".txt,.md";
+  inp.addEventListener("change",async()=>{
+    const f = inp.files[0];
+    if(!f) return;
+    document.getElementById("story-text").value = await f.text();
+    flash(`loaded ${f.name}`);
+  });
+  inp.click();
+}
+function pasteSample(){
+  document.getElementById("story-text").value =
+`The rehearsal room was half-lit, the kind of crimson glow that made everything look like it was happening underwater.
+
+"That was almost competent," Lyra said. "I'm impressed."
+
+Sable threw a pick at her head. "You're a menace."
+
+"I'm precise. Different word."
+
+The narrator let the silence stretch. There was music in it — the specific kind that happens before the downbeat.`;
+  flash("sample pasted");
+}
+
+async function parseSpeakers(){
+  const text = document.getElementById("story-text").value.trim();
+  if(!text){flash("no text");return}
+  setProgress(5,"detecting speakers…");
+  try{
+    const r = await fetch(`${API}/api/narrator/parse`,{
+      method:"POST",headers:{"content-type":"application/json"},
+      body:JSON.stringify({text, characters:state.characters, settings:state.settings})
+    });
+    if(!r.ok) throw new Error();
+    const data = await r.json();
+    state.segments = data.segments || [];
+  }catch{
+    // offline fallback — naive local parser so the UI still feels alive
+    state.segments = localParse(text);
+    flash("parsed locally (backend offline)");
+  }
+  renderSegments_UI();
+  document.getElementById("btn-render").disabled = state.segments.length===0;
+  setProgress(100,`${state.segments.length} segments`);
+  setTimeout(()=>setProgress(0,"idle"),1200);
+}
+
+function localParse(text){
+  // lightweight fallback: split quoted dialogue from prose
+  const out = [];
+  const re = /"([^"]+)"\s*,?\s*([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)\s+(?:said|asked|whispered|shouted|muttered)/g;
+  let last=0,m;
+  while((m=re.exec(text))!==null){
+    const pre = text.slice(last,m.index).trim();
+    if(pre) out.push({char:"Narrator",text:pre});
+    const namedChar = state.characters.find(c=>c.name.toLowerCase()===m[2].toLowerCase());
+    out.push({char:namedChar?namedChar.name:"Narrator",text:`"${m[1]}"`});
+    last = re.lastIndex;
+  }
+  const tail = text.slice(last).trim();
+  if(tail) out.push({char:"Narrator",text:tail});
+  return out.length?out:[{char:"Narrator",text}];
+}
+
+function renderSegments_UI(){
+  const el = document.getElementById("segments-list");
+  if(!state.segments.length){
+    el.innerHTML = '<div class="segment-empty">No segments yet — paste text and hit Parse.</div>';
+    return;
+  }
+  el.innerHTML = state.segments.map(s=>{
+    const c = state.characters.find(x=>x.name===s.char) || {color:"#8a7a94",voice:"—"};
+    return `<div class="segment" style="border-left-color:${c.color}">
+      <div class="segment-head">
+        <span class="segment-char" style="color:${c.color}">${escape(s.char)}</span>
+        <span class="segment-voice">${escape(c.voice||"—")}</span>
+      </div>
+      <div class="segment-text">${escape(s.text)}</div>
+    </div>`;
+  }).join("");
+}
+
+async function renderSegments(){
+  if(!state.segments.length) return;
+  setProgress(2,"queueing…");
+  document.getElementById("btn-render").disabled = true;
+  try{
+    const r = await fetch(`${API}/api/narrator/render`,{
+      method:"POST",headers:{"content-type":"application/json"},
+      body:JSON.stringify({segments:state.segments, characters:state.characters, settings:state.settings})
+    });
+    if(!r.ok) throw new Error();
+    const {job_id} = await r.json();
+    pollJob(job_id);
+  }catch{
+    // offline sim
+    simulateRender();
+  }
+}
+function pollJob(id){
+  const iv = setInterval(async()=>{
+    try{
+      const r = await fetch(`${API}/api/narrator/progress/${id}`);
+      const j = await r.json();
+      setProgress(j.pct, j.msg);
+      if(j.status==="done"||j.status==="error"){
+        clearInterval(iv);
+        document.getElementById("btn-render").disabled=false;
+        flash(j.status==="done"?`rendered → ${j.output_path||"file"}`:`error: ${j.msg}`);
+      }
+    }catch{clearInterval(iv); document.getElementById("btn-render").disabled=false}
+  },500);
+}
+function simulateRender(){
+  let p=0;
+  const iv = setInterval(()=>{
+    p += 3+Math.random()*6;
+    if(p>=100){
+      p=100; clearInterval(iv);
+      document.getElementById("btn-render").disabled=false;
+      flash("simulated render complete (backend offline)");
+      setTimeout(()=>setProgress(0,"idle"),1500);
+    }
+    setProgress(p,`rendering ${Math.floor(p)}%`);
+  },140);
+}
+
+function previewVoice(c){
+  flash(`preview ${c.voice} — backend required`);
+  fetch(`${API}/api/narrator/preview`,{method:"POST",headers:{"content-type":"application/json"},
+    body:JSON.stringify({voice:c.voice, engine:c.engine, text:`This is ${c.name}. The rhythm's off.`})}).catch(()=>{});
+}
+
+/* ── voice catalog ─────────────────────────── */
+function renderVoices(list){
+  const el = document.getElementById("voice-grid");
+  el.innerHTML = list.map(v=>{
+    const parts = v.split("-");
+    const locale = parts.slice(0,2).join("-");
+    const name = parts[2]?.replace("Neural","")||v;
+    return `<div class="voice-card">
+      <div class="voice-name">${escape(name)}</div>
+      <div class="voice-meta">${escape(locale)} · Neural</div>
+      <div class="voice-actions">
+        <button class="btn btn-ghost" data-v="${v}">▶ Preview</button>
+        <button class="btn btn-ghost" data-v="${v}" data-assign="1">Assign</button>
+      </div>
+    </div>`;
+  }).join("");
+  el.querySelectorAll("button").forEach(b=>{
+    b.addEventListener("click",()=>{
+      if(b.dataset.assign){
+        flash(`assign ${b.dataset.v} — pick character in dialog`);
+        openDialog(-1);
+        document.getElementById("dlg-voice").value = b.dataset.v;
+      }else{
+        previewVoice({voice:b.dataset.v,engine:"edge-tts",name:"Preview"});
+      }
+    });
+  });
+}
+function bindVoiceSearch(){
+  document.getElementById("voice-search").addEventListener("input",e=>{
+    const q = e.target.value.toLowerCase();
+    renderVoices(VOICES.filter(v=>v.toLowerCase().includes(q)));
+  });
+}
+
+/* ── helpers ────────────────────────────────── */
+function setProgress(pct,msg){
+  document.getElementById("prog-bar").style.width = `${Math.min(100,pct)}%`;
+  document.getElementById("prog-text").textContent = msg;
+}
+function flash(msg){
+  document.getElementById("last-action").textContent = msg;
+}
+function escape(s){return String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[m]))}
+</script>
+</body>
+</html>

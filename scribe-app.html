@@ -1,0 +1,1404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Scribe — RedVerse</title>
+<link rel="stylesheet" href="lyra.css">
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+<style>
+/* ── Scribe App Layout ─────────────────────────────── */
+body { min-height: 100vh; overflow-x: hidden; }
+
+.scribe-shell {
+  display: grid;
+  grid-template-columns: 280px 1fr 260px;
+  grid-template-rows: auto 1fr;
+  height: calc(100vh - 56px);
+  gap: 0;
+  margin-top: 56px;
+}
+
+/* ── Left Panel — Controls ─────────────────────────── */
+.panel-controls {
+  grid-column: 1;
+  grid-row: 1 / 3;
+  border-right: 1px solid var(--lyra-border);
+  display: flex;
+  flex-direction: column;
+  background: var(--lyra-obsidian);
+  overflow-y: auto;
+}
+
+.panel-section {
+  padding: 18px 16px;
+  border-bottom: 1px solid var(--lyra-border);
+}
+
+.panel-label {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+  color: var(--lyra-crimson);
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.panel-label::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, var(--lyra-border), transparent);
+}
+
+/* ── Record button ─────────────────────────────────── */
+.record-ring {
+  width: 96px;
+  height: 96px;
+  margin: 0 auto 16px;
+  position: relative;
+  cursor: pointer;
+}
+
+.record-ring svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+
+.record-ring .ring-bg {
+  fill: none;
+  stroke: var(--lyra-border);
+  stroke-width: 3;
+}
+
+.record-ring .ring-progress {
+  fill: none;
+  stroke: var(--lyra-crimson);
+  stroke-width: 3;
+  stroke-dasharray: 251;
+  stroke-dashoffset: 251;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 0.3s ease;
+  filter: drop-shadow(0 0 4px rgba(220,20,60,0.6));
+}
+
+.record-ring.listening .ring-progress {
+  animation: ringPulse 2s linear infinite;
+}
+
+@keyframes ringPulse {
+  0%   { stroke-dashoffset: 251; opacity: 1; }
+  50%  { stroke-dashoffset: 0;   opacity: 0.8; }
+  100% { stroke-dashoffset: 251; opacity: 1; }
+}
+
+.record-btn-inner {
+  position: absolute;
+  inset: 12px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--lyra-stone), var(--lyra-obsidian));
+  border: 1px solid var(--lyra-border);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  transition: all 0.2s ease;
+  box-shadow: inset 0 2px 8px rgba(0,0,0,0.4);
+}
+
+.record-btn-inner:hover {
+  border-color: var(--lyra-crimson);
+  box-shadow: inset 0 2px 8px rgba(0,0,0,0.4), 0 0 16px rgba(220,20,60,0.2);
+}
+
+.record-btn-inner.active {
+  background: linear-gradient(135deg, rgba(220,20,60,0.15), rgba(139,0,0,0.1));
+  border-color: var(--lyra-crimson);
+  box-shadow: inset 0 2px 8px rgba(0,0,0,0.4), 0 0 24px rgba(220,20,60,0.3);
+}
+
+.record-icon {
+  font-size: 24px;
+  color: var(--lyra-crimson);
+  line-height: 1;
+}
+
+.record-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--lyra-ghost);
+}
+
+/* ── Status indicator ──────────────────────────────── */
+.status-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--lyra-ghost);
+  transition: background 0.3s ease;
+  flex-shrink: 0;
+}
+
+.status-dot.ready   { background: var(--lyra-success); box-shadow: 0 0 6px rgba(0,255,136,0.5); }
+.status-dot.listening { background: var(--lyra-crimson); box-shadow: 0 0 6px rgba(220,20,60,0.5); animation: blink 1s infinite; }
+.status-dot.error   { background: var(--lyra-error); }
+
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+.status-text {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 1px;
+  color: var(--lyra-ash);
+}
+
+/* ── Control buttons row ───────────────────────────── */
+.ctrl-row {
+  display: flex;
+  gap: 8px;
+}
+
+.ctrl-btn {
+  flex: 1;
+  padding: 8px 6px;
+  background: var(--lyra-stone);
+  border: 1px solid var(--lyra-border);
+  border-radius: var(--lyra-radius-md);
+  color: var(--lyra-ash);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  transition: all 0.15s ease;
+}
+
+.ctrl-btn .material-icons { font-size: 16px; }
+
+.ctrl-btn:hover:not(:disabled) {
+  border-color: var(--lyra-ghost);
+  color: var(--lyra-silver);
+  background: rgba(255,255,255,0.03);
+}
+
+.ctrl-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+.ctrl-btn.danger:hover:not(:disabled) {
+  border-color: var(--lyra-error);
+  color: var(--lyra-error);
+}
+
+/* ── Backend selector ──────────────────────────────── */
+.backend-select {
+  width: 100%;
+  background: var(--lyra-void);
+  border: 1px solid var(--lyra-border);
+  border-radius: var(--lyra-radius-md);
+  padding: 8px 12px;
+  color: var(--lyra-silver);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  cursor: pointer;
+  margin-bottom: 10px;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.backend-select:focus { border-color: var(--lyra-crimson); }
+
+/* ── Checkboxes ────────────────────────────────────── */
+.check-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+  cursor: pointer;
+}
+
+.check-row input[type=checkbox] {
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  border: 1px solid var(--lyra-border);
+  border-radius: 3px;
+  background: var(--lyra-void);
+  cursor: pointer;
+  position: relative;
+  flex-shrink: 0;
+  transition: all 0.15s;
+}
+
+.check-row input[type=checkbox]:checked {
+  background: var(--lyra-crimson);
+  border-color: var(--lyra-crimson);
+}
+
+.check-row input[type=checkbox]:checked::after {
+  content: '✓';
+  position: absolute;
+  top: -1px;
+  left: 2px;
+  font-size: 10px;
+  color: white;
+  font-weight: 700;
+}
+
+.check-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--lyra-ash);
+  letter-spacing: 0.5px;
+}
+
+/* ── Stats ─────────────────────────────────────────── */
+.stat-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.stat-box {
+  background: var(--lyra-void);
+  border: 1px solid var(--lyra-border);
+  border-radius: var(--lyra-radius-md);
+  padding: 10px 12px;
+  text-align: center;
+}
+
+.stat-val {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--lyra-crimson);
+  display: block;
+  line-height: 1;
+  margin-bottom: 4px;
+}
+
+.stat-key {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--lyra-ghost);
+}
+
+/* ── Center — Transcription ────────────────────────── */
+.panel-transcription {
+  grid-column: 2;
+  grid-row: 1 / 3;
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid var(--lyra-border);
+}
+
+/* Waveform bar */
+.waveform-bar {
+  height: 56px;
+  background: var(--lyra-obsidian);
+  border-bottom: 1px solid var(--lyra-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  padding: 0 20px;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.wave-bar {
+  width: 3px;
+  border-radius: 2px;
+  background: var(--lyra-border);
+  height: 6px;
+  transition: height 0.1s ease, background 0.2s ease;
+}
+
+.waveform-bar.active .wave-bar {
+  background: var(--lyra-crimson);
+  animation: waveAnim 0.6s ease-in-out infinite;
+}
+
+.waveform-bar.active .wave-bar:nth-child(odd)  { animation-delay: 0.1s; }
+.waveform-bar.active .wave-bar:nth-child(3n)   { animation-delay: 0.2s; }
+.waveform-bar.active .wave-bar:nth-child(5n)   { animation-delay: 0.15s; }
+
+@keyframes waveAnim {
+  0%,100% { height: 6px; opacity: 0.5; }
+  50%     { height: var(--h, 28px); opacity: 1; }
+}
+
+/* Toolbar */
+.transcription-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--lyra-border);
+  background: var(--lyra-obsidian);
+  flex-shrink: 0;
+}
+
+.toolbar-title {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+  color: var(--lyra-crimson);
+  flex: 1;
+}
+
+.toolbar-btn {
+  background: none;
+  border: 1px solid var(--lyra-border);
+  border-radius: var(--lyra-radius-sm);
+  padding: 4px 10px;
+  color: var(--lyra-ghost);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 1px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+
+.toolbar-btn .material-icons { font-size: 13px; }
+
+.toolbar-btn:hover {
+  border-color: var(--lyra-ghost);
+  color: var(--lyra-silver);
+  background: rgba(255,255,255,0.03);
+}
+
+.toolbar-btn.primary:hover {
+  border-color: var(--lyra-crimson);
+  color: var(--lyra-crimson);
+  background: rgba(220,20,60,0.06);
+}
+
+/* Transcription area */
+.transcription-area {
+  flex: 1;
+  padding: 24px;
+  overflow-y: auto;
+  position: relative;
+}
+
+.transcript-block {
+  background: var(--lyra-stone);
+  border: 1px solid var(--lyra-border);
+  border-radius: var(--lyra-radius-lg);
+  padding: 20px 24px;
+  min-height: 200px;
+  font-size: 15px;
+  color: var(--lyra-silver);
+  line-height: 1.75;
+  white-space: pre-wrap;
+  word-break: break-word;
+  outline: none;
+  cursor: text;
+  transition: border-color 0.2s;
+  position: relative;
+}
+
+.transcript-block::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--lyra-crimson), transparent);
+  opacity: 0.3;
+}
+
+.transcript-block:focus {
+  border-color: rgba(220,20,60,0.35);
+}
+
+.transcript-block.empty::after {
+  content: 'Press ⬤ to start listening — transcription will appear here in real time...';
+  color: var(--lyra-ghost);
+  font-style: italic;
+  font-size: 14px;
+  pointer-events: none;
+}
+
+/* Interim text pulse */
+.interim-text {
+  color: rgba(220,20,60,0.6);
+  font-style: italic;
+}
+
+/* ── Right Panel — History / Favorites ─────────────── */
+.panel-history {
+  grid-column: 3;
+  grid-row: 1 / 3;
+  display: flex;
+  flex-direction: column;
+  background: var(--lyra-obsidian);
+  overflow: hidden;
+}
+
+.history-tabs {
+  display: flex;
+  border-bottom: 1px solid var(--lyra-border);
+  flex-shrink: 0;
+}
+
+.history-tab {
+  flex: 1;
+  padding: 12px 8px;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--lyra-ghost);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+}
+
+.history-tab .material-icons { font-size: 13px; }
+
+.history-tab:hover { color: var(--lyra-ash); }
+
+.history-tab.active {
+  color: var(--lyra-crimson);
+  border-bottom-color: var(--lyra-crimson);
+  background: rgba(220,20,60,0.04);
+}
+
+.history-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.history-item {
+  background: var(--lyra-stone);
+  border: 1px solid var(--lyra-border);
+  border-radius: var(--lyra-radius-md);
+  padding: 10px 12px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  position: relative;
+}
+
+.history-item:hover {
+  border-color: rgba(220,20,60,0.3);
+  background: rgba(220,20,60,0.04);
+}
+
+.history-item-text {
+  font-size: 12px;
+  color: var(--lyra-ash);
+  line-height: 1.45;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  margin-bottom: 6px;
+}
+
+.history-item-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 6px;
+}
+
+.history-item-time {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  color: var(--lyra-ghost);
+  letter-spacing: 0.5px;
+}
+
+.history-item-actions {
+  display: flex;
+  gap: 4px;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.history-item:hover .history-item-actions { opacity: 1; }
+
+.hist-btn {
+  background: none;
+  border: 1px solid var(--lyra-border);
+  border-radius: 3px;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--lyra-ghost);
+  transition: all 0.15s;
+  padding: 0;
+}
+
+.hist-btn .material-icons { font-size: 11px; }
+
+.hist-btn:hover { border-color: var(--lyra-crimson); color: var(--lyra-crimson); }
+.hist-btn.del:hover { border-color: var(--lyra-error); color: var(--lyra-error); }
+
+/* ── Export Panel ──────────────────────────────────── */
+.export-panel {
+  padding: 14px;
+  border-top: 1px solid var(--lyra-border);
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.export-btn {
+  width: 100%;
+  padding: 9px 12px;
+  background: var(--lyra-stone);
+  border: 1px solid var(--lyra-border);
+  border-radius: var(--lyra-radius-md);
+  color: var(--lyra-ash);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.15s;
+}
+
+.export-btn .material-icons { font-size: 14px; }
+
+.export-btn:hover {
+  border-color: var(--lyra-crimson);
+  color: var(--lyra-crimson);
+  background: rgba(220,20,60,0.06);
+}
+
+/* ── Connection status ─────────────────────────────── */
+.conn-bar {
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  height: 28px;
+  background: var(--lyra-void);
+  border-top: 1px solid var(--lyra-border);
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  gap: 12px;
+  z-index: 10;
+}
+
+.conn-indicator {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.5px;
+  color: var(--lyra-ghost);
+}
+
+.conn-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--lyra-ghost);
+}
+
+.conn-dot.online  { background: var(--lyra-success); box-shadow: 0 0 4px rgba(0,255,136,0.5); }
+.conn-dot.offline { background: var(--lyra-error); }
+
+.conn-bar-right {
+  margin-left: auto;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: var(--lyra-ghost);
+}
+
+/* ── Scrollbar ─────────────────────────────────────── */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--lyra-border); border-radius: 2px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(220,20,60,0.4); }
+
+/* ── Toast ─────────────────────────────────────────── */
+.toast {
+  position: fixed;
+  bottom: 40px;
+  right: 20px;
+  background: var(--lyra-stone);
+  border: 1px solid rgba(220,20,60,0.3);
+  border-radius: var(--lyra-radius-md);
+  padding: 10px 16px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: var(--lyra-silver);
+  z-index: 100;
+  transform: translateY(20px);
+  opacity: 0;
+  transition: all 0.25s ease;
+  pointer-events: none;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+}
+
+.toast.show { transform: translateY(0); opacity: 1; }
+
+/* ── Access Gate ───────────────────────────────────── */
+.access-gate {
+  position: fixed;
+  inset: 56px 0 28px 0;
+  z-index: 40;
+  background: rgba(6,6,10,0.82);
+  backdrop-filter: blur(6px);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.access-gate.show { display: flex; }
+
+.access-gate-card {
+  width: min(560px, 92vw);
+  background: var(--lyra-stone);
+  border: 1px solid rgba(220,20,60,0.3);
+  border-radius: var(--lyra-radius-lg);
+  padding: 24px;
+  text-align: center;
+  box-shadow: 0 18px 40px rgba(0,0,0,0.55);
+}
+
+.access-gate-title {
+  font-family: 'Cinzel', serif;
+  font-size: 20px;
+  color: var(--lyra-text-bright);
+  margin-bottom: 8px;
+  letter-spacing: 1px;
+}
+
+.access-gate-note {
+  font-size: 13px;
+  color: var(--lyra-ash);
+  line-height: 1.7;
+  margin-bottom: 18px;
+}
+
+.access-gate-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+/* Responsive collapse */
+@media (max-width: 900px) {
+  .scribe-shell { grid-template-columns: 240px 1fr; }
+  .panel-history { display: none; }
+}
+@media (max-width: 600px) {
+  .scribe-shell { grid-template-columns: 1fr; }
+  .panel-controls { display: none; }
+}
+</style>
+</head>
+<body>
+<div class="lyra-cathedral"></div>
+
+<!-- Header -->
+<header class="lyra-header">
+  <a href="index.html" style="display:flex;align-items:center;gap:10px;text-decoration:none;color:inherit">
+    <div style="width:32px;height:32px;border-radius:6px;background:linear-gradient(135deg,var(--lyra-blood),var(--lyra-crimson));display:flex;align-items:center;justify-content:center;box-shadow:0 0 10px rgba(220,20,60,0.3)">
+      <span style="color:var(--lyra-gold);font-size:16px">♦</span>
+    </div>
+    <span class="lyra-logo">RED<span class="lyra-logo-accent">VERSE</span></span>
+  </a>
+  <div style="display:flex;align-items:center;gap:8px">
+    <span style="font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:2px;color:var(--lyra-ghost);text-transform:uppercase">Scribe</span>
+    <span style="color:var(--lyra-border)">·</span>
+    <a href="redverse-shop.html" class="lyra-btn" style="padding:5px 12px;font-size:11px">
+      <i class="material-icons" style="font-size:14px">store</i> Shop
+    </a>
+  </div>
+</header>
+
+<!-- Access Gate -->
+<div class="access-gate" id="accessGate">
+  <div class="access-gate-card">
+    <div class="access-gate-title">Scribe Access Required</div>
+    <div class="access-gate-note" id="accessGateMsg">
+      This tool is linked to your RedVerse Store entitlement.
+    </div>
+    <div class="access-gate-actions">
+      <a class="lyra-btn lyra-btn-primary" href="redverse-shop.html" id="accessGateStoreLink">
+        <i class="material-icons" style="font-size:16px">shopping_cart</i> Open Store
+      </a>
+      <button class="lyra-btn" onclick="ensureScribeAccess(true)">
+        <i class="material-icons" style="font-size:16px">refresh</i> Recheck Access
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Main Shell -->
+<div class="scribe-shell">
+
+  <!-- LEFT: Controls -->
+  <aside class="panel-controls">
+
+    <!-- Record -->
+    <div class="panel-section">
+      <div class="panel-label">Input</div>
+      <div class="record-ring" id="recordRing" onclick="toggleListening()">
+        <svg viewBox="0 0 96 96">
+          <circle class="ring-bg" cx="48" cy="48" r="40"/>
+          <circle class="ring-progress" id="ringProgress" cx="48" cy="48" r="40"/>
+        </svg>
+        <div class="record-btn-inner" id="recordInner">
+          <i class="material-icons record-icon" id="recordIcon">mic</i>
+          <span class="record-label" id="recordLabel">Idle</span>
+        </div>
+      </div>
+      <div class="status-row">
+        <div class="status-dot" id="statusDot"></div>
+        <span class="status-text" id="statusText">Ready</span>
+      </div>
+      <div class="ctrl-row">
+        <button class="ctrl-btn" id="btnPause" onclick="pauseListening()" disabled>
+          <i class="material-icons">pause</i>
+          <span>Pause</span>
+        </button>
+        <button class="ctrl-btn danger" id="btnStop" onclick="stopListening()" disabled>
+          <i class="material-icons">stop</i>
+          <span>Stop</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Backend -->
+    <div class="panel-section">
+      <div class="panel-label">Backend</div>
+      <select class="backend-select" id="backendSelect" onchange="setBackend(this.value)">
+        <option value="auto">Auto — Best Available</option>
+        <option value="whisper">OpenAI Whisper</option>
+        <option value="google">Google Cloud STT</option>
+        <option value="local">Local Offline</option>
+      </select>
+      <label class="check-row">
+        <input type="checkbox" id="chkContinuous" checked>
+        <span class="check-label">Continuous Mode</span>
+      </label>
+      <label class="check-row">
+        <input type="checkbox" id="chkAutoCopy">
+        <span class="check-label">Auto-copy to Clipboard</span>
+      </label>
+      <label class="check-row">
+        <input type="checkbox" id="chkPunctuation" checked>
+        <span class="check-label">Auto Punctuation</span>
+      </label>
+    </div>
+
+    <!-- Stats -->
+    <div class="panel-section">
+      <div class="panel-label">Session</div>
+      <div class="stat-grid">
+        <div class="stat-box">
+          <span class="stat-val" id="statWords">0</span>
+          <span class="stat-key">Words</span>
+        </div>
+        <div class="stat-box">
+          <span class="stat-val" id="statChars">0</span>
+          <span class="stat-key">Chars</span>
+        </div>
+        <div class="stat-box">
+          <span class="stat-val" id="statTime">0:00</span>
+          <span class="stat-key">Time</span>
+        </div>
+        <div class="stat-box">
+          <span class="stat-val" id="statSegments">0</span>
+          <span class="stat-key">Segments</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Clipboard shortcut -->
+    <div class="panel-section">
+      <div class="panel-label">Clipboard</div>
+      <div class="ctrl-row">
+        <button class="ctrl-btn" onclick="copyAll()">
+          <i class="material-icons">content_copy</i>
+          <span>Copy All</span>
+        </button>
+        <button class="ctrl-btn" onclick="clearTranscript()">
+          <i class="material-icons">delete_outline</i>
+          <span>Clear</span>
+        </button>
+      </div>
+    </div>
+
+  </aside>
+
+  <!-- CENTER: Transcription -->
+  <main class="panel-transcription">
+
+    <!-- Waveform -->
+    <div class="waveform-bar" id="waveformBar">
+      <!-- bars injected by JS -->
+    </div>
+
+    <!-- Toolbar -->
+    <div class="transcription-toolbar">
+      <span class="toolbar-title">Transcription</span>
+      <button class="toolbar-btn primary" onclick="copyAll()">
+        <i class="material-icons">content_copy</i> Copy
+      </button>
+      <button class="toolbar-btn" onclick="saveToHistory()">
+        <i class="material-icons">bookmark_add</i> Save
+      </button>
+      <button class="toolbar-btn" onclick="exportTxt()">
+        <i class="material-icons">download</i> TXT
+      </button>
+      <button class="toolbar-btn" onclick="exportMd()">
+        <i class="material-icons">download</i> MD
+      </button>
+    </div>
+
+    <!-- Text area -->
+    <div class="transcription-area">
+      <div class="transcript-block empty" id="transcript" contenteditable="true"
+           oninput="onTranscriptEdit()" onclick="this.classList.remove('empty')"></div>
+    </div>
+
+  </main>
+
+  <!-- RIGHT: History & Favorites -->
+  <aside class="panel-history">
+    <div class="history-tabs">
+      <button class="history-tab active" id="tabHistory" onclick="switchTab('history')">
+        <i class="material-icons">history</i> History
+      </button>
+      <button class="history-tab" id="tabFav" onclick="switchTab('favorites')">
+        <i class="material-icons">star</i> Favorites
+      </button>
+    </div>
+
+    <div class="history-list" id="historyList">
+      <div style="padding:20px;text-align:center;color:var(--lyra-ghost);font-family:'JetBrains Mono',monospace;font-size:11px;line-height:1.7">
+        Clipboard history will<br>appear here.
+      </div>
+    </div>
+
+    <div class="export-panel">
+      <button class="export-btn" onclick="exportTxt()">
+        <i class="material-icons">article</i> Export as TXT
+      </button>
+      <button class="export-btn" onclick="exportMd()">
+        <i class="material-icons">code</i> Export as Markdown
+      </button>
+    </div>
+  </aside>
+
+</div>
+
+<!-- Connection bar -->
+<div class="conn-bar">
+  <div class="conn-indicator">
+    <div class="conn-dot" id="connDot"></div>
+    <span id="connText">Connecting...</span>
+  </div>
+  <span style="color:var(--lyra-border);font-size:10px">·</span>
+  <span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--lyra-ghost)" id="backendLabel">Backend: Auto</span>
+  <div class="conn-bar-right">
+    <span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--lyra-ghost)">Scribe · RedVerse Tools · <span id="clockEl"></span></span>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ── CONFIG ────────────────────────────────────────────
+const API = 'http://127.0.0.1:8925';
+const ACCESS_API = 'http://127.0.0.1:8915';
+const STORE_URL = 'redverse-shop.html';
+const STORE_PRODUCT_ID = 'scribe';
+const POLL_INTERVAL = 800;
+
+// ── STATE ─────────────────────────────────────────────
+let isListening  = false;
+let isPaused     = false;
+let sessionStart = null;
+let timerInterval = null;
+let segments     = 0;
+let history      = JSON.parse(localStorage.getItem('scribe_history') || '[]');
+let favorites    = JSON.parse(localStorage.getItem('scribe_favorites') || '[]');
+let currentTab   = 'history';
+let scribeLocked = true;
+
+function getRvUser() {
+  try {
+    return JSON.parse(localStorage.getItem('rv_user') || 'null');
+  } catch {
+    return null;
+  }
+}
+
+function getLocalEntitlements() {
+  try {
+    const raw = JSON.parse(localStorage.getItem('rv_entitlements') || '[]');
+    return Array.isArray(raw) ? raw : [];
+  } catch {
+    return [];
+  }
+}
+
+function setScribeLocked(locked, message = '') {
+  scribeLocked = !!locked;
+  const gate = document.getElementById('accessGate');
+  const msg = document.getElementById('accessGateMsg');
+  if (msg && message) msg.textContent = message;
+  if (gate) gate.classList.toggle('show', scribeLocked);
+
+  const recordRing = document.getElementById('recordRing');
+  const backendSelect = document.getElementById('backendSelect');
+  const btnPause = document.getElementById('btnPause');
+  const btnStop = document.getElementById('btnStop');
+  if (recordRing) recordRing.style.pointerEvents = scribeLocked ? 'none' : 'auto';
+  if (backendSelect) backendSelect.disabled = scribeLocked;
+  if (btnPause) btnPause.disabled = scribeLocked || !isListening;
+  if (btnStop) btnStop.disabled = scribeLocked || !isListening;
+}
+
+async function ensureScribeAccess(showToastOnSuccess = false) {
+  const localEntitled = getLocalEntitlements().includes(STORE_PRODUCT_ID);
+  const user = getRvUser();
+
+  // Fast-path local fallback for same-browser post-checkout use.
+  if (localEntitled) {
+    setScribeLocked(false);
+    if (showToastOnSuccess) showToast('Access confirmed');
+    return true;
+  }
+
+  if (!user || (!user.sub && !user.email)) {
+    setScribeLocked(true, 'Sign in and purchase Scribe in the RedVerse Store to unlock this app.');
+    return false;
+  }
+
+  try {
+    const qs = new URLSearchParams({
+      tool_id: STORE_PRODUCT_ID,
+      sub: user.sub || '',
+      email: user.email || '',
+    });
+    const res = await fetch(`${ACCESS_API}/entitlements/check?${qs.toString()}`);
+    if (res.ok) {
+      const data = await res.json();
+      if (data.entitled) {
+        setScribeLocked(false);
+        if (showToastOnSuccess) showToast('Access confirmed');
+        return true;
+      }
+    }
+  } catch {
+    // keep locked and show guidance
+  }
+
+  setScribeLocked(false, 'No Scribe entitlement found for this account yet. Purchase Scribe in the store, then click Recheck Access.');
+  return false;
+}
+
+// ── WAVEFORM INIT ─────────────────────────────────────
+const waveformEl = document.getElementById('waveformBar');
+const BAR_COUNT = 48;
+const HEIGHTS = [8,14,22,30,38,30,22,14,8,14,22,30,22,14,22,38,30,22,14,8,14,22,38,30,22,14,8,14,22,30,38,22,14,22,30,14,8,14,22,30,14,8,22,30,22,14,8,14];
+for (let i = 0; i < BAR_COUNT; i++) {
+  const b = document.createElement('div');
+  b.className = 'wave-bar';
+  b.style.setProperty('--h', (HEIGHTS[i % HEIGHTS.length]) + 'px');
+  waveformEl.appendChild(b);
+}
+
+// ── CLOCK ─────────────────────────────────────────────
+function updateClock() {
+  const now = new Date();
+  document.getElementById('clockEl').textContent = 
+    now.toLocaleTimeString('en-NZ', { hour:'2-digit', minute:'2-digit', second:'2-digit' });
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+// ── SERVER CONNECTION ─────────────────────────────────
+async function checkConnection() {
+  try {
+    const r = await fetch(`${API}/status`, { signal: AbortSignal.timeout(2000) });
+    if (r.ok) {
+      setConnected(true);
+      const data = await r.json();
+      if (data.backend) document.getElementById('backendLabel').textContent = `Backend: ${data.backend}`;
+      return true;
+    }
+  } catch {}
+  setConnected(false);
+  return false;
+}
+
+function setConnected(online) {
+  const dot  = document.getElementById('connDot');
+  const text = document.getElementById('connText');
+  dot.className  = 'conn-dot ' + (online ? 'online' : 'offline');
+  text.textContent = online ? 'Server online · port 8925' : 'Server offline — start scribe_server.py';
+}
+
+// ── LISTENING CONTROL ─────────────────────────────────
+async function toggleListening() {
+  if (isListening && !isPaused) {
+    pauseListening();
+  } else {
+    startListening();
+  }
+}
+
+async function startListening() {
+  if (scribeLocked) {
+    showToast('Scribe is locked — open store to purchase/unlock');
+    window.location.href = `${STORE_URL}#${STORE_PRODUCT_ID}`;
+    return;
+  }
+
+  try {
+    const r = await fetch(`${API}/start`, { method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        backend: document.getElementById('backendSelect').value,
+        continuous: document.getElementById('chkContinuous').checked,
+        auto_punctuation: document.getElementById('chkPunctuation').checked
+      })
+    });
+    if (!r.ok) throw new Error();
+  } catch {
+    // Fall through — allow offline demo mode
+  }
+
+  isListening = true;
+  isPaused    = false;
+  sessionStart = sessionStart || Date.now();
+
+  // UI
+  document.getElementById('recordIcon').textContent   = 'mic';
+  document.getElementById('recordLabel').textContent  = 'Live';
+  document.getElementById('recordInner').classList.add('active');
+  document.getElementById('recordRing').classList.add('listening');
+  setStatus('listening', 'Listening');
+  document.getElementById('btnPause').disabled = false;
+  document.getElementById('btnStop').disabled  = false;
+  document.getElementById('waveformBar').classList.add('active');
+  document.getElementById('transcript').classList.remove('empty');
+
+  startTimer();
+  pollTranscription();
+}
+
+async function pauseListening() {
+  if (!isListening) return;
+  isPaused = !isPaused;
+  const btn = document.getElementById('btnPause');
+  if (isPaused) {
+    setStatus('', 'Paused');
+    document.getElementById('waveformBar').classList.remove('active');
+    document.getElementById('recordIcon').textContent  = 'pause';
+    document.getElementById('recordLabel').textContent = 'Paused';
+    btn.innerHTML = '<i class="material-icons">play_arrow</i><span>Resume</span>';
+    try { await fetch(`${API}/pause`, { method: 'POST' }); } catch {}
+  } else {
+    setStatus('listening', 'Listening');
+    document.getElementById('waveformBar').classList.add('active');
+    document.getElementById('recordIcon').textContent  = 'mic';
+    document.getElementById('recordLabel').textContent = 'Live';
+    btn.innerHTML = '<i class="material-icons">pause</i><span>Pause</span>';
+    try { await fetch(`${API}/resume`, { method: 'POST' }); } catch {}
+  }
+}
+
+async function stopListening() {
+  try { await fetch(`${API}/stop`, { method: 'POST' }); } catch {}
+  isListening = false;
+  isPaused    = false;
+
+  document.getElementById('recordIcon').textContent   = 'mic';
+  document.getElementById('recordLabel').textContent  = 'Idle';
+  document.getElementById('recordInner').classList.remove('active');
+  document.getElementById('recordRing').classList.remove('listening');
+  setStatus('ready', 'Ready');
+  document.getElementById('btnPause').disabled = true;
+  document.getElementById('btnStop').disabled  = true;
+  document.getElementById('waveformBar').classList.remove('active');
+  document.getElementById('btnPause').innerHTML = '<i class="material-icons">pause</i><span>Pause</span>';
+
+  stopTimer();
+  saveToHistory();
+}
+
+// ── TRANSCRIPTION POLL ────────────────────────────────
+let pollTimeout = null;
+async function pollTranscription() {
+  if (!isListening || isPaused) return;
+  try {
+    const r = await fetch(`${API}/transcript`);
+    if (r.ok) {
+      const { text, interim, words, segments: seg } = await r.json();
+      const el = document.getElementById('transcript');
+      if (text !== undefined) {
+        el.textContent = text + (interim ? '' : '');
+        if (interim) {
+          const span = document.createElement('span');
+          span.className = 'interim-text';
+          span.textContent = ' ' + interim;
+          el.appendChild(span);
+        }
+        updateStats(text, seg);
+        if (document.getElementById('chkAutoCopy').checked && text) {
+          navigator.clipboard.writeText(text).catch(()=>{});
+        }
+      }
+    }
+  } catch {}
+  if (isListening) pollTimeout = setTimeout(pollTranscription, POLL_INTERVAL);
+}
+
+// ── STATS ─────────────────────────────────────────────
+function updateStats(text, seg) {
+  const words = text ? text.trim().split(/\s+/).filter(Boolean).length : 0;
+  document.getElementById('statWords').textContent = words;
+  document.getElementById('statChars').textContent = text ? text.length : 0;
+  if (seg !== undefined) { segments = seg; document.getElementById('statSegments').textContent = seg; }
+}
+
+function startTimer() {
+  if (timerInterval) return;
+  timerInterval = setInterval(() => {
+    const elapsed = Math.floor((Date.now() - sessionStart) / 1000);
+    const m = Math.floor(elapsed / 60);
+    const s = elapsed % 60;
+    document.getElementById('statTime').textContent = `${m}:${s.toString().padStart(2,'0')}`;
+  }, 1000);
+}
+
+function stopTimer() {
+  clearInterval(timerInterval);
+  timerInterval = null;
+}
+
+// ── UI HELPERS ────────────────────────────────────────
+function setStatus(cls, label) {
+  const dot  = document.getElementById('statusDot');
+  const text = document.getElementById('statusText');
+  dot.className  = 'status-dot ' + cls;
+  text.textContent = label;
+}
+
+function setBackend(val) {
+  const labels = { auto:'Auto', whisper:'Whisper', google:'Google STT', local:'Local Offline' };
+  document.getElementById('backendLabel').textContent = 'Backend: ' + (labels[val] || val);
+}
+
+// ── TRANSCRIPT ACTIONS ────────────────────────────────
+function onTranscriptEdit() {
+  const el = document.getElementById('transcript');
+  const text = el.textContent || el.innerText;
+  updateStats(text, segments);
+}
+
+function copyAll() {
+  const el = document.getElementById('transcript');
+  const text = el.textContent || el.innerText || '';
+  if (!text.trim()) { showToast('Nothing to copy'); return; }
+  navigator.clipboard.writeText(text.trim()).then(() => showToast('Copied to clipboard'));
+}
+
+function clearTranscript() {
+  const el = document.getElementById('transcript');
+  el.textContent = '';
+  el.classList.add('empty');
+  updateStats('', 0);
+  segments = 0;
+  sessionStart = null;
+  document.getElementById('statTime').textContent = '0:00';
+}
+
+function saveToHistory() {
+  const el = document.getElementById('transcript');
+  const text = (el.textContent || el.innerText || '').trim();
+  if (!text) return;
+  const entry = { text, time: new Date().toLocaleTimeString('en-NZ', {hour:'2-digit',minute:'2-digit'}), id: Date.now() };
+  history.unshift(entry);
+  if (history.length > 50) history = history.slice(0,50);
+  localStorage.setItem('scribe_history', JSON.stringify(history));
+  renderHistory();
+  showToast('Saved to history');
+}
+
+function addToFavorites(id) {
+  const item = history.find(h => h.id === id);
+  if (!item || favorites.find(f => f.id === id)) return;
+  favorites.unshift(item);
+  localStorage.setItem('scribe_favorites', JSON.stringify(favorites));
+  if (currentTab === 'favorites') renderFavorites();
+  showToast('Added to favorites ★');
+}
+
+function deleteFromHistory(id) {
+  history = history.filter(h => h.id !== id);
+  localStorage.setItem('scribe_history', JSON.stringify(history));
+  renderHistory();
+}
+
+function loadFromHistory(id) {
+  const item = history.find(h => h.id === id) || favorites.find(f => f.id === id);
+  if (!item) return;
+  const el = document.getElementById('transcript');
+  el.textContent = item.text;
+  el.classList.remove('empty');
+  updateStats(item.text, 0);
+  showToast('Loaded');
+}
+
+// ── RENDER HISTORY ────────────────────────────────────
+function renderHistory() {
+  const list = document.getElementById('historyList');
+  if (!history.length) {
+    list.innerHTML = '<div style="padding:20px;text-align:center;color:var(--lyra-ghost);font-family:\'JetBrains Mono\',monospace;font-size:11px;line-height:1.7">No history yet.<br>Start speaking.</div>';
+    return;
+  }
+  list.innerHTML = history.map(item => `
+    <div class="history-item" onclick="loadFromHistory(${item.id})">
+      <div class="history-item-text">${item.text.replace(/</g,'&lt;')}</div>
+      <div class="history-item-meta">
+        <span class="history-item-time">${item.time}</span>
+        <div class="history-item-actions">
+          <button class="hist-btn" title="Favorite" onclick="event.stopPropagation();addToFavorites(${item.id})">
+            <i class="material-icons">star_outline</i>
+          </button>
+          <button class="hist-btn" title="Copy" onclick="event.stopPropagation();navigator.clipboard.writeText('${item.text.replace(/'/g,"\\'")}');showToast('Copied')">
+            <i class="material-icons">content_copy</i>
+          </button>
+          <button class="hist-btn del" title="Delete" onclick="event.stopPropagation();deleteFromHistory(${item.id})">
+            <i class="material-icons">close</i>
+          </button>
+        </div>
+      </div>
+    </div>`).join('');
+}
+
+function renderFavorites() {
+  const list = document.getElementById('historyList');
+  if (!favorites.length) {
+    list.innerHTML = '<div style="padding:20px;text-align:center;color:var(--lyra-ghost);font-family:\'JetBrains Mono\',monospace;font-size:11px;line-height:1.7">No favorites yet.<br>Star a history item.</div>';
+    return;
+  }
+  list.innerHTML = favorites.map(item => `
+    <div class="history-item" onclick="loadFromHistory(${item.id})">
+      <div class="history-item-text">${item.text.replace(/</g,'&lt;')}</div>
+      <div class="history-item-meta">
+        <span class="history-item-time">★ ${item.time}</span>
+        <div class="history-item-actions">
+          <button class="hist-btn" title="Copy" onclick="event.stopPropagation();navigator.clipboard.writeText('${item.text.replace(/'/g,"\\'")}');showToast('Copied')">
+            <i class="material-icons">content_copy</i>
+          </button>
+        </div>
+      </div>
+    </div>`).join('');
+}
+
+function switchTab(tab) {
+  currentTab = tab;
+  document.getElementById('tabHistory').classList.toggle('active', tab === 'history');
+  document.getElementById('tabFav').classList.toggle('active', tab === 'favorites');
+  if (tab === 'history') renderHistory();
+  else renderFavorites();
+}
+
+// ── EXPORT ────────────────────────────────────────────
+function exportTxt() {
+  const el = document.getElementById('transcript');
+  const text = (el.textContent || el.innerText || '').trim();
+  if (!text) { showToast('Nothing to export'); return; }
+  download(`scribe_${timestamp()}.txt`, text);
+}
+
+function exportMd() {
+  const el = document.getElementById('transcript');
+  const text = (el.textContent || el.innerText || '').trim();
+  if (!text) { showToast('Nothing to export'); return; }
+  const md = `# Scribe Transcription\n_${new Date().toLocaleString()}_\n\n---\n\n${text}`;
+  download(`scribe_${timestamp()}.md`, md);
+}
+
+function download(filename, text) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([text], {type:'text/plain'}));
+  a.download = filename;
+  a.click();
+  showToast(`Exported: ${filename}`);
+}
+
+function timestamp() {
+  return new Date().toISOString().slice(0,19).replace(/[T:]/g,'-');
+}
+
+// ── TOAST ─────────────────────────────────────────────
+let toastTimer = null;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+// ── INIT ──────────────────────────────────────────────
+renderHistory();
+ensureScribeAccess();
+checkConnection();
+setInterval(checkConnection, 5000);
+setStatus('ready', 'Ready');
+</script>
+</body>
+</html>

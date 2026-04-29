@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Luna — First Breath</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Cormorant+Garamond:ital,wght@0,300;1,300&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { overflow: hidden; background: #0a0a0a; font-family: 'Cormorant Garamond', serif; }
+    canvas { display: block; }
+
+    #overlay {
+      position: absolute;
+      top: 24px;
+      left: 28px;
+      color: #c9a84c;
+      font-family: 'Cinzel', serif;
+      font-size: 1.5rem;
+      letter-spacing: 0.18em;
+      pointer-events: none;
+      text-shadow: 0 0 20px rgba(139, 0, 0, 0.7), 0 0 40px rgba(139, 0, 0, 0.3);
+      opacity: 0;
+      animation: fadeIn 2s ease-out 0.5s forwards;
+    }
+
+    #subtitle {
+      position: absolute;
+      top: 64px;
+      left: 30px;
+      color: rgba(201, 168, 76, 0.5);
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 0.85rem;
+      font-style: italic;
+      letter-spacing: 0.3em;
+      pointer-events: none;
+      opacity: 0;
+      animation: fadeIn 2s ease-out 1.5s forwards;
+    }
+
+    #hud {
+      position: absolute;
+      bottom: 24px;
+      left: 28px;
+      color: rgba(201, 168, 76, 0.4);
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 0.75rem;
+      letter-spacing: 0.15em;
+      pointer-events: none;
+      opacity: 0;
+      animation: fadeIn 1.5s ease-out 2.5s forwards;
+    }
+
+    #loading {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #0a0a0a;
+      z-index: 100;
+      transition: opacity 1.2s ease-out;
+    }
+    #loading.done { opacity: 0; pointer-events: none; }
+    #loading span {
+      color: #c9a84c;
+      font-family: 'Cinzel', serif;
+      font-size: 1.1rem;
+      letter-spacing: 0.3em;
+      animation: pulse 1.8s ease-in-out infinite;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 0.3; }
+      50%      { opacity: 1; }
+    }
+  </style>
+
+  <!-- Import map for Three.js ES modules -->
+  <script src="js/config.js"></script>
+<script src="js/auth.js"></script>
+<script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.168.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.168.0/examples/jsm/"
+    }
+  }
+  </script>
+</head>
+<body>
+<nav style="position:fixed;top:12px;left:16px;z-index:9999;"><a href="index.html" style="font-family:Cinzel,serif;font-size:0.75rem;color:#d4a846;text-decoration:none;letter-spacing:0.15em;opacity:0.7;transition:opacity 0.3s;" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.7">⬡ PORTAL</a></nav>
+
+  <div id="loading"><span>Weaving Form…</span></div>
+  <div id="overlay">Luna — Awakening</div>
+  <div id="subtitle">luna · sable embodiment</div>
+  <div id="hud">
+    <span id="hud-state">IDLE</span> &middot;
+    <span id="hud-fps">0</span> FPS &middot;
+    [P] pulse+bounce &middot; [B] blink+wave &middot; [G] glow+think &middot; [D] diag &middot; [1-5] gestures &middot; [6-0] moods &middot; [M] mode &middot; [R] reset
+  </div>
+
+  <!-- Socket.IO for external control (optional, gracefully fails if server not running) -->
+  <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+  
+  <script type="module" src="./src/main.js?v=5"></script>
+</body>
+</html>

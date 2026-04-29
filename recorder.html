@@ -1,0 +1,810 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>RedVerse Voice Recorder</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@400;600;800&family=Archivo:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ══════════════════════════════════════════════════════════════
+   RedVerse — Voice Recorder Web Front
+   Shares design language with Narrator / Screen Recorder
+   ══════════════════════════════════════════════════════════════ */
+:root{
+  --bg-void:#0a0612;--bg-deep:#110a18;--bg-panel:#1a0f24;--bg-elev:#241530;
+  --line:#3a1f45;--line-faint:#2a1533;
+  --text:#e8dfe8;--text-mute:#8a7a94;--text-dim:#5a4a68;
+  --crimson:#dc143c;--crimson-deep:#8b0f24;--crimson-glow:#ff2a52;
+  --gold:#d4a846;--gold-deep:#8a6a2a;
+  --ok:#4dd0a3;--warn:#e8a547;--rec:#ff2a52;
+  --font-display:"Unbounded",sans-serif;
+  --font-body:"Archivo",system-ui,sans-serif;
+  --font-mono:"IBM Plex Mono",monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:var(--bg-void);color:var(--text);font-family:var(--font-body);font-size:14px;overflow:hidden}
+body{
+  background:
+    radial-gradient(1200px 600px at 85% -20%, rgba(220,20,60,.08), transparent 60%),
+    radial-gradient(800px 400px at -10% 120%, rgba(212,168,70,.04), transparent 60%),
+    var(--bg-void);
+}
+button{font-family:inherit;color:inherit;background:none;border:none;cursor:pointer}
+input,textarea,select{font-family:inherit;color:inherit;background:none;border:none;outline:none}
+
+/* ── APP SHELL ──────────────────────────────── */
+.app{display:grid;grid-template-columns:48px 1fr;grid-template-rows:72px 1fr 32px;height:100vh}
+.rail{grid-row:1/4;background:var(--bg-deep);border-right:1px solid var(--line);display:flex;flex-direction:column;align-items:center;padding:16px 0;position:relative}
+.rail::before{content:"";position:absolute;top:0;left:0;right:0;height:72px;background:linear-gradient(180deg,var(--crimson-deep),transparent);opacity:.3}
+.rail-mark{width:32px;height:32px;border:1px solid var(--crimson);display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-weight:800;font-size:14px;color:var(--crimson);position:relative;z-index:1;letter-spacing:-1px}
+.rail-text{writing-mode:vertical-rl;transform:rotate(180deg);margin-top:24px;font-family:var(--font-mono);font-size:10px;color:var(--text-mute);letter-spacing:.3em}
+.rail-dot{width:6px;height:6px;border-radius:50%;background:var(--gold);margin-top:auto;box-shadow:0 0 8px var(--gold)}
+
+/* ── HEADER ─────────────────────────────────── */
+.header{grid-column:2;border-bottom:1px solid var(--line);background:var(--bg-deep);display:flex;align-items:center;padding:0 24px;gap:24px;position:relative}
+.header::after{content:"";position:absolute;bottom:-1px;left:0;width:120px;height:1px;background:linear-gradient(90deg,var(--crimson),transparent)}
+.brand{display:flex;align-items:baseline;gap:12px;font-family:var(--font-display)}
+.brand-red{font-weight:800;font-size:18px;color:var(--text);letter-spacing:-.01em}
+.brand-slash{color:var(--crimson);font-weight:800}
+.brand-verse{font-weight:400;font-size:18px;color:var(--text-mute)}
+.brand-tool{margin-left:16px;padding-left:16px;border-left:1px solid var(--line);font-family:var(--font-mono);font-size:11px;font-weight:500;color:var(--gold);letter-spacing:.25em;text-transform:uppercase}
+.header-spacer{flex:1}
+.header-status{display:flex;align-items:center;gap:16px;font-family:var(--font-mono);font-size:11px;color:var(--text-mute);letter-spacing:.1em}
+.pulse-dot{width:8px;height:8px;border-radius:50%;background:var(--ok);box-shadow:0 0 0 0 var(--ok);animation:pulse 2s infinite}
+.pulse-dot.offline{background:var(--text-dim);box-shadow:none;animation:none}
+.pulse-dot.rec{background:var(--rec);animation:pulse-rec 1s infinite}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(77,208,163,.5)}70%{box-shadow:0 0 0 8px rgba(77,208,163,0)}100%{box-shadow:0 0 0 0 rgba(77,208,163,0)}}
+@keyframes pulse-rec{0%{box-shadow:0 0 0 0 rgba(255,42,82,.7)}70%{box-shadow:0 0 0 10px rgba(255,42,82,0)}100%{box-shadow:0 0 0 0 rgba(255,42,82,0)}}
+
+/* ── MAIN ───────────────────────────────────── */
+.main{grid-column:2;overflow:hidden;display:flex;flex-direction:column;background:var(--bg-void)}
+.tabs{display:flex;padding:12px 24px 0;gap:2px;border-bottom:1px solid var(--line-faint)}
+.tab{font-family:var(--font-mono);font-size:11px;font-weight:500;color:var(--text-dim);padding:10px 18px;border:1px solid transparent;border-bottom:none;letter-spacing:.2em;text-transform:uppercase;position:relative;transition:color .15s}
+.tab:hover{color:var(--text-mute)}
+.tab.active{color:var(--gold);border-color:var(--line);background:var(--bg-panel)}
+.tab.active::after{content:"";position:absolute;left:0;right:0;bottom:-1px;height:2px;background:var(--gold)}
+.tab-badge{margin-left:8px;display:inline-block;min-width:18px;height:16px;line-height:14px;padding:0 5px;font-size:9px;border:1px solid var(--line);border-radius:2px;color:var(--text-mute)}
+.tab.active .tab-badge{border-color:var(--gold);color:var(--gold)}
+.content{flex:1;overflow:auto;padding:24px}
+.content::-webkit-scrollbar{width:8px;height:8px}
+.content::-webkit-scrollbar-track{background:var(--bg-deep)}
+.content::-webkit-scrollbar-thumb{background:var(--line)}
+.pane{display:none}
+.pane.active{display:block}
+
+/* ── PANELS ─────────────────────────────────── */
+.panel{background:var(--bg-panel);border:1px solid var(--line);position:relative;margin-bottom:16px}
+.panel-label{position:absolute;top:-9px;left:16px;padding:0 8px;background:var(--bg-void);font-family:var(--font-mono);font-size:9px;font-weight:600;color:var(--gold);letter-spacing:.3em;text-transform:uppercase}
+.panel-body{padding:18px}
+
+/* ── BUTTONS ────────────────────────────────── */
+.btn{font-family:var(--font-mono);font-size:11px;font-weight:500;letter-spacing:.15em;text-transform:uppercase;padding:9px 18px;background:var(--bg-elev);border:1px solid var(--line);color:var(--text);transition:all .15s;display:inline-flex;align-items:center;gap:8px}
+.btn:hover:not(:disabled){border-color:var(--gold);color:var(--gold)}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn-primary{background:linear-gradient(180deg,var(--crimson),var(--crimson-deep));border-color:var(--crimson);color:#fff}
+.btn-primary:hover:not(:disabled){border-color:var(--gold);color:var(--gold);background:var(--bg-elev)}
+.btn-ghost{background:transparent;border-color:var(--line-faint)}
+.btn-ghost:hover:not(:disabled){border-color:var(--text-mute);color:var(--text)}
+.btn-rec{background:linear-gradient(180deg,var(--crimson),var(--crimson-deep));border-color:var(--crimson);color:#fff;font-weight:600;min-width:120px;justify-content:center}
+.btn-rec.active{background:var(--rec);animation:btn-rec-pulse 1.2s infinite}
+@keyframes btn-rec-pulse{0%,100%{box-shadow:0 0 0 0 rgba(255,42,82,.5)}50%{box-shadow:0 0 0 10px rgba(255,42,82,0)}}
+.btn-lg{padding:14px 22px;font-size:12px}
+
+/* ── STUDIO ─────────────────────────────────── */
+.studio-top{display:flex;gap:12px;align-items:center;margin-bottom:16px}
+.form-select{background:var(--bg-deep);border:1px solid var(--line);padding:10px 12px;color:var(--text);font-family:var(--font-mono);font-size:12px;min-width:280px}
+.form-select:focus{border-color:var(--crimson)}
+.form-input{background:var(--bg-deep);border:1px solid var(--line);padding:10px 12px;color:var(--text);font-size:13px;width:100%}
+.form-input:focus{border-color:var(--crimson)}
+
+/* ── WAVEFORM ────────────────────────────────── */
+.waveform-wrap{background:var(--bg-deep);border:1px solid var(--line);position:relative;height:220px;overflow:hidden;cursor:crosshair}
+.waveform-wrap::before{
+  content:"";position:absolute;inset:0;
+  background-image:linear-gradient(rgba(220,20,60,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(220,20,60,.03) 1px,transparent 1px);
+  background-size:24px 24px;
+  pointer-events:none;
+}
+.waveform-svg{width:100%;height:100%;display:block}
+.waveform-empty{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--text-dim);font-family:var(--font-mono);font-size:11px;letter-spacing:.2em;text-transform:uppercase;pointer-events:none}
+.waveform-meta{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;font-family:var(--font-mono);font-size:10px;color:var(--text-mute);background:var(--bg-deep);border:1px solid var(--line);border-top:none;letter-spacing:.15em}
+.wf-region{fill:rgba(212,168,70,.12);stroke:var(--gold);stroke-width:1;stroke-dasharray:3 2}
+.wf-marker{stroke:var(--crimson);stroke-width:1.5}
+.wf-marker-tri{fill:var(--crimson)}
+.wf-playhead{stroke:#fff;stroke-width:1;stroke-dasharray:2 2}
+
+/* ── TRANSPORT ──────────────────────────────── */
+.transport{display:flex;align-items:center;gap:10px;margin-top:14px;flex-wrap:wrap}
+.level-wrap{
+  flex:1;max-width:280px;min-width:160px;
+  height:18px;background:var(--bg-deep);border:1px solid var(--line);
+  position:relative;overflow:hidden;
+}
+.level-bar{
+  height:100%;
+  background:linear-gradient(90deg,var(--ok) 0%,var(--ok) 50%,var(--warn) 70%,var(--rec) 90%);
+  width:0;
+  transition:width .06s;
+}
+.level-wrap::before{
+  content:"";position:absolute;inset:0;pointer-events:none;
+  background-image:linear-gradient(90deg,transparent 0%,transparent calc(100% / 12 - 1px),var(--bg-deep) calc(100% / 12 - 1px),var(--bg-deep) calc(100% / 12));
+  background-size:calc(100% / 12) 100%;
+}
+.timer{font-family:var(--font-mono);font-size:22px;font-weight:600;color:var(--gold);letter-spacing:.1em;min-width:130px;text-align:right}
+.timer.rec{color:var(--rec)}
+
+/* ── EDIT BAR ───────────────────────────────── */
+.edit-bar{display:flex;gap:6px;margin-top:14px;flex-wrap:wrap}
+
+/* ── TELEPROMPTER ───────────────────────────── */
+.tp-controls{display:flex;gap:10px;align-items:center;margin-bottom:12px}
+.tp-text{
+  width:100%;min-height:360px;
+  background:var(--bg-deep);border:1px solid var(--line);
+  padding:24px;color:var(--text);
+  font-family:var(--font-body);line-height:1.8;resize:vertical;
+}
+.tp-text:focus{border-color:var(--crimson)}
+
+/* ── MARKERS ────────────────────────────────── */
+.markers-list{list-style:none;display:flex;flex-direction:column;gap:4px;margin-top:12px}
+.marker-item{
+  display:flex;align-items:center;gap:12px;padding:10px 14px;
+  background:var(--bg-deep);border-left:2px solid var(--crimson);
+  font-family:var(--font-mono);font-size:12px;cursor:pointer;
+}
+.marker-item:hover{background:var(--bg-elev)}
+.marker-time{color:var(--gold);min-width:80px}
+.marker-label{color:var(--text);flex:1}
+.marker-del{color:var(--text-dim);font-size:10px}
+.marker-del:hover{color:var(--crimson)}
+
+/* ── SETTINGS ───────────────────────────────── */
+.form-grid{display:grid;grid-template-columns:180px 1fr;gap:14px 20px;max-width:720px}
+.form-label{font-family:var(--font-mono);font-size:11px;color:var(--text-mute);letter-spacing:.1em;text-transform:uppercase;padding-top:10px}
+.form-group-title{grid-column:1/-1;font-family:var(--font-display);font-size:13px;font-weight:600;color:var(--text);padding-top:16px;letter-spacing:.05em}
+.form-group-title:first-child{padding-top:0}
+.form-group-title::before{content:"▌ ";color:var(--crimson)}
+.form-row{display:flex;gap:8px;align-items:center}
+
+/* ── STATUS STRIP ───────────────────────────── */
+.status-strip{grid-column:2;background:var(--bg-deep);border-top:1px solid var(--line);display:flex;align-items:center;padding:0 24px;gap:20px;font-family:var(--font-mono);font-size:10px;color:var(--text-dim);letter-spacing:.15em;text-transform:uppercase}
+.status-item{display:flex;align-items:center;gap:8px}
+.status-item strong{color:var(--text-mute);font-weight:500}
+.status-spacer{flex:1}
+.status-time{color:var(--gold)}
+
+/* ── STAGGER ────────────────────────────────── */
+@keyframes fadeUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.header,.tabs,.content,.status-strip{animation:fadeUp .45s ease-out both}
+.tabs{animation-delay:.08s}
+.content{animation-delay:.14s}
+.status-strip{animation-delay:.22s}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <aside class="rail">
+    <div class="rail-mark">RV</div>
+    <div class="rail-text">RECORDER · VOICE · STUDIO</div>
+    <div class="rail-dot"></div>
+  </aside>
+
+  <header class="header">
+    <div class="brand">
+      <span class="brand-red">RED</span><span class="brand-slash">//</span><span class="brand-verse">VERSE</span>
+      <span class="brand-tool">Voice Recorder</span>
+    </div>
+    <div class="header-spacer"></div>
+    <div class="header-status">
+      <div class="status-item"><span class="pulse-dot" id="api-dot"></span><span>API · <span id="api-state">probing</span></span></div>
+      <div class="status-item"><strong>DEVICE</strong><span id="device-label">—</span></div>
+    </div>
+  </header>
+
+  <main class="main">
+    <nav class="tabs">
+      <button class="tab active" data-tab="studio">Studio</button>
+      <button class="tab" data-tab="teleprompter">Teleprompter</button>
+      <button class="tab" data-tab="markers">Markers <span class="tab-badge" id="marker-count">0</span></button>
+      <button class="tab" data-tab="settings">Settings</button>
+    </nav>
+
+    <div class="content">
+
+      <!-- ── STUDIO ──────────────────────────────── -->
+      <section class="pane active" data-pane="studio">
+
+        <div class="studio-top">
+          <label style="font-family:var(--font-mono);font-size:11px;color:var(--text-mute);letter-spacing:.2em;text-transform:uppercase">Input</label>
+          <select class="form-select" id="device-select"><option>— no devices detected —</option></select>
+          <button class="btn btn-ghost" id="btn-refresh-devs">↻</button>
+        </div>
+
+        <div class="panel" style="padding:0;background:transparent;border:none">
+          <div class="panel-label" style="position:relative;top:0;left:0;background:transparent;padding:0 0 8px 0">Waveform</div>
+          <div class="waveform-wrap" id="wf-wrap">
+            <svg class="waveform-svg" id="wf-svg" preserveAspectRatio="none" viewBox="0 0 1000 220"></svg>
+            <div class="waveform-empty" id="wf-empty">— no audio loaded —</div>
+          </div>
+          <div class="waveform-meta">
+            <span id="wf-meta-region">No region selected · drag to select · dbl-click to mark</span>
+            <span id="wf-meta-time">00:00.00 / 00:00.00</span>
+          </div>
+        </div>
+
+        <div class="transport">
+          <button class="btn btn-rec" id="btn-rec">● REC</button>
+          <button class="btn" id="btn-pause" disabled>⏸ Pause</button>
+          <span style="width:12px"></span>
+          <button class="btn" id="btn-play" disabled>▶ Play</button>
+          <button class="btn" id="btn-stop" disabled>■ Stop</button>
+          <span style="width:12px"></span>
+          <span style="font-family:var(--font-mono);font-size:10px;color:var(--text-mute);letter-spacing:.15em">LEVEL</span>
+          <div class="level-wrap"><div class="level-bar" id="level-bar"></div></div>
+          <div style="flex:1"></div>
+          <div class="timer" id="timer">00:00.0</div>
+        </div>
+
+        <div class="edit-bar">
+          <button class="btn" id="btn-chop" disabled>✂ Chop Region</button>
+          <button class="btn" id="btn-replace" disabled>🔁 Record Replace</button>
+          <button class="btn" id="btn-trim" disabled>⇤ Trim to Region</button>
+          <button class="btn" id="btn-undo" disabled>↩ Undo</button>
+          <button class="btn" id="btn-load">📂 Load Audio</button>
+          <div style="flex:1"></div>
+          <button class="btn btn-primary" id="btn-export" disabled>💾 Export</button>
+        </div>
+
+      </section>
+
+      <!-- ── TELEPROMPTER ───────────────────────── -->
+      <section class="pane" data-pane="teleprompter">
+        <div class="tp-controls">
+          <button class="btn" id="btn-load-tp">📂 Load Text</button>
+          <span style="font-family:var(--font-mono);font-size:11px;color:var(--text-mute);letter-spacing:.15em">FONT SIZE</span>
+          <input type="range" id="tp-size" min="12" max="40" value="18" style="accent-color:var(--crimson)">
+          <span id="tp-size-label" style="font-family:var(--font-mono);font-size:11px;color:var(--gold);min-width:40px">18px</span>
+          <div style="flex:1"></div>
+          <button class="btn btn-ghost" id="btn-clear-tp">Clear</button>
+        </div>
+        <textarea class="tp-text" id="tp-text" placeholder="Paste script here. Stays visible while you record in the Studio tab."></textarea>
+      </section>
+
+      <!-- ── MARKERS ────────────────────────────── -->
+      <section class="pane" data-pane="markers">
+        <div class="panel">
+          <div class="panel-label">Timeline Markers</div>
+          <div class="panel-body">
+            <div style="color:var(--text-mute);font-size:12px;margin-bottom:8px">
+              Double-click the waveform to add a marker. Click one here to jump.
+            </div>
+            <ul class="markers-list" id="markers-list"></ul>
+            <div style="display:flex;gap:8px;margin-top:16px">
+              <button class="btn btn-ghost" id="btn-clear-markers">🗑 Clear All</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── SETTINGS ───────────────────────────── -->
+      <section class="pane" data-pane="settings">
+        <div class="panel">
+          <div class="panel-label">Recorder Settings</div>
+          <div class="panel-body">
+            <div class="form-grid">
+              <div class="form-group-title">Output</div>
+              <label class="form-label">Folder</label>
+              <input class="form-input" id="set-output-dir" placeholder="~/Music/RedVerse/Recordings">
+
+              <label class="form-label">Sample Rate</label>
+              <select class="form-select form-input" id="set-sample-rate">
+                <option value="44100">44.1 kHz</option>
+                <option value="48000" selected>48 kHz</option>
+                <option value="96000">96 kHz</option>
+              </select>
+
+              <div class="form-group-title">Processing</div>
+              <label class="form-label">Auto-normalise</label>
+              <div class="form-row">
+                <label><input type="checkbox" id="set-normalise" checked style="accent-color:var(--crimson)"> on export</label>
+              </div>
+
+              <label class="form-label">Noise Reduction</label>
+              <div class="form-row">
+                <label><input type="checkbox" id="set-nr" style="accent-color:var(--crimson)"> on export</label>
+              </div>
+
+              <div class="form-group-title">Music Bed (optional)</div>
+              <label class="form-label">Music File</label>
+              <div class="form-row" style="width:100%">
+                <input class="form-input" id="set-music-path" placeholder="path to backing track (wav/mp3)">
+                <button class="btn btn-ghost" id="btn-browse-music">…</button>
+              </div>
+
+              <label class="form-label">Volume</label>
+              <div class="form-row">
+                <input type="range" id="set-music-vol" min="-60" max="0" value="-18" style="width:200px;accent-color:var(--gold)">
+                <span id="music-vol-label" style="font-family:var(--font-mono);color:var(--gold);min-width:50px">-18 dB</span>
+              </div>
+
+              <label class="form-label"></label>
+              <div><button class="btn btn-primary" id="btn-save-settings">💾 Save Settings</button></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <footer class="status-strip">
+    <div class="status-item"><strong>SESSION</strong><span id="session-id">—</span></div>
+    <div class="status-item"><strong>LAST</strong><span id="last-action">ready</span></div>
+    <div class="status-spacer"></div>
+    <div class="status-item">RV//RECORDER · v1.0</div>
+    <div class="status-item status-time" id="status-time"></div>
+  </footer>
+
+</div>
+
+<script>
+/* ══════════════════════════════════════════════════════════════
+   STATE
+   ══════════════════════════════════════════════════════════════ */
+const API = "";
+let state = {
+  devices: [],
+  audio: null,       // {peaks:[], duration, sr}
+  recording: false,
+  paused: false,
+  rec_start: 0,
+  rec_elapsed: 0,
+  level_iv: null,
+  timer_iv: null,
+  region: null,      // [start, end] seconds
+  markers: [],       // [{t, label}]
+  playhead: 0,
+  undo_stack: [],
+  session_id: "rv-" + Math.random().toString(36).slice(2,8),
+};
+
+(async function init(){
+  bindTabs();
+  bindAll();
+  tickTime(); setInterval(tickTime,1000);
+  document.getElementById("session-id").textContent = state.session_id;
+  checkHealth(); setInterval(checkHealth, 15000);
+  loadDevices();
+  drawWaveform();
+})();
+
+function tickTime(){
+  const d = new Date(), p = n=>String(n).padStart(2,"0");
+  document.getElementById("status-time").textContent = `${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
+}
+
+async function checkHealth(){
+  const dot = document.getElementById("api-dot");
+  try{
+    const r = await fetch(`${API}/api/recorder/health`);
+    if(r.ok){ dot.className="pulse-dot"; document.getElementById("api-state").textContent="live"; }
+    else throw 0;
+  }catch{ dot.className="pulse-dot offline"; document.getElementById("api-state").textContent="offline"; }
+}
+
+function bindTabs(){
+  document.querySelectorAll(".tab").forEach(t=>{
+    t.addEventListener("click",()=>{
+      document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));
+      document.querySelectorAll(".pane").forEach(x=>x.classList.remove("active"));
+      t.classList.add("active");
+      document.querySelector(`[data-pane="${t.dataset.tab}"]`).classList.add("active");
+    });
+  });
+}
+
+function bindAll(){
+  document.getElementById("btn-refresh-devs").addEventListener("click",loadDevices);
+  document.getElementById("device-select").addEventListener("change",e=>{
+    document.getElementById("device-label").textContent = e.target.value.slice(0,24) || "—";
+  });
+  document.getElementById("btn-rec").addEventListener("click",toggleRecord);
+  document.getElementById("btn-pause").addEventListener("click",togglePause);
+  document.getElementById("btn-play").addEventListener("click",togglePlay);
+  document.getElementById("btn-stop").addEventListener("click",stopAll);
+  document.getElementById("btn-chop").addEventListener("click",chopRegion);
+  document.getElementById("btn-replace").addEventListener("click",replaceRegion);
+  document.getElementById("btn-trim").addEventListener("click",trimToRegion);
+  document.getElementById("btn-undo").addEventListener("click",undo);
+  document.getElementById("btn-load").addEventListener("click",loadAudio);
+  document.getElementById("btn-export").addEventListener("click",exportAudio);
+
+  document.getElementById("btn-load-tp").addEventListener("click",loadTeleprompter);
+  document.getElementById("btn-clear-tp").addEventListener("click",()=>document.getElementById("tp-text").value="");
+  document.getElementById("tp-size").addEventListener("input",e=>{
+    const px = e.target.value;
+    document.getElementById("tp-text").style.fontSize = px+"px";
+    document.getElementById("tp-size-label").textContent = px+"px";
+  });
+  document.getElementById("btn-clear-markers").addEventListener("click",clearMarkers);
+
+  document.getElementById("set-music-vol").addEventListener("input",e=>{
+    document.getElementById("music-vol-label").textContent = e.target.value+" dB";
+  });
+  document.getElementById("btn-save-settings").addEventListener("click",saveSettings);
+
+  // waveform interactions
+  const wf = document.getElementById("wf-wrap");
+  let dragStart = null;
+  wf.addEventListener("mousedown",e=>{
+    if(!state.audio) return;
+    const r = wf.getBoundingClientRect();
+    dragStart = (e.clientX - r.left) / r.width * state.audio.duration;
+  });
+  wf.addEventListener("mousemove",e=>{
+    if(!state.audio || dragStart===null) return;
+    const r = wf.getBoundingClientRect();
+    const cur = (e.clientX - r.left) / r.width * state.audio.duration;
+    state.region = [Math.min(dragStart,cur), Math.max(dragStart,cur)];
+    updateRegionLabel();
+    drawWaveform();
+  });
+  wf.addEventListener("mouseup",()=>{ dragStart = null; updateEditButtons(); });
+  wf.addEventListener("mouseleave",()=>{ dragStart = null; });
+  wf.addEventListener("dblclick",e=>{
+    if(!state.audio) return;
+    const r = wf.getBoundingClientRect();
+    const t = (e.clientX - r.left) / r.width * state.audio.duration;
+    state.markers.push({t, label:`Marker ${state.markers.length+1}`});
+    state.markers.sort((a,b)=>a.t-b.t);
+    drawWaveform();
+    renderMarkers();
+  });
+}
+
+/* ── devices ────────────────────────────────── */
+async function loadDevices(){
+  const sel = document.getElementById("device-select");
+  try{
+    const r = await fetch(`${API}/api/recorder/devices`);
+    const data = await r.json();
+    state.devices = data.devices || [];
+  }catch{
+    state.devices = [
+      {id:0,name:"Default Input",sr:48000},
+      {id:1,name:"USB Microphone",sr:48000},
+      {id:2,name:"Built-in Mic",sr:44100},
+    ];
+  }
+  sel.innerHTML = state.devices.map(d=>`<option value="${d.id}">${escape(d.name)} · ${d.sr/1000}kHz</option>`).join("");
+  document.getElementById("device-label").textContent = state.devices[0]?.name?.slice(0,20) || "—";
+}
+
+/* ── record ────────────────────────────────── */
+async function toggleRecord(){
+  if(!state.recording) startRecord();
+  else stopRecord();
+}
+async function startRecord(){
+  state.recording = true;
+  state.paused = false;
+  state.rec_start = Date.now();
+  state.rec_elapsed = 0;
+  document.getElementById("btn-rec").classList.add("active");
+  document.getElementById("btn-rec").textContent = "● REC";
+  document.getElementById("btn-pause").disabled = false;
+  document.getElementById("btn-stop").disabled = false;
+  document.getElementById("api-dot").classList.add("rec");
+  document.getElementById("timer").classList.add("rec");
+  flash("recording");
+
+  // simulated level meter & timer (backend will replace with SSE / WS)
+  state.level_iv = setInterval(()=>{
+    if(state.paused) return;
+    const v = 30 + Math.random()*60;
+    document.getElementById("level-bar").style.width = v+"%";
+  }, 60);
+  state.timer_iv = setInterval(()=>{
+    if(state.paused) return;
+    state.rec_elapsed = (Date.now() - state.rec_start) / 1000;
+    document.getElementById("timer").textContent = fmtTimeMs(state.rec_elapsed);
+  }, 80);
+
+  try{
+    await fetch(`${API}/api/recorder/record/start`,{
+      method:"POST",headers:{"content-type":"application/json"},
+      body:JSON.stringify({device:document.getElementById("device-select").value})
+    });
+  }catch{/* offline — simulated */}
+}
+function togglePause(){
+  state.paused = !state.paused;
+  document.getElementById("btn-pause").textContent = state.paused ? "▶ Resume" : "⏸ Pause";
+  if(!state.paused) state.rec_start = Date.now() - state.rec_elapsed*1000;
+  flash(state.paused?"paused":"recording");
+  fetch(`${API}/api/recorder/record/${state.paused?"pause":"resume"}`,{method:"POST"}).catch(()=>{});
+}
+async function stopRecord(){
+  state.recording = false;
+  document.getElementById("btn-rec").classList.remove("active");
+  document.getElementById("btn-pause").disabled = true;
+  document.getElementById("api-dot").classList.remove("rec");
+  document.getElementById("timer").classList.remove("rec");
+  clearInterval(state.level_iv);
+  clearInterval(state.timer_iv);
+  document.getElementById("level-bar").style.width = "0%";
+
+  try{
+    const r = await fetch(`${API}/api/recorder/record/stop`,{method:"POST"});
+    const data = await r.json();
+    loadAudioData(data);
+  }catch{
+    // simulate audio capture locally so UI feels real
+    simulateCapturedAudio(state.rec_elapsed || 12);
+  }
+  flash(`captured ${fmtTimeMs(state.rec_elapsed)}`);
+}
+function stopAll(){
+  if(state.recording) stopRecord();
+  document.getElementById("btn-play").textContent = "▶ Play";
+}
+function togglePlay(){
+  if(!state.audio) return;
+  const btn = document.getElementById("btn-play");
+  const playing = btn.textContent.includes("Pause");
+  btn.textContent = playing ? "▶ Play" : "⏸ Pause";
+  flash(playing?"paused playback":"playback");
+  fetch(`${API}/api/recorder/playback/${playing?"pause":"play"}`,{method:"POST"}).catch(()=>{});
+}
+
+/* ── audio loading & waveform ──────────────── */
+function simulateCapturedAudio(durationSec){
+  // generate fake peak data so UI feels alive even without a backend
+  const n = Math.max(400, Math.floor(durationSec * 50));
+  const peaks = new Array(n);
+  for(let i=0;i<n;i++){
+    const env = Math.sin(i/n*Math.PI) * (0.6 + Math.random()*0.3);
+    peaks[i] = env * (0.3 + Math.random()*0.6);
+  }
+  state.audio = {peaks, duration:durationSec, sr:48000};
+  document.getElementById("wf-empty").style.display = "none";
+  drawWaveform();
+  updateEditButtons();
+  document.getElementById("btn-play").disabled = false;
+  document.getElementById("btn-export").disabled = false;
+}
+function loadAudioData(data){
+  state.audio = data;
+  document.getElementById("wf-empty").style.display = "none";
+  drawWaveform();
+  updateEditButtons();
+  document.getElementById("btn-play").disabled = false;
+  document.getElementById("btn-export").disabled = false;
+}
+
+function drawWaveform(){
+  const svg = document.getElementById("wf-svg");
+  if(!state.audio || !state.audio.peaks.length){
+    svg.innerHTML = "";
+    return;
+  }
+  const W = 1000, H = 220, mid = H/2;
+  const peaks = state.audio.peaks;
+  const step = W / peaks.length;
+
+  let path = "M0 "+mid;
+  for(let i=0;i<peaks.length;i++){
+    const x = i*step;
+    const y = mid - peaks[i]*(H*0.45);
+    path += ` L${x.toFixed(1)} ${y.toFixed(1)}`;
+  }
+  for(let i=peaks.length-1;i>=0;i--){
+    const x = i*step;
+    const y = mid + peaks[i]*(H*0.45);
+    path += ` L${x.toFixed(1)} ${y.toFixed(1)}`;
+  }
+  path += " Z";
+
+  let regionRect = "";
+  if(state.region){
+    const [s,e] = state.region;
+    const x1 = s/state.audio.duration * W;
+    const x2 = e/state.audio.duration * W;
+    regionRect = `<rect class="wf-region" x="${x1}" y="0" width="${x2-x1}" height="${H}"/>`;
+  }
+  let markers = state.markers.map(m=>{
+    const x = m.t/state.audio.duration * W;
+    return `<line class="wf-marker" x1="${x}" y1="0" x2="${x}" y2="${H}"/>
+            <polygon class="wf-marker-tri" points="${x-5},0 ${x+5},0 ${x},8"/>`;
+  }).join("");
+
+  svg.innerHTML = `
+    ${regionRect}
+    <path d="${path}" fill="url(#wf-grad)" opacity="0.85"/>
+    <line x1="0" y1="${mid}" x2="${W}" y2="${mid}" stroke="var(--line)" stroke-width="0.5"/>
+    ${markers}
+    <defs>
+      <linearGradient id="wf-grad" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#ff2a52"/>
+        <stop offset="50%" stop-color="#dc143c"/>
+        <stop offset="100%" stop-color="#8b0f24"/>
+      </linearGradient>
+    </defs>`;
+
+  // update meta
+  const cur = state.playhead || 0;
+  document.getElementById("wf-meta-time").textContent = `${fmtTime(cur)} / ${fmtTime(state.audio.duration)}`;
+}
+
+function updateRegionLabel(){
+  const l = document.getElementById("wf-meta-region");
+  if(state.region){
+    const [s,e] = state.region;
+    l.textContent = `Region ${fmtTime(s)} → ${fmtTime(e)} · Δ ${(e-s).toFixed(2)}s`;
+  }else{
+    l.textContent = "No region selected · drag to select · dbl-click to mark";
+  }
+}
+function updateEditButtons(){
+  const hasRegion = !!state.region;
+  document.getElementById("btn-chop").disabled = !hasRegion;
+  document.getElementById("btn-replace").disabled = !hasRegion;
+  document.getElementById("btn-trim").disabled = !hasRegion;
+  document.getElementById("btn-undo").disabled = !state.undo_stack.length;
+}
+
+/* ── edit actions ──────────────────────────── */
+function snapshot(){ state.undo_stack.push(JSON.parse(JSON.stringify(state.audio))); }
+function chopRegion(){
+  if(!state.region || !state.audio) return;
+  snapshot();
+  const [s,e] = state.region;
+  const n0 = Math.floor(s/state.audio.duration * state.audio.peaks.length);
+  const n1 = Math.ceil(e/state.audio.duration * state.audio.peaks.length);
+  state.audio.peaks = [...state.audio.peaks.slice(0,n0), ...state.audio.peaks.slice(n1)];
+  state.audio.duration -= (e-s);
+  state.region = null;
+  flash("chopped region");
+  drawWaveform(); updateRegionLabel(); updateEditButtons();
+  fetch(`${API}/api/recorder/chop`,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({region:[s,e]})}).catch(()=>{});
+}
+function trimToRegion(){
+  if(!state.region || !state.audio) return;
+  snapshot();
+  const [s,e] = state.region;
+  const n0 = Math.floor(s/state.audio.duration * state.audio.peaks.length);
+  const n1 = Math.ceil(e/state.audio.duration * state.audio.peaks.length);
+  state.audio.peaks = state.audio.peaks.slice(n0,n1);
+  state.audio.duration = e-s;
+  state.region = null;
+  flash("trimmed to region");
+  drawWaveform(); updateRegionLabel(); updateEditButtons();
+  fetch(`${API}/api/recorder/trim`,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({region:[s,e]})}).catch(()=>{});
+}
+function replaceRegion(){
+  flash("record-replace: start recording to overwrite region");
+  fetch(`${API}/api/recorder/replace/start`,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({region:state.region})}).catch(()=>{});
+}
+function undo(){
+  if(!state.undo_stack.length) return;
+  state.audio = state.undo_stack.pop();
+  state.region = null;
+  flash("undone");
+  drawWaveform(); updateRegionLabel(); updateEditButtons();
+}
+function loadAudio(){
+  const inp = document.createElement("input");
+  inp.type="file"; inp.accept="audio/*";
+  inp.addEventListener("change",async()=>{
+    const f = inp.files[0]; if(!f) return;
+    flash(`uploading ${f.name}`);
+    const fd = new FormData(); fd.append("file",f);
+    try{
+      const r = await fetch(`${API}/api/recorder/audio/upload`,{method:"POST",body:fd});
+      const data = await r.json();
+      loadAudioData(data);
+      flash(`loaded ${f.name}`);
+    }catch{
+      // offline: estimate duration ~30s for feedback
+      simulateCapturedAudio(30);
+      flash(`loaded ${f.name} (simulated)`);
+    }
+  });
+  inp.click();
+}
+async function exportAudio(){
+  flash("export → dialog");
+  try{
+    const r = await fetch(`${API}/api/recorder/export`,{
+      method:"POST",headers:{"content-type":"application/json"},
+      body:JSON.stringify({
+        normalise:document.getElementById("set-normalise").checked,
+        noise_reduce:document.getElementById("set-nr").checked,
+        music_path:document.getElementById("set-music-path").value,
+        music_vol:+document.getElementById("set-music-vol").value,
+        output_dir:document.getElementById("set-output-dir").value,
+      })
+    });
+    const j = await r.json();
+    flash(`exported → ${j.path||"file"}`);
+  }catch{ flash("export: backend offline"); }
+}
+
+/* ── markers ───────────────────────────────── */
+function renderMarkers(){
+  const list = document.getElementById("markers-list");
+  document.getElementById("marker-count").textContent = state.markers.length;
+  list.innerHTML = state.markers.map((m,i)=>`
+    <li class="marker-item" data-i="${i}">
+      <span class="marker-time">${fmtTime(m.t)}</span>
+      <span class="marker-label">${escape(m.label)}</span>
+      <button class="marker-del" data-del="${i}">DELETE</button>
+    </li>`).join("");
+  list.querySelectorAll(".marker-item").forEach(li=>{
+    li.addEventListener("click",e=>{
+      if(e.target.dataset.del!==undefined){
+        state.markers.splice(+e.target.dataset.del,1);
+        drawWaveform(); renderMarkers();
+      }else{
+        const i = +li.dataset.i;
+        state.playhead = state.markers[i].t;
+        drawWaveform();
+        flash(`jumped to ${state.markers[i].label}`);
+      }
+    });
+  });
+}
+function clearMarkers(){
+  state.markers = [];
+  renderMarkers(); drawWaveform();
+  flash("markers cleared");
+}
+
+/* ── teleprompter ──────────────────────────── */
+function loadTeleprompter(){
+  const inp = document.createElement("input");
+  inp.type="file"; inp.accept=".txt,.md";
+  inp.addEventListener("change",async()=>{
+    const f = inp.files[0]; if(!f) return;
+    document.getElementById("tp-text").value = await f.text();
+    flash(`loaded ${f.name}`);
+  });
+  inp.click();
+}
+
+/* ── settings ──────────────────────────────── */
+async function saveSettings(){
+  const cfg = {
+    output_dir:document.getElementById("set-output-dir").value,
+    sample_rate:+document.getElementById("set-sample-rate").value,
+    normalise:document.getElementById("set-normalise").checked,
+    noise_reduce:document.getElementById("set-nr").checked,
+    music_path:document.getElementById("set-music-path").value,
+    music_vol:+document.getElementById("set-music-vol").value,
+  };
+  try{
+    await fetch(`${API}/api/recorder/config`,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(cfg)});
+    flash("settings saved");
+  }catch{ flash("saved locally (offline)"); }
+}
+
+/* ── helpers ───────────────────────────────── */
+function fmtTime(s){
+  if(!isFinite(s)) s=0;
+  const m = Math.floor(s/60), sec = (s%60).toFixed(2);
+  return `${String(m).padStart(2,"0")}:${String(sec).padStart(5,"0")}`;
+}
+function fmtTimeMs(s){
+  const m = Math.floor(s/60), sec = (s%60).toFixed(1);
+  return `${String(m).padStart(2,"0")}:${String(sec).padStart(4,"0")}`;
+}
+function flash(msg){ document.getElementById("last-action").textContent = msg; }
+function escape(s){return String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[m]))}
+</script>
+</body>
+</html>
