@@ -22,6 +22,7 @@ distlib==0.4.0
 edge-tts==7.2.8
 executing==2.2.1
 fastapi==0.135.3
+faster-whisper>=1.0.3
 filelock==3.28.0
 flake8==7.3.0
 Flask==3.1.3

@@ -3,7 +3,7 @@
 RedVault Indexer Server — Project discovery backend
 Scans directories for YOUR projects. Ignores node_modules.
 
-Port 8920 | Part of RedVerse Agency Scripts
+Port 8923 | Part of RedVerse Agency Scripts
 
 Wraps redvault_indexer.py's RedVaultIndexer class, exposes async scan,
 searchable catalog, and report export over HTTP.
@@ -344,7 +344,7 @@ def scan_delete(scan_id):
 
 
 if __name__ == '__main__':
-    port = int(sys.argv[1]) if len(sys.argv) > 1 else 8920
+    port = int(sys.argv[1]) if len(sys.argv) > 1 else 8923
     print(f'📇 RedVault Indexer Server on http://127.0.0.1:{port}')
     if RedVaultIndexer is None:
         print('   ⚠ indexer module not loaded — place redvault_indexer.py adjacent')
