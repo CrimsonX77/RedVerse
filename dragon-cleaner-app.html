@@ -830,11 +830,15 @@ $('confirmCancel').addEventListener('click', () => {
 $('confirmYes').addEventListener('click', async () => {
   const paths = Object.keys(selection);
   $('confirmModal').classList.remove('active');
+  if (!currentScanId) {
+    alertFailure('No active scan session. Please run a scan first.');
+    return;
+  }
   try {
     const r = await fetch(`${API}/api/delete`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ paths, confirm: true }),
+      body: JSON.stringify({ scan_id: currentScanId, paths, confirm: true }),
     });
     const d = await r.json();
     if (!r.ok) { alertFailure(d.error || 'Delete failed'); return; }

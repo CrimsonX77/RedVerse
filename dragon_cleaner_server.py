@@ -73,9 +73,18 @@ SCAN_LOCK = threading.Lock()
 
 
 def is_protected(path: str) -> bool:
-    p = path.lower().replace('\\', '/')
+    """Check if a path is system-protected. Uses canonicalized path to prevent bypasses."""
+    try:
+        # Canonicalize the path to resolve symlinks and relative paths
+        canonical = os.path.realpath(path)
+        p = canonical.lower().replace('\\', '/')
+    except (OSError, ValueError):
+        # If we can't resolve the path, treat it as protected (fail-safe)
+        return True
+    
     for proto in SYSTEM_PROTECTED:
-        if p.startswith(proto.lower().replace('\\', '/')):
+        proto_canonical = proto.lower().replace('\\', '/')
+        if p.startswith(proto_canonical):
             return True
     return False
 
@@ -446,32 +455,96 @@ def dave_verdict():
 @app.route('/api/delete', methods=['POST'])
 def delete_paths():
     """
-    ALWAYS requires explicit confirm=true. Never deletes speculatively.
-    Request: {"paths": [...], "confirm": true}
+    Delete paths that were discovered in a specific scan session.
+    Requires explicit confirm=true and a valid scan_id.
+    Request: {"scan_id": "...", "paths": [...], "confirm": true}
+    
+    Security: Only allows deletion of paths that:
+    1. Were discovered in the specified scan session
+    2. Are within the scan root directory (after canonicalization)
+    3. Are not system-protected (checked on canonical path)
     """
     data = request.get_json(force=True)
+    scan_id = data.get('scan_id', '').strip()
     paths = data.get('paths', [])
+    
     if not data.get('confirm') is True:
         return jsonify({'error': 'Confirmation required (confirm: true)'}), 400
     if not isinstance(paths, list) or not paths:
         return jsonify({'error': 'No paths'}), 400
+    if not scan_id:
+        return jsonify({'error': 'scan_id required'}), 400
+
+    # Verify scan session exists and is complete
+    with SCAN_LOCK:
+        scan = SCANS.get(scan_id)
+        if not scan:
+            return jsonify({'error': 'Unknown scan_id'}), 404
+        if scan.get('state') != 'complete':
+            return jsonify({'error': f"Scan not complete (state={scan.get('state')})"}), 409
+        
+        scan_results = scan.get('results')
+        if not scan_results:
+            return jsonify({'error': 'No scan results available'}), 409
+        
+        scan_root = scan_results.get('scan_root')
+        if not scan_root:
+            return jsonify({'error': 'Scan root not found'}), 500
+
+    # Canonicalize scan root once
+    try:
+        canonical_scan_root = os.path.realpath(scan_root)
+    except (OSError, ValueError):
+        return jsonify({'error': 'Cannot resolve scan root'}), 500
+
+    # Build a set of all paths discovered in this scan for validation
+    discovered_paths = set()
+    for junk in scan_results.get('junk_files', []):
+        discovered_paths.add(junk['path'])
+    for large in scan_results.get('large_files', []):
+        discovered_paths.add(large['path'])
+    for dup_group in scan_results.get('duplicates', {}).values():
+        for dup in dup_group:
+            discovered_paths.add(dup['path'])
 
     deleted, failed, freed = [], [], 0
     for p in paths:
-        if is_protected(p):
+        # Validate path was discovered in this scan
+        if p not in discovered_paths:
+            failed.append({'path': p, 'error': 'path not from this scan session'})
+            continue
+        
+        # Canonicalize the path to prevent traversal attacks
+        try:
+            canonical_path = os.path.realpath(p)
+        except (OSError, ValueError):
+            failed.append({'path': p, 'error': 'cannot resolve path'})
+            continue
+        
+        # Verify path is within scan root (containment check)
+        if not canonical_path.startswith(canonical_scan_root + os.sep) and canonical_path != canonical_scan_root:
+            failed.append({'path': p, 'error': 'path outside scan root'})
+            continue
+        
+        # Check system protection on canonical path
+        if is_protected(canonical_path):
             failed.append({'path': p, 'error': 'protected'})
             continue
-        if not os.path.exists(p):
+        
+        # Verify path still exists
+        if not os.path.exists(canonical_path):
             failed.append({'path': p, 'error': 'not found'})
             continue
+        
+        # Perform deletion
         try:
-            if os.path.isdir(p) and not os.path.islink(p):
-                size = _dir_size(p)
-                shutil.rmtree(p)
+            if os.path.isdir(canonical_path) and not os.path.islink(canonical_path):
+                size = _dir_size(canonical_path)
+                shutil.rmtree(canonical_path)
                 freed += size
             else:
-                size = os.path.getsize(p)
-                os.remove(p)
+                size = os.path.getsize(canonical_path)
+                os.remove(canonical_path)
                 freed += size
             deleted.append(p)
         except Exception as e:
