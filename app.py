@@ -110,7 +110,7 @@ def index():
 
 @app.route('/assets/<path:filename>', methods=['GET'])
 def serve_assets(filename):
-    """Serve assets using a layered fallback strategy.
+    """Serve assets using a layered fallback strategy with security controls.
 
     HTML pages reference assets as ``assets/<name>`` but the actual files
     live in several locations within the repository:
@@ -118,16 +118,35 @@ def serve_assets(filename):
     1. ``assets/<filename>``          - canonical location (populated over time)
     2. ``visualassets/<basename>``    - current home for all image assets
     3. ``E_Drive_rings/<basename>``   - E-Drive ring PNGs
-    4. ``<basename>``                 - root-level files (mp4 videos, etc.)
-    5. ``<filename>`` at repo root    - handles refs like assets/visualassets/x.png
+    4. ``music/<basename>``           - audio files
 
-    Adding a file to *any* of these locations makes it immediately available
-    at the ``/assets/...`` URL the HTML already uses.
+    Security: Only serves files with safe extensions from designated asset
+    directories. Blocks access to credentials, source code, and config files.
     """
     from werkzeug.utils import safe_join
     from werkzeug.exceptions import NotFound
 
     base_dir = os.path.dirname(os.path.abspath(__file__))
+
+    # Allowlist of safe file extensions for public assets
+    SAFE_EXTENSIONS = {
+        # Images
+        '.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg', '.ico', '.bmp',
+        # Videos
+        '.mp4', '.webm', '.mov', '.mkv', '.avi',
+        # Audio
+        '.mp3', '.ogg', '.wav', '.flac', '.m4a', '.aac',
+        # Web assets
+        '.css', '.js', '.woff', '.woff2', '.ttf', '.eot',
+    }
+
+    # Extract just the final filename component (safe — basename never traverses).
+    basename = os.path.basename(filename)
+    
+    # Security check: Reject files without safe extensions
+    file_ext = os.path.splitext(basename)[1].lower()
+    if file_ext not in SAFE_EXTENSIONS:
+        return jsonify({'error': 'Asset type not allowed'}), 403
 
     # Sanitise the URL-supplied path: strip any component that would escape the
     # base directory (e.g. "../../etc/passwd").  Depending on the werkzeug
@@ -142,25 +161,14 @@ def serve_assets(filename):
             return None
         return joined if (joined is not None and os.path.isfile(joined)) else None
 
-    # Extract just the final filename component (safe — basename never traverses).
-    basename = os.path.basename(filename)
-
     # 1. Canonical assets/ directory (works once files are placed there)
     if _safe_isfile(base_dir, 'assets', filename):
         return send_from_directory(os.path.join(base_dir, 'assets'), filename)
 
-    # 2 & 3. Named sub-directories at repo root
-    for subdir in ('visualassets', 'E_Drive_rings'):
+    # 2 & 3. Named sub-directories at repo root (visualassets, E_Drive_rings, music)
+    for subdir in ('visualassets', 'E_Drive_rings', 'music'):
         if _safe_isfile(base_dir, subdir, basename):
             return send_from_directory(os.path.join(base_dir, subdir), basename)
-
-    # 4. Repo root (mp4 videos sit here)
-    if _safe_isfile(base_dir, basename):
-        return send_from_directory(base_dir, basename)
-
-    # 5. Full relative path from repo root (handles assets/visualassets/foo.png)
-    if _safe_isfile(base_dir, filename):
-        return send_from_directory(base_dir, filename)
 
     # Nothing found - return a proper 404 rather than a 500
     return jsonify({'error': 'Asset not found: ' + filename}), 404
