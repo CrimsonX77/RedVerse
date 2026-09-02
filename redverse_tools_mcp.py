@@ -9,12 +9,14 @@ Each .sh file must follow the RedVerse Launcher Protocol (RLP) header format.
 See launchers/TEMPLATE.sh for the full spec.
 
 Transport: stdio (local use with Ollama, Claude Desktop, etc.)
+          sse (HTTP, requires REDVERSE_MCP_API_KEY for authentication)
 """
 
 import asyncio
 import json
 import os
 import re
+import secrets
 import subprocess
 import sys
 from dataclasses import dataclass, field
@@ -33,6 +35,13 @@ DEFAULT_LAUNCHERS_DIR = Path(__file__).parent / "launchers"
 LAUNCHERS_DIR = Path(os.environ.get("REDVERSE_LAUNCHERS_DIR", DEFAULT_LAUNCHERS_DIR))
 
 TOOL_EXECUTION_TIMEOUT = int(os.environ.get("REDVERSE_TOOL_TIMEOUT", "30"))  # seconds
+
+# API Key for SSE transport authentication
+# REQUIRED when using --transport sse to prevent unauthenticated access
+MCP_API_KEY = os.environ.get("REDVERSE_MCP_API_KEY", "")
+
+# Track which transport mode we're running in
+_TRANSPORT_MODE: str = "stdio"
 
 # ─────────────────────────────────────────────
 # RLP HEADER PARSER
@@ -191,6 +200,54 @@ def discover_launchers(launchers_dir: Path) -> List[LauncherSpec]:
 
 
 # ─────────────────────────────────────────────
+# AUTHENTICATION
+# ─────────────────────────────────────────────
+
+class AuthenticationError(Exception):
+    """Raised when authentication fails."""
+    pass
+
+
+def validate_api_key(ctx: Optional[Context]) -> None:
+    """
+    Validate API key for SSE transport mode.
+    
+    In stdio mode (local use), no authentication is required.
+    In SSE mode (network exposed), API key must be provided via X-API-Key header.
+    
+    Raises:
+        AuthenticationError: If authentication fails in SSE mode.
+    """
+    # stdio mode: local use, no authentication needed
+    if _TRANSPORT_MODE == "stdio":
+        return
+    
+    # SSE mode: require API key authentication
+    if not MCP_API_KEY:
+        raise AuthenticationError(
+            "Server misconfiguration: REDVERSE_MCP_API_KEY not set. "
+            "SSE transport requires API key authentication."
+        )
+    
+    # Extract API key from context metadata
+    # FastMCP passes request headers through context
+    provided_key = None
+    if ctx and hasattr(ctx, 'meta') and ctx.meta:
+        # Check for API key in various header formats
+        provided_key = (
+            ctx.meta.get('x-api-key') or 
+            ctx.meta.get('X-API-Key') or
+            ctx.meta.get('authorization', '').replace('Bearer ', '').strip()
+        )
+    
+    # Constant-time comparison to prevent timing attacks
+    if not provided_key or not secrets.compare_digest(provided_key, MCP_API_KEY):
+        raise AuthenticationError(
+            "Authentication required. Provide valid API key via X-API-Key header."
+        )
+
+
+# ─────────────────────────────────────────────
 # SCRIPT EXECUTION ENGINE
 # ─────────────────────────────────────────────
 
@@ -204,7 +261,21 @@ async def execute_launcher(
     Args are injected as environment variables: PARAM_<NAME> (uppercased).
 
     Example: param 'plant_id' becomes env var PARAM_PLANT_ID
+    
+    Raises:
+        AuthenticationError: If authentication fails in SSE mode.
     """
+    # Validate authentication before executing any launcher
+    try:
+        validate_api_key(ctx)
+    except AuthenticationError as e:
+        return json.dumps({
+            "success": False,
+            "error": str(e),
+            "tool": spec.tool_name,
+            "error_type": "authentication_error",
+        }, indent=2)
+    
     # Build environment: inherit current env + inject params
     env = os.environ.copy()
 
@@ -380,13 +451,23 @@ class ListToolsInput(BaseModel):
         "openWorldHint": False,
     }
 )
-async def list_launcher_tools(params: ListToolsInput) -> str:
+async def list_launcher_tools(params: ListToolsInput, ctx: Context = None) -> str:
     """
     List all tools currently loaded from the launchers folder.
     Use this to discover available shell tools without needing to know them in advance.
 
     Returns: JSON list of tool names, descriptions, params, and script paths.
     """
+    # Validate authentication
+    try:
+        validate_api_key(ctx)
+    except AuthenticationError as e:
+        return json.dumps({
+            "success": False,
+            "error": str(e),
+            "error_type": "authentication_error",
+        }, indent=2)
+    
     result = []
     for spec in _loaded_specs:
         entry: Dict[str, Any] = {
@@ -428,13 +509,23 @@ class ReloadInput(BaseModel):
         "openWorldHint": False,
     }
 )
-async def reload_launcher_tools(params: ReloadInput) -> str:
+async def reload_launcher_tools(params: ReloadInput, ctx: Context = None) -> str:
     """
     Rescan the launchers folder and reload all .sh tools without restarting the server.
     Use this after adding or modifying launcher scripts.
 
     Returns: JSON summary of what was loaded/reloaded.
     """
+    # Validate authentication
+    try:
+        validate_api_key(ctx)
+    except AuthenticationError as e:
+        return json.dumps({
+            "success": False,
+            "error": str(e),
+            "error_type": "authentication_error",
+        }, indent=2)
+    
     global _loaded_specs
     old_names = {s.tool_name for s in _loaded_specs}
     _loaded_specs = discover_launchers(LAUNCHERS_DIR)
@@ -471,13 +562,23 @@ class InspectInput(BaseModel):
         "openWorldHint": False,
     }
 )
-async def inspect_launcher_tool(params: InspectInput) -> str:
+async def inspect_launcher_tool(params: InspectInput, ctx: Context = None) -> str:
     """
     Get full details about a specific launcher tool including its RLP header and script path.
     Use this before calling a tool to understand its expected inputs.
 
     Returns: JSON with full spec, param list, and the raw RLP header text.
     """
+    # Validate authentication
+    try:
+        validate_api_key(ctx)
+    except AuthenticationError as e:
+        return json.dumps({
+            "success": False,
+            "error": str(e),
+            "error_type": "authentication_error",
+        }, indent=2)
+    
     for spec in _loaded_specs:
         if spec.tool_name == params.tool_name:
             return json.dumps({
@@ -527,12 +628,39 @@ if __name__ == "__main__":
                     help="Host for SSE mode (default: 0.0.0.0)")
     _args = _p.parse_args()
 
+    # Set transport mode globally
+    _TRANSPORT_MODE = _args.transport
+
+    # Security check: SSE mode requires API key
+    if _args.transport == "sse":
+        if not MCP_API_KEY:
+            print(
+                "[SECURITY ERROR] SSE transport requires authentication.\n"
+                "Set REDVERSE_MCP_API_KEY environment variable before starting.\n"
+                "\n"
+                "Example:\n"
+                "  export REDVERSE_MCP_API_KEY='your-secret-key-here'\n"
+                "  python redverse_tools_mcp.py --transport sse\n"
+                "\n"
+                "Generate a secure key with:\n"
+                "  python -c 'import secrets; print(secrets.token_urlsafe(32))'\n",
+                file=sys.stderr
+            )
+            sys.exit(1)
+        
+        print(
+            f"[redverse_tools_mcp] SSE transport: http://{_args.host}:{_args.port}\n"
+            f"[SECURITY] API key authentication ENABLED\n"
+            f"[SECURITY] Clients must provide X-API-Key header for all requests",
+            file=sys.stderr
+        )
+
     # Ensure launchers directory exists
     LAUNCHERS_DIR.mkdir(parents=True, exist_ok=True)
 
     startup_load_launchers()
     if _args.transport == "sse":
-        print(f"[redverse_tools_mcp] SSE transport: http://{_args.host}:{_args.port}", file=sys.stderr)
         mcp.run(transport="sse", host=_args.host, port=_args.port)
     else:
+        print("[redverse_tools_mcp] stdio transport (local use, no authentication required)", file=sys.stderr)
         mcp.run()  # stdio transport — pipe it from your AI client
